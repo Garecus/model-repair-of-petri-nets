@@ -1,0 +1,44 @@
+.type pn
+.transitions
+t0 Register
+t1 Analyze_Defect
+t2 Repair_(Complex)
+t3 Test_Repair
+t4 Archive_Repair
+t5 Repair_(Simple)
+t6 Restart_Repair
+t7 Inform_User
+.places
+p0 0
+p4 0
+p5 0
+p6 0
+p8 0
+p9 0
+p10 0
+p11 1
+p12 0
+.arcs
+t0 p0
+p0 t1
+t2 p4
+p4 t3
+t5 p4
+t1 p5
+p5 t7
+t7 p6
+p6 t4
+t1 p8
+p8 t2
+t3 p8
+p8 t4
+p8 t5
+t0 p9
+p9 t2
+p9 t5
+t6 p9
+t3 p10
+p10 t4
+p10 t6
+p11 t0
+t4 p12

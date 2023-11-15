@@ -1,3 +1,4 @@
+<!-- Section to display the canvas overlay for fitness repair -->
 <div
   class="margin-spaces outer-container"
   *ngIf="invalidPlaceCount$ | async as invalidPlaceCount"
@@ -62,6 +63,73 @@
       </div>
     </ng-container>
   </ng-container>
+</div>
+
+<!-- Section to display the canvas overlay for precision repair -->
+<div
+  class="margin-spaces outer-container"
+  *ngIf="wrongContinuationCount$ | async as wrongContinuationCount"
+>
+  <div class="inner-container" *ngIf="shouldShowPrecisionSuggestions$ | async">
+    <div class="icon-with-text">
+      <ng-container *ngIf="wrongContinuationCount.count === 0">
+        <mat-icon class="color_success"> check_circle </mat-icon>
+        <span>No additional behavior found!</span>
+      </ng-container>
+      <ng-container *ngIf="wrongContinuationCount.count === 1">
+        <mat-icon class="color_hint"> error_outline </mat-icon>
+        <span>{{ wrongContinuationCount.count }} wrong continuation found</span>
+      </ng-container>
+      <ng-container *ngIf="wrongContinuationCount.count > 1">
+        <mat-icon class="color_hint"> error_outline </mat-icon>
+        <span>{{ wrongContinuationCount.count }} wrong continuations found</span>
+      </ng-container>
+    </div>
+  </div>
+
+  <div
+    [class.solutions-loading--visible]="computingSolutions"
+    class="solutions-loading"
+  >
+    Computing solutions ...
+  </div>
+
+  <!-- <ng-container *ngIf="transitionSolutions$ | async as transitionSolutions">
+    <div class="inner-container" *ngIf="tracesCount$ | async as tracesCount">
+      {{ tracesCount }} traces loaded
+    </div>
+    <ng-container *ngIf="transitionSolutions.length > 0">
+      <div class="inner-container transition-solution-list">
+        <div class="icon-with-text">
+          <mat-icon class="color_error"> error_outline </mat-icon>
+          <span
+            matTooltip="Some of the traces have transitions, that aren't found in the net. You can add them by clicking on the buttons!"
+          >
+            {{ transitionSolutions.length }} missing
+            {{
+              transitionSolutions.length === 1 ? 'transition' : 'transitions'
+            }}:
+          </span>
+        </div>
+
+        <div class="inner-container transition-scroller">
+          <button
+            mat-stroked-button
+            [matTooltip]="
+              'Adds and connects the transition ' +
+              solution.missingTransition +
+              ' to the net'
+            "
+            *ngFor="let solution of transitionSolutions"
+            #button
+            (click)="applyPrecisionSolution(solution, button)"
+          >
+            {{ solution.missingTransition }}
+          </button>
+        </div>
+      </div>
+    </ng-container>
+  </ng-container> -->
 </div>
 
 <div #svg_wrapper>

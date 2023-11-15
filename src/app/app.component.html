@@ -3,13 +3,17 @@
   <a href="https://www.fernuni-hagen.de/ilovepetrinets/"
     ><h1>I <span class="red">❤</span> Petri Nets</h1></a
   >
-  <h2>... especially functioning nets 🛠️</h2>
+  <h2 [ngClass] = "introductionStyle">... especially functioning nets 🛠️</h2>
 
-  <p>
+  <p [ngClass] = "introductionStyle">
     With this tool you can check whether a Petri net can be enabled by your
     log(s). <br />
     You will see which places are not enabled and you will receive
-    recommendations to solve the issues.
+    recommendations to solve the issues.<br /><br />
+
+    In addition you can get hints where your process model allows more behavior than the
+    given event log.<br />
+    In a second step you can then adjust the process model based on suggestions. <br />
   </p>
 
   <section class="toggle-section">
@@ -17,14 +21,23 @@
       class="example-margin"
       color="primary"
       (change)="changeToggle($event)"
+      [(ngModel)] = "isToggled"
     >
-      Activate me for repair suggestions!
+      Activate fitness repair suggestions.
+    </mat-slide-toggle>
+    <mat-slide-toggle
+      class="example-margin distance-left"
+      color="primary"
+      (change)="changeTogglePrecision($event)"
+      [(ngModel)] = "isToggledPrecision"
+    >
+      Activate precision repair suggestions.
     </mat-slide-toggle>
   </section>
 
   <ng-container *ngIf="partialOrderCount$ | async as partialOrderCount">
     <div [style.display]="hasPartialOrders ? 'block' : 'none'">
-      <main>
+      <main [ngClass] = "mainStyle">
         <app-display
           class="padding full-size"
           [resetSvgPosition]="resetPositioningSubject"
@@ -90,25 +103,26 @@
     </div>
 
     <ng-container *ngIf="!hasPartialOrders">
-      <main>
+      <main [ngClass] = "mainStyle">
         <div class="initial-content">
           <p>
-            Before you can use the tool, you need to upload one or more logs.
-            Also you can upload a Petri net to have a starting point.
-            Alternatively you can create a new net with this tool.
+            <!-- At first, add a log and a petri net. -->
           </p>
+          <!-- Before you can use the tool, you need to upload one or more logs.
+          Also you can upload a Petri net to have a starting point.
+          Alternatively you can create a new net with this tool. -->
         </div>
 
         <div class="empty-button-list">
           <app-template-button
-            buttonText="Upload logs and/or a net"
+            buttonText="Upload a log and  a petri net to start."
             buttonIcon="upload"
             [styleClass]="
               partialOrderCount.count === 0 ? 'color_error' : 'color_success'
             "
             (buttonAction)="openFileSelector(undefined)"
             (dropAction)="dropFiles($event, undefined)"
-          ></app-template-button>
+          ></app-template-button> <!-- Upload logs and/or a net -->
         </div>
 
         <div class="submit-button-row">
@@ -137,24 +151,7 @@
         </ng-template>
       </main>
 
-      <div class="empty-button-list">
-        <app-template-button
-          *ngIf="false"
-          class="margin-spaces"
-          buttonText="Download example"
-          buttonIcon="star"
-          styleClass="color_primary"
-          (buttonAction)="downloadExample()"
-        ></app-template-button>
-
-        <app-template-button
-          class="margin-spaces"
-          buttonText="Evaluation files"
-          buttonIcon="star"
-          styleClass="color_primary"
-          (buttonAction)="downloadEvaluationFiles()"
-        ></app-template-button>
-      </div>
+      <app-download-example></app-download-example>
     </ng-container>
   </ng-container>
 

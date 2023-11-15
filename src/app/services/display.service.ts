@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { EventEmitter, Injectable, Output } from '@angular/core';
 import {
   BehaviorSubject,
   map,
@@ -22,6 +22,7 @@ export class DisplayService {
   private partialOrders$: Subject<PartialOrder[] | null>;
 
   private showSuggestions$ = new BehaviorSubject(false);
+  private showPrecisionSuggestions$ = new BehaviorSubject(false);
   private reset$: BehaviorSubject<Coordinates>;
 
   constructor() {
@@ -67,5 +68,19 @@ export class DisplayService {
 
   getPartialOrders$(): Observable<PartialOrder[] | null> {
     return this.partialOrders$.asObservable();
+  }
+
+  // Precision model repair
+  getShouldShowPrecisionSuggestions(): Observable<boolean> {
+    return this.showSuggestions$.asObservable();
+  }
+  
+  setShouldShowPrecisionSuggestions(show: boolean): void {
+    this.showSuggestions$.next(show);
+  }
+
+  @Output() triggeredBuildContent = new EventEmitter<string>();
+  triggerBuildContent(solutionType: string) {
+    this.triggeredBuildContent.emit(solutionType);
   }
 }

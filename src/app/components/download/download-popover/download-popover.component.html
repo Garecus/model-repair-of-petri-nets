@@ -3,20 +3,19 @@
 <div class="content" mat-dialog-content>
   <mat-form-field appearance="outline">
     <mat-label class="input-label">
-      <span>Name</span>
+      <span>Enter a file name</span>
     </mat-label>
-
     <input matInput [(ngModel)]="downloadName" />
   </mat-form-field>
 
-  <mat-label id="format-radio-group-label">File format</mat-label>
+  <mat-label id="format-radio-group-label">Select a file format</mat-label>
   <mat-radio-group
     color="primary"
     [(ngModel)]="fileFormat"
     aria-labelledby="format-radio-group-label"
   >
-    <mat-radio-button value="pn">Petri-Net</mat-radio-button>
-    <mat-radio-button value="pnml">PNML</mat-radio-button>
+    <mat-radio-button value="pn">Petri-Net of I<span class="red">❤</span>PN (.pn)</mat-radio-button>
+    <mat-radio-button value="pnml">Petri Net Markup Language (.pnml)</mat-radio-button>
   </mat-radio-group>
 
   <div class="buttons"></div>
@@ -24,5 +23,5 @@
 
 <div mat-dialog-actions>
   <button mat-button (click)="closePopover()">Cancel</button>
-  <button mat-button (click)="download()">Save</button>
+  <button mat-button (click)="download()">Download File</button>
 </div>

@@ -1,0 +1,26 @@
+<div class="empty-button-list">
+  <app-template-button
+    *ngIf="false"
+    class="margin-spaces"
+    buttonText="Download example"
+    buttonIcon="star"
+    styleClass="color_primary"
+    (buttonAction)="downloadExample()"
+  ></app-template-button>
+
+  <app-template-button
+    class="margin-spaces"
+    buttonText="Fitness Evaluation files"
+    buttonIcon="star"
+    styleClass="color_primary"
+    (buttonAction)="downloadEvaluationFiles()"
+  ></app-template-button>
+
+  <app-template-button
+    class="margin-spaces"
+    buttonText="Precision Evaluation files"
+    buttonIcon="star"
+    styleClass="color_primary"
+    (buttonAction)="downloadEvaluationFilesPrecision()"
+  ></app-template-button>
+</div>

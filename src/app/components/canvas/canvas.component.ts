@@ -19,7 +19,7 @@ import {
 import { LayoutResult } from '../../services/layout/layout.service';
 import { SvgService } from '../../services/svg/svg.service';
 import { bindEventsForNet } from './bind-events.fn';
-
+// todo
 @Component({
   selector: 'app-canvas',
   templateUrl: './canvas.component.html',

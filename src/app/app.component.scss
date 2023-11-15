@@ -48,6 +48,19 @@
     }
   }
 
+  .defaultMain {
+    background: transparent;
+  }
+
+  .changedMainStyle {
+    height: 700px;
+    cursor: grab;
+  }
+
+  .changedIntroductionStyle {
+    display: none;
+  }
+
   .empty-button-list {
     display: flex;
     justify-content: space-evenly;
@@ -86,4 +99,8 @@
     display: grid;
     grid-template-columns: 1fr 2fr 1fr;
   }
+}
+
+.distance-left {
+  padding-left: 20px;
 }

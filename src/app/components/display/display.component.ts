@@ -48,11 +48,13 @@ export class DisplayComponent implements OnInit {
   @ViewChild('svg_wrapper') svgWrapper: ElementRef<HTMLElement> | undefined;
 
   invalidPlaceCount$: Subject<{ count: number } | null>;
+  wrongContinuationCount$: Subject<{ count: number } | null>;
 
   tracesCount$: Observable<number>;
   transitionSolutions$: Observable<NewTransitionSolution[]>;
 
   shouldShowSuggestions$: Observable<boolean>;
+  shouldShowPrecisionSuggestions$: Observable<boolean>;
 
   constructor(
     private layoutService: LayoutService,
@@ -65,7 +67,15 @@ export class DisplayComponent implements OnInit {
       .getShouldShowSuggestions()
       .pipe(distinctUntilChanged());
 
+    this.shouldShowPrecisionSuggestions$ = this.displayService
+      .getShouldShowSuggestions()
+      .pipe(distinctUntilChanged());
+
     this.invalidPlaceCount$ = new BehaviorSubject<{ count: number } | null>(
+      null
+    );
+
+    this.wrongContinuationCount$ = new BehaviorSubject<{ count: number } | null>(
       null
     );
 
@@ -87,6 +97,12 @@ export class DisplayComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.displayService.triggeredBuildContent.subscribe((solutionType: string) => {
+      /* console.log(solutionType); */
+      this.buildContent(solutionType);
+    });
+
+    // Default content
     this.layoutResult$ = this.displayService.getPetriNet$().pipe(
       switchMap((net) =>
         this.displayService.getPartialOrders$().pipe(
@@ -176,15 +192,220 @@ export class DisplayComponent implements OnInit {
           switchMap(({ net, renderChanges }) =>
             (this.resetSvgPosition
               ? this.resetSvgPosition.pipe(
-                  startWith(undefined),
-                  map(() => this.layoutService.layout(clonedeep(net)))
-                )
+                startWith(undefined),
+                map(() => this.layoutService.layout(clonedeep(net)))
+              )
               : of(this.layoutService.layout(clonedeep(net)))
             ).pipe(map((result) => ({ ...result, renderChanges })))
           )
         )
       )
     );
+  }
+
+  buildContent(solutionType: string): void {
+    if (solutionType == "fitness") {
+      // Precision model repair (focus on precision)
+      this.layoutResult$ = this.displayService.getPetriNet$().pipe(
+        switchMap((net) =>
+          this.displayService.getPartialOrders$().pipe(
+            startWith([]),
+            switchMap((partialOrders) =>
+              this.shouldShowSuggestions$.pipe(
+                switchMap((showSuggestions) => {
+                  if (!showSuggestions) {
+                    net.places.forEach((place) => {
+                      place.issueStatus = undefined;
+                    });
+                    this.invalidPlaceCount$.next({
+                      count: 0,
+                    });
+                    this.repairService.saveNewSolutions([], 0);
+                    return of({ solutions: [], renderChanges: true });
+                  }
+
+                  if (!partialOrders || partialOrders.length === 0) {
+                    this.repairService.saveNewSolutions([], 0);
+                    return of({ solutions: [], renderChanges: true });
+                  }
+
+                  this.computingSolutions = true;
+                  const invalidPlaces: {
+                    [key: string]: number;
+                  } = {};
+                  for (let index = 0; index < partialOrders.length; index++) {
+                    const currentInvalid = this.firePartialOrder(
+                      net,
+                      partialOrders[index]
+                    );
+
+                    currentInvalid.forEach((place) => {
+                      if (invalidPlaces[place] === undefined) {
+                        invalidPlaces[place] = 0;
+                      }
+                      invalidPlaces[place]++;
+                    });
+                  }
+
+                  const placeIds = Object.keys(invalidPlaces);
+                  this.invalidPlaceCount$.next({
+                    count: placeIds.length,
+                  });
+
+                  const places: Place[] = net.places.filter((place) =>
+                    placeIds.includes(place.id)
+                  );
+                  net.places.forEach((place) => {
+                    place.issueStatus = undefined;
+                  });
+                  places.forEach((invalidPlace) => {
+                    invalidPlace.issueStatus = 'error';
+                  });
+
+                  return this.petriNetRegionsService
+                    .computeSolutions(partialOrders, net, invalidPlaces)
+                    .pipe(
+                      tap(() => (this.computingSolutions = false)),
+                      map((solutions) => ({
+                        solutions,
+                        renderChanges: false,
+                      })),
+                      startWith({
+                        solutions: [] as PlaceSolution[],
+                        renderChanges: false,
+                      })
+                    );
+                }),
+                map(({ solutions, renderChanges }) => {
+                  for (const place of solutions) {
+                    if (place.type === 'newTransition') {
+                      continue;
+                    }
+                    const foundPlace = net.places.find(
+                      (p) => p.id === place.place
+                    );
+                    if (foundPlace) {
+                      foundPlace.issueStatus = place.type;
+                    }
+                  }
+                  return { net, renderChanges };
+                })
+              )
+            ),
+            switchMap(({ net, renderChanges }) =>
+              (this.resetSvgPosition
+                ? this.resetSvgPosition.pipe(
+                  startWith(undefined),
+                  map(() => this.layoutService.layout(clonedeep(net)))
+                )
+                : of(this.layoutService.layout(clonedeep(net)))
+              ).pipe(map((result) => ({ ...result, renderChanges })))
+            )
+          )
+        )
+      );
+    } else if (solutionType == "precision") {
+      // Precision model repair
+      this.layoutResult$ = this.displayService.getPetriNet$().pipe(
+        switchMap((net) =>
+          this.displayService.getPartialOrders$().pipe(
+            startWith([]),
+            switchMap((partialOrders) =>
+              this.shouldShowPrecisionSuggestions$.pipe(
+                switchMap((showSuggestions) => {
+                  if (!showSuggestions) {
+                    net.places.forEach((place) => {
+                      place.issueStatus = undefined;
+                    });
+                    this.wrongContinuationCount$.next({
+                      count: 0, // todo
+                    });
+                    this.repairService.saveNewSolutions([], 0);
+                    return of({ solutions: [], renderChanges: true });
+                  }
+
+                  if (!partialOrders || partialOrders.length === 0) {
+                    this.repairService.saveNewSolutions([], 0);
+                    return of({ solutions: [], renderChanges: true });
+                  }
+
+                  this.computingSolutions = true;
+                  const wrongContinuation: {
+                    [key: string]: number;
+                  } = {};
+                  for (let index = 0; index < partialOrders.length; index++) {
+                    const currentInvalid = this.checkWrongContinuations(
+                      net,
+                      partialOrders[index]
+                    );
+
+                    currentInvalid.forEach((place) => {
+                      if (wrongContinuation[place] === undefined) {
+                        wrongContinuation[place] = 0;
+                      }
+                      wrongContinuation[place]++;
+                    });
+                  }
+
+                  let wrongContinuations: any; // Todo
+                  const placeIds = Object.keys(wrongContinuations);
+                  this.wrongContinuationCount$.next({
+                    count: placeIds.length,
+                  });
+
+                  const places: Place[] = net.places.filter((place) =>
+                    placeIds.includes(place.id)
+                  );
+                  net.places.forEach((place) => {
+                    place.issueStatus = undefined;
+                  });
+                  places.forEach((wrongContinuation) => {
+                    wrongContinuation.issueStatus = 'error';
+                  });
+
+                  return this.petriNetRegionsService
+                    .computeSolutions(partialOrders, net, wrongContinuations)
+                    .pipe(
+                      tap(() => (this.computingSolutions = false)),
+                      map((solutions) => ({
+                        solutions,
+                        renderChanges: false,
+                      })),
+                      startWith({
+                        solutions: [] as PlaceSolution[],
+                        renderChanges: false,
+                      })
+                    );
+                }),
+                map(({ solutions, renderChanges }) => {
+                  for (const place of solutions) {
+                    if (place.type === 'newTransition') {
+                      continue;
+                    }
+                    const foundPlace = net.places.find(
+                      (p) => p.id === place.place
+                    );
+                    if (foundPlace) {
+                      foundPlace.issueStatus = place.type;
+                    }
+                  }
+                  return { net, renderChanges };
+                })
+              )
+            ),
+            switchMap(({ net, renderChanges }) =>
+              (this.resetSvgPosition
+                ? this.resetSvgPosition.pipe(
+                  startWith(undefined),
+                  map(() => this.layoutService.layout(clonedeep(net)))
+                )
+                : of(this.layoutService.layout(clonedeep(net)))
+              ).pipe(map((result) => ({ ...result, renderChanges })))
+            )
+          )
+        )
+      );
+    }
   }
 
   private firePartialOrder(
@@ -199,4 +420,12 @@ export class DisplayComponent implements OnInit {
       button._elementRef.nativeElement.getBoundingClientRect();
     this.repairService.showRepairPopoverForSolution(domRect, solution);
   }
+
+  private checkWrongContinuations(
+    petriNet: PetriNet,
+    partialOrder: PartialOrder
+  ): string[] {
+    return new FirePartialOrder(petriNet, partialOrder).getInvalidPlaces();
+  }
+
 }

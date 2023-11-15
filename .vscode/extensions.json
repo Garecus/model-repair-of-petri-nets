@@ -1,0 +1,12 @@
+{
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=827846
+  "recommendations": [
+    "angular.ng-template",
+    "ms-vscode-remote.remote-containers",
+    "ms-azuretools.vscode-docker",
+    "xdebug.php-debug",
+    "bmewburn.vscode-intelephense-client",
+    "esbenp.prettier-vscode",
+    "rangav.vscode-thunder-client"
+  ]
+}

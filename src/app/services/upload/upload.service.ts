@@ -40,6 +40,7 @@ export class UploadService {
   openFileSelector(type?: StructureType): void {
     const fileUpload = document.createElement('input');
     fileUpload.setAttribute('type', 'file');
+    fileUpload.setAttribute('multiple', 'true'); // Allows to upload to file at once in the select file option
 
     const relevantExtensions = type
       ? allowedExtensions[type]

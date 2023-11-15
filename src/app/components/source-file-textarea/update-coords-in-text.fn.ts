@@ -1,3 +1,4 @@
+//todo
 export function removeCoordinates(value: string): string {
   const contentLines = value.split('\n');
   let newText = '';
