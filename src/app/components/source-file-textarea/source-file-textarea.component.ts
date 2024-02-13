@@ -106,7 +106,7 @@ export class SourceFileTextareaComponent implements OnDestroy {
       this.displayService.setNewNet(result, errors);
     } else {
       const errors = new Set<string>();
-      const result = this.parserService.parsePartialOrders(newSource, errors);
+      const result = this.parserService.parseEventLog(newSource, errors); // parsePartialOrders todo
 
       this.updateValidationForLog(result, errors);
       if (!result) return;

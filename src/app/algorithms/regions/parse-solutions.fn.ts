@@ -1,8 +1,5 @@
 import { Place } from '../../classes/diagram/place';
-import {
-  ParsableSolution,
-  ParsableSolutionsPerType,
-} from '../../services/repair/repair.model';
+import { ParsableSolution, ParsableSolutionsPerType } from '../../services/repair/repair.model';
 import { SolutionType } from './ilp-solver/solver-classes';
 
 export type AutoRepairForSinglePlace =
@@ -16,7 +13,7 @@ type ModifyPlaceType = {
   type: 'modify-place';
 } & SinglePlaceParameter;
 
-export type AutoRepair = AutoRepairForSinglePlace | ReplacePlaceAutoRepair;
+export type AutoRepair = AutoRepairForSinglePlace | ReplacePlaceAutoRepair | AddPlaceAutoRepair;
 
 export type ReplacePlaceAutoRepair = {
   type: 'replace-place';
@@ -37,6 +34,17 @@ export type SinglePlaceParameter = {
 };
 
 type ArcDefinition = { transitionLabel: string; weight: number };
+
+// Precision.AutoRepair
+export type AddPlaceAutoRepair = {
+  type: 'add-place';
+  regionSize: number;
+  repairType: SolutionType;
+  places: SinglePlaceParameter[];
+  newMarking?: number;
+  incoming: ArcDefinition[];
+  outgoing: ArcDefinition[];
+};
 
 export function parseSolution(
   placeSolutionList: ParsableSolutionsPerType[],
@@ -168,6 +176,7 @@ export function parseSolution(
         places: newPlaces.map((newPlace) => mergeAllDuplicatePlaces(newPlace)),
       };
       return repair;
+      
     })
     .filter((solution) => !!solution);
 

@@ -3,9 +3,9 @@ import { AutoRepairWithSolutionType } from '../../algorithms/regions/parse-solut
 
 export type ParsableSolution =
   | {
-      type: 'increase-marking';
-      newMarking: number;
-    }
+    type: 'increase-marking';
+    newMarking: number;
+  }
   | IncomingArcSolution
   | OutgoingArcSolution;
 
@@ -29,20 +29,20 @@ export type ParsableSolutionsPerType = {
 
 export type PlaceSolution =
   | {
-      type: 'error';
-      place: string;
-      solutions: AutoRepairWithSolutionType[];
-      invalidTraceCount: number;
-      missingTokens: number | undefined;
-      regionSize: number;
-    }
+    type: 'error';
+    place: string;
+    solutions: AutoRepairWithSolutionType[];
+    invalidTraceCount: number;
+    missingTokens: number | undefined;
+    regionSize: number;
+  }
   | {
-      type: 'warning';
-      place: string;
-      tooManyTokens: number;
-      reduceTokensTo: number;
-      regionSize: number;
-    }
+    type: 'warning';
+    place: string;
+    tooManyTokens: number;
+    reduceTokensTo: number;
+    regionSize: number;
+  }
   | NewTransitionSolution;
 
 export type NewTransitionSolution = {
@@ -52,3 +52,21 @@ export type NewTransitionSolution = {
   invalidTraceCount: number;
   regionSize: number;
 };
+
+// Precision.TransitionSolution
+export type TransitionSolution =
+  {
+    type: 'newPlace';
+    solutions: AutoRepairWithSolutionType[];
+    wrongContinuations: string;
+    transition: string;
+    missingPlace: string;
+
+    place: string;
+    invalidTraceCount: number;
+    missingTokens: number | undefined;
+    regionSize: number;
+    tooManyTokens: number;
+    reduceTokensTo: number;
+    missingTransition: string;
+  };

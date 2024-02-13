@@ -1,6 +1,7 @@
 import { Arc } from './arc';
 import { EventItem } from './transition';
 
+// Type: Partial Order or sequential log
 export interface PartialOrder {
   events: EventItem[];
   arcs: Arc[];
@@ -9,6 +10,7 @@ export interface PartialOrder {
   finalEvents?: string[];
 }
 
+// Identify the start and end events of the log
 export function determineInitialAndFinalEvents(
   partialOrder: PartialOrder
 ): void {
@@ -26,4 +28,25 @@ export function determineInitialAndFinalEvents(
 
   partialOrder.initialEvents = initialEvents;
   partialOrder.finalEvents = finalEvents;
+}
+
+export interface LogList {
+  rowId: number,
+  rowContent: string,
+  caseId: number,
+  name: string,
+}
+
+export interface ModelList {
+  rowId: number,
+  rowContent: string,
+}
+
+export interface CaseList {
+  caseId: number,
+  sequence: string,
+}
+
+export interface ArcList {
+  arc: string,
 }

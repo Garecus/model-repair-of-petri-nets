@@ -2,12 +2,9 @@ import { OverlayRef } from '@angular/cdk/overlay';
 import { Component, EventEmitter, OnInit } from '@angular/core';
 
 import { SolutionType } from '../../algorithms/regions/ilp-solver/solver-classes';
-import {
-  AutoRepair,
-  AutoRepairWithSolutionType,
-} from '../../algorithms/regions/parse-solutions.fn';
+import { AutoRepair, AutoRepairWithSolutionType} from '../../algorithms/regions/parse-solutions.fn';
 import { NetCommandService } from '../../services/repair/net-command.service';
-import { PlaceSolution } from '../../services/repair/repair.model';
+import { PlaceSolution, TransitionSolution } from '../../services/repair/repair.model';
 
 type LabelWithTooltip = {
   label: string;
@@ -18,20 +15,32 @@ type LabelWithTooltip = {
   templateUrl: './repair-menu.component.html',
   styleUrls: ['./repair-menu.component.scss'],
 })
+
 export class RepairMenuComponent implements OnInit {
   placeSolution!: PlaceSolution;
   partialOrderCount!: number;
-  shownTextsForSolutions: { text: LabelWithTooltip; solution: AutoRepair }[] =
-    [];
+  shownTextsForSolutions: { text: LabelWithTooltip; solution: AutoRepair }[] = [];
   overlayRef?: OverlayRef;
-
   infoHeader = '';
-
   applySolution = new EventEmitter<void>();
+  transitionSolution!: TransitionSolution;
 
   constructor(private netCommandService: NetCommandService) {}
 
+  // On page initialization: Show the user the RepairMenu.FirstLine and .SecondLine
   ngOnInit(): void {
+    // Precision
+    let solutionType = "precision"; // todo
+    let tmpValue = 1; // todo
+    if (solutionType == "precision") {
+      this.infoHeader = `The transition has ${tmpValue} possible wrong ${tmpValue === 1 ? 'continuation' : 'continuations'}.`; /* ${this.transitionSolution.wrongContinuations} */ // todo
+      this.shownTextsForSolutions = this.generateSolutionToDisplay(
+        this.transitionSolution.solutions,
+        true
+      );
+      console.log(this.shownTextsForSolutions);
+    } else if (solutionType == "fitness") {
+    // Fitness
     if (this.placeSolution.type === 'warning') {
       this.infoHeader = `The place has ${this.placeSolution.tooManyTokens} too many tokens`;
       this.shownTextsForSolutions = [
@@ -82,10 +91,11 @@ export class RepairMenuComponent implements OnInit {
     } else {
       this.shownTextsForSolutions = this.generateSolutionToDisplay(solutions);
     }
-
+  }
     this.infoHeader += 'Choose a solution to repair the place:';
   }
 
+  // Apply the selected solution to the petri net
   useSolution(solution: AutoRepair): void {
     this.applySolution.next();
 
@@ -93,6 +103,13 @@ export class RepairMenuComponent implements OnInit {
       this.netCommandService
         .repairNetForNewTransition(
           this.placeSolution.missingTransition,
+          solution
+        )
+        .subscribe(() => this.overlayRef?.dispose());
+    } else if (this.transitionSolution.type === 'newPlace') { // Precision
+      this.netCommandService
+        .repairNetForNewTransition(
+          this.transitionSolution.missingPlace,
           solution
         )
         .subscribe(() => this.overlayRef?.dispose());
@@ -114,6 +131,7 @@ export class RepairMenuComponent implements OnInit {
   }
 }
 
+// Display the solution text (1. Part to display RepairMenu.SolutionList.Record.FirstLine)
 function generateTextForAutoRepair(
   solution: AutoRepairWithSolutionType,
   newTransition: boolean
@@ -131,27 +149,39 @@ function generateTextForAutoRepair(
     };
   }
 
+  if (solution.type === 'add-place') {
+    return {
+      label: `${baseText}${getSubLabel(solution)}`,
+    };
+  }
+
   return {
     label: `${baseText}${getSubLabel(solution)}`,
   };
 }
 
+// Convert the solution types of the ilp-solver into solution text  (1. Part to display RepairMenu.SolutionList.Record.FirstLine)
 const solutionTypeToText: { [key in SolutionType]: string } = {
   changeMarking: 'Add tokens',
   changeIncoming: 'Add ingoing tokens',
   multiplePlaces: 'Split place',
+  addPlace: 'Add place',
 };
 
+// Generate the text of the RepairMenu.SolutionList.Record.SecondLine
 function getSubLabel(solution: { regionSize: number }): string {
   return `<span>Region size: ${solution.regionSize}</span>`;
 }
 
+// Generate the solution text (2. Part to display RepairMenu.SolutionList.Record.FirstLine)
 function generateBaseText(
   solution: AutoRepairWithSolutionType,
   newTransition: boolean
 ): string {
   let text = solutionTypeToText[solution.repairType];
-
+  if (solution.type === 'add-place') {
+    text = 'Add place';
+  }
   if (solution.type === 'marking') {
     text = 'Add tokens';
   }
@@ -163,5 +193,6 @@ function generateBaseText(
       text = `Add minimal region`;
     }
   }
+
   return `<b>${text}</b></br>`;
 }

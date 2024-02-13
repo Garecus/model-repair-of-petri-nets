@@ -213,6 +213,7 @@ export class IlpSolver {
           changeIncoming: { sum: 0, vars: [] },
           multiplePlaces: { sum: 0, vars: [] },
           changeMarking: { sum: 0, vars: [] },
+          addPlace: { sum: 0, vars: [] }, // Precision
         };
 
         placeSolutions.forEach((placeSolution) => {

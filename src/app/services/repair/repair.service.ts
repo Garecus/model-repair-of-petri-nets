@@ -5,7 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import { BehaviorSubject, Observable, Subject, Unsubscribable } from 'rxjs';
 
 import { RepairMenuComponent } from '../../components/repair-menu/repair-menu.component';
-import { PlaceSolution } from './repair.model';
+import { PlaceSolution, TransitionSolution } from './repair.model';
 
 @Injectable({
   providedIn: 'root',
@@ -94,6 +94,61 @@ export class RepairService {
     );
   }
 
+  showRepairPopoverForSolutionPrecision(ref: DOMRect, solution?: TransitionSolution): void {
+    if (!solution) {
+      this.toastr.warning(`No solutions found`);
+      return;
+    }
+
+    if (this.overlayRef) {
+      this.overlayRef.dispose();
+    }
+
+    this.currentOpenElement =
+      solution.type === 'newPlace'
+        ? solution.wrongContinuations
+        : solution.transition;
+    if (this.outsideClickSubscription) {
+      this.outsideClickSubscription.unsubscribe();
+    }
+
+    this.overlayRef = this.overlay.create();
+    const position = this.overlay
+      .position()
+      .flexibleConnectedTo(ref)
+      .withPositions([
+        {
+          originX: 'start',
+          originY: 'bottom',
+          overlayX: 'start',
+          overlayY: 'top',
+        },
+      ]);
+
+    // We create the overlay
+    //Then we create a portal to render a component
+    const componentPortal = new ComponentPortal(RepairMenuComponent);
+
+    this.overlayRef.addPanelClass('current-overlay');
+    this.overlayRef.updatePositionStrategy(position);
+    this.overlayRef.updateScrollStrategy(this.overlay.scrollStrategies.noop());
+
+    this.unsubscribables.push(
+      (this.outsideClickSubscription = this.overlayRef
+        .outsidePointerEvents()
+        .subscribe(() => this.clearOverlay()))
+    );
+
+    const componentRef = this.overlayRef.attach(componentPortal);
+    componentRef.instance.overlayRef = this.overlayRef;
+    componentRef.instance.transitionSolution = solution;
+    componentRef.instance.partialOrderCount = this.partialOrderCount;
+
+    this.unsubscribables.push(
+      componentRef.instance.applySolution.subscribe(() => this.clearOverlay())
+    );
+  }
+
   showRepairPopover(ref: DOMRect, place: string): void {
     if (this.currentOpenElement === place) {
       this.currentOpenElement = undefined;
@@ -105,6 +160,19 @@ export class RepairService {
       (s) => s.type !== 'newTransition' && s.place === place
     );
     this.showRepairPopoverForSolution(ref, solutionsForPlace);
+  }
+
+  showRepairPopoverPrecision(ref: DOMRect, transition: string): void {
+    if (this.currentOpenElement === transition) {
+      this.currentOpenElement = undefined;
+      this.overlayRef?.dispose();
+      return;
+    }
+
+    const solutionsForTransition = this.solutions.find(
+      (s) => s.type !== 'newTransition' && s.place === transition
+    );
+    this.showRepairPopoverForSolution(ref, solutionsForTransition);
   }
 
   private clearOverlay(): void {

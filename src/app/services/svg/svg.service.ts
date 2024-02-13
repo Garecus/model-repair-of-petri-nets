@@ -125,7 +125,71 @@ export class SvgService {
           offset.y -
           foreignElementYOffset)
     );
-    return [transEl, textEl];
+    //return [transEl, textEl];
+    // Precision
+    
+    const result = [transEl, textEl];
+
+    if (transition.issueStatus) {
+      if (transition.issueStatus === 'warning') {
+        transEl.classList.add('transition--warning');
+        transEl.setAttribute('stroke', 'var(--warn-color)');
+
+        const titleEl = this.createSvgElement('title');
+        titleEl.textContent =
+          'Place can be improved. Click to see possibilities to solve the issue!';
+        transEl.appendChild(titleEl);
+      } else {
+        transEl.classList.add('transition--invalid');
+        transEl.setAttribute('stroke', 'var(--error-color)');
+
+        const titleEl = this.createSvgElement('title');
+        titleEl.textContent =
+          'Invalid transition. Click to see possibilities to solve the issue!';
+        transEl.appendChild(titleEl);
+      }
+
+      const markingEl = this.createTextElementForPlaceContent(
+        transition.id,
+        transition.issueStatus === 'warning' ? '?' : '!'
+      );
+      markingEl.setAttribute('x', '' + (getNumber(transition.x) + offset.x));
+      markingEl.setAttribute('y', '' + (getNumber(transition.y) + offset.y));
+      markingEl.setAttribute('width', '48');
+      markingEl.setAttribute('height', '48');
+      markingEl.setAttribute(
+        'stroke',
+        transition.issueStatus === 'warning'
+          ? 'var(--warn-color)'
+          : 'var(--error-color)'
+      );
+      markingEl.setAttribute('font-size', '2em');
+      result.push(markingEl);
+
+      transEl.addEventListener('mouseup', () => {
+        if (
+          transition.x === transition.preDragPosition?.x &&
+          transition.y === transition.preDragPosition?.y
+        ) {
+          this.repairService.showRepairPopover(
+            transEl.getBoundingClientRect(),
+            transition.id
+          );
+        }
+      });
+    } /* else if (transition.marking > 0) {
+      const markingEl = this.createTextElementForPlaceContent(
+        transition.id,
+        '' + transition.marking
+      );
+      transEl.setAttribute(hashAttribute, `${transition.id}-${transition.marking}-text`);
+      markingEl.setAttribute('x', '' + (getNumber(transition.x) + offset.x));
+      markingEl.setAttribute('y', '' + (getNumber(transition.y) + offset.y));
+      markingEl.setAttribute('font-size', '1.5em');
+      result.push(markingEl);
+    } */
+
+    return result;
   }
 
   private createPlaceElement(place: Place, offset: Point): Array<SVGElement> {

@@ -10,7 +10,7 @@ import {
 } from 'rxjs';
 
 import { Coordinates } from '../classes/diagram/coordinates';
-import { PartialOrder } from '../classes/diagram/partial-order';
+import { ArcList, PartialOrder } from '../classes/diagram/partial-order';
 import { isNetEmpty, PetriNet } from '../classes/diagram/petri-net';
 
 @Injectable({
@@ -25,12 +25,16 @@ export class DisplayService {
   private showPrecisionSuggestions$ = new BehaviorSubject(false);
   private reset$: BehaviorSubject<Coordinates>;
 
+  private sequences$: Subject<ArcList[] | null>;
+
   constructor() {
     this.petriNet$ = new ReplaySubject<PetriNet>(1);
     this.partialOrders$ = new BehaviorSubject<PartialOrder[] | null>(null);
     this.currentErrors$ = new BehaviorSubject<Set<string>>(new Set());
 
     this.reset$ = new BehaviorSubject<Coordinates>({ x: 0, y: 0 });
+
+    this.sequences$ = new BehaviorSubject<ArcList[] | null>(null);
   }
 
   getShouldShowSuggestions(): Observable<boolean> {
@@ -83,4 +87,9 @@ export class DisplayService {
   triggerBuildContent(solutionType: string) {
     this.triggeredBuildContent.emit(solutionType);
   }
+
+  getSequences$(): Observable<ArcList[] | null> {
+    return this.sequences$.asObservable();
+  }
+
 }

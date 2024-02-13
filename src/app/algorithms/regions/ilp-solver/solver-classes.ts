@@ -33,7 +33,8 @@ export interface SolutionVariable {
 export type SolutionType =
   | 'changeIncoming'
   | 'changeMarking'
-  | 'multiplePlaces';
+  | 'multiplePlaces'
+  | 'addPlace'; // Precision
 
 export interface ProblemSolutionWithoutType {
   ilp: LP;

@@ -27,10 +27,13 @@ import {
 import {
   NewTransitionSolution,
   PlaceSolution,
+  TransitionSolution,
 } from '../../services/repair/repair.model';
 import { RepairService } from '../../services/repair/repair.service';
 import { SvgService } from '../../services/svg/svg.service';
 import { CanvasComponent } from '../canvas/canvas.component';
+import { ParserService } from 'src/app/services/parser/parser.service';
+import { CheckWrongContinuations } from 'src/app/algorithms/check-wrong-continuations/check-wrong-continuations';
 
 @Component({
   selector: 'app-display',
@@ -49,19 +52,23 @@ export class DisplayComponent implements OnInit {
 
   invalidPlaceCount$: Subject<{ count: number } | null>;
   wrongContinuationCount$: Subject<{ count: number } | null>;
+  wrongContinuations: string[] = [];
 
   tracesCount$: Observable<number>;
   transitionSolutions$: Observable<NewTransitionSolution[]>;
 
   shouldShowSuggestions$: Observable<boolean>;
   shouldShowPrecisionSuggestions$: Observable<boolean>;
+  solutionType = "";
+  precisionActive: boolean = false;
 
   constructor(
     private layoutService: LayoutService,
     private svgService: SvgService,
     private displayService: DisplayService,
     private petriNetRegionsService: PetriNetSolutionService,
-    private repairService: RepairService
+    private repairService: RepairService,
+    private parserService: ParserService
   ) {
     this.shouldShowSuggestions$ = this.displayService
       .getShouldShowSuggestions()
@@ -98,10 +105,17 @@ export class DisplayComponent implements OnInit {
 
   ngOnInit(): void {
     this.displayService.triggeredBuildContent.subscribe((solutionType: string) => {
-      /* console.log(solutionType); */
-      this.buildContent(solutionType);
+      console.log("0. Display: " + solutionType);
+      this.solutionType = solutionType;
+          // Identify which logic should be used
+    if (this.solutionType == "precision") {
+      this.precisionActive = true;
+    } else if (this.solutionType == "fitness") {
+      this.precisionActive = false;
+    }
+      this.buildContent();
     });
-
+    console.log("1. Display: " + this.solutionType);
     // Default content
     this.layoutResult$ = this.displayService.getPetriNet$().pipe(
       switchMap((net) =>
@@ -147,6 +161,14 @@ export class DisplayComponent implements OnInit {
                 const placeIds = Object.keys(invalidPlaces);
                 this.invalidPlaceCount$.next({
                   count: placeIds.length,
+                });
+
+                for (let index = 0; index < partialOrders.length; index++) {
+                  this.wrongContinuations = this.checkWrongContinuations(net, partialOrders[index]);
+                }
+
+                this.wrongContinuationCount$.next({
+                  count: this.wrongContinuations.length,
                 });
 
                 const places: Place[] = net.places.filter((place) =>
@@ -203,9 +225,9 @@ export class DisplayComponent implements OnInit {
     );
   }
 
-  buildContent(solutionType: string): void {
-    if (solutionType == "fitness") {
-      // Precision model repair (focus on precision)
+  buildContent(): void {
+    if (this.solutionType == "fitness") {
+      // Fitness model repair (focus on fitness)
       this.layoutResult$ = this.displayService.getPetriNet$().pipe(
         switchMap((net) =>
           this.displayService.getPartialOrders$().pipe(
@@ -304,33 +326,32 @@ export class DisplayComponent implements OnInit {
           )
         )
       );
-    } else if (solutionType == "precision") {
-      // Precision model repair
+    } else if (this.solutionType == "precision") {
       this.layoutResult$ = this.displayService.getPetriNet$().pipe(
         switchMap((net) =>
-          this.displayService.getPartialOrders$().pipe(
+          this.displayService.getPartialOrders$().pipe( // getSequences
             startWith([]),
             switchMap((partialOrders) =>
-              this.shouldShowPrecisionSuggestions$.pipe(
+              this.shouldShowSuggestions$.pipe( // this.shouldShowPrecisionSuggestions$
                 switchMap((showSuggestions) => {
                   if (!showSuggestions) {
                     net.places.forEach((place) => {
                       place.issueStatus = undefined;
                     });
                     this.wrongContinuationCount$.next({
-                      count: 0, // todo
+                      count: 0,
                     });
                     this.repairService.saveNewSolutions([], 0);
                     return of({ solutions: [], renderChanges: true });
                   }
-
+    
                   if (!partialOrders || partialOrders.length === 0) {
                     this.repairService.saveNewSolutions([], 0);
                     return of({ solutions: [], renderChanges: true });
                   }
-
+    
                   this.computingSolutions = true;
-                  const wrongContinuation: {
+                  /* const wrongContinuations: {
                     [key: string]: number;
                   } = {};
                   for (let index = 0; index < partialOrders.length; index++) {
@@ -338,21 +359,23 @@ export class DisplayComponent implements OnInit {
                       net,
                       partialOrders[index]
                     );
-
+    
                     currentInvalid.forEach((place) => {
-                      if (wrongContinuation[place] === undefined) {
-                        wrongContinuation[place] = 0;
+                      if (wrongContinuations[place] === undefined) {
+                        wrongContinuations[place] = 0;
                       }
-                      wrongContinuation[place]++;
+                      wrongContinuations[place]++;
                     });
-                  }
-
+                  } */
+                  console.log("3. Display");
                   let wrongContinuations: any; // Todo
+                  wrongContinuations = ["abc","abbbbc"];
+                  console.log("Wrong continuations: " + wrongContinuations);
                   const placeIds = Object.keys(wrongContinuations);
                   this.wrongContinuationCount$.next({
                     count: placeIds.length,
                   });
-
+    
                   const places: Place[] = net.places.filter((place) =>
                     placeIds.includes(place.id)
                   );
@@ -362,7 +385,7 @@ export class DisplayComponent implements OnInit {
                   places.forEach((wrongContinuation) => {
                     wrongContinuation.issueStatus = 'error';
                   });
-
+    
                   return this.petriNetRegionsService
                     .computeSolutions(partialOrders, net, wrongContinuations)
                     .pipe(
@@ -416,16 +439,19 @@ export class DisplayComponent implements OnInit {
   }
 
   applySolution(solution: NewTransitionSolution, button: MatButton): void {
-    const domRect: DOMRect =
-      button._elementRef.nativeElement.getBoundingClientRect();
-    this.repairService.showRepairPopoverForSolution(domRect, solution);
+    const domRect: DOMRect = button._elementRef.nativeElement.getBoundingClientRect();
+      this.repairService.showRepairPopoverForSolution(domRect, solution);
+  }
+
+  applySolutionPrecision(solution: TransitionSolution, button: MatButton): void {
+    const domRect: DOMRect = button._elementRef.nativeElement.getBoundingClientRect();
+      this.repairService.showRepairPopoverForSolutionPrecision(domRect, solution);
   }
 
   private checkWrongContinuations(
     petriNet: PetriNet,
     partialOrder: PartialOrder
   ): string[] {
-    return new FirePartialOrder(petriNet, partialOrder).getInvalidPlaces();
+    return new CheckWrongContinuations(petriNet, partialOrder).getInvalidTransitions();
   }
-
 }

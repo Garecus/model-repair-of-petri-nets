@@ -32,7 +32,7 @@ export class PetriNetSolutionService {
   constructor(private repairService: RepairService) {}
 
   computeSolutions(
-    partialOrders: PartialOrder[],
+    partialOrders: any[], /* PartialOrder[] */ // ToDo
     petriNet: PetriNet,
     invalidPlaces: { [key: string]: number }
   ): Observable<PlaceSolution[]> {
