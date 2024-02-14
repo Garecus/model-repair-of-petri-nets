@@ -74,9 +74,13 @@
     class="margin-spaces outer-container"
     *ngIf="wrongContinuationCount$ | async as wrongContinuationCount"
   ><!-- <p>TEST2</p> -->
-    <div
+    <!-- <div
       class="inner-container"
       *ngIf="shouldShowPrecisionSuggestions$ | async"
+    > -->
+    <div
+      class="inner-container"
+      *ngIf="precisionActive"
     ><!-- <p>TEST3</p> -->
       <div class="icon-with-text">
         <ng-container *ngIf="wrongContinuationCount.count === 0">
@@ -86,18 +90,13 @@
         <ng-container *ngIf="wrongContinuationCount.count === 1">
           <mat-icon class="color_hint"> error_outline </mat-icon>
           <span
-            >{{ wrongContinuationCount.count }} wrong continuation found.</span
+            >{{ wrongContinuationCount.count }} wrong continuation found. Here is a list: {{ wrongContinuations }}</span
           >
         </ng-container>
         <ng-container *ngIf="wrongContinuationCount.count > 1">
           <mat-icon class="color_hint"> error_outline </mat-icon>
           <span
-            >{{ wrongContinuationCount.count }} wrong continuations found.</span
-          >
-        </ng-container>
-        <ng-container *ngIf="wrongContinuationCount.count >= 1">
-          <span
-            >The wrong continuations are: {{ wrongContinuations }}.</span
+            >{{ wrongContinuationCount.count }} wrong continuations found. Here is a list: {{ wrongContinuations }}</span
           >
         </ng-container>
       </div>

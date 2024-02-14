@@ -410,7 +410,7 @@ export class ParserService {
         `Invalid arcs are ignored`
       );
     }
-    this.listWrongContinuations();
+    /* this.listWrongContinuations(); */
     return petriNet;
   }
 

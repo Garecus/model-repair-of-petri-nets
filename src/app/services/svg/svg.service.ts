@@ -129,7 +129,7 @@ export class SvgService {
     // Precision
     
     const result = [transEl, textEl];
-
+    console.log("Drawing.");
     if (transition.issueStatus) {
       if (transition.issueStatus === 'warning') {
         transEl.classList.add('transition--warning');
@@ -137,7 +137,7 @@ export class SvgService {
 
         const titleEl = this.createSvgElement('title');
         titleEl.textContent =
-          'Place can be improved. Click to see possibilities to solve the issue!';
+          'Transition can be improved. Click to see possibilities to solve the issue!';
         transEl.appendChild(titleEl);
       } else {
         transEl.classList.add('transition--invalid');
@@ -171,7 +171,7 @@ export class SvgService {
           transition.x === transition.preDragPosition?.x &&
           transition.y === transition.preDragPosition?.y
         ) {
-          this.repairService.showRepairPopover(
+          this.repairService.showRepairPopoverPrecision(
             transEl.getBoundingClientRect(),
             transition.id
           );

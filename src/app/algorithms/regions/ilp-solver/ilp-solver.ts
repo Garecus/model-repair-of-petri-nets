@@ -37,7 +37,14 @@ export type SolutionGeneratorType =
       type: 'repair' | 'warning';
       placeId: string;
     }
-  | { type: 'transition'; newTransition: string };
+  | { 
+    type: 'transition';
+    newTransition: string
+  }
+  /* | { 
+    type: 'warning';
+    transitionId: string
+  } */;
 
 export class IlpSolver {
   private readonly PO_ARC_SEPARATOR = '_';

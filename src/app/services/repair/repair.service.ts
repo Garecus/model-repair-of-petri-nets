@@ -1,6 +1,6 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { Injectable } from '@angular/core';
+import { EventEmitter, Injectable, Output } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 import { BehaviorSubject, Observable, Subject, Unsubscribable } from 'rxjs';
 
@@ -14,6 +14,7 @@ export class RepairService {
   private currentOpenElement?: string;
 
   private solutions: PlaceSolution[] = [];
+  private precisionSolutions: TransitionSolution[] = [];
   private partialOrderCount = 0;
   private overlayRef?: OverlayRef;
   private outsideClickSubscription?: Unsubscribable;
@@ -21,6 +22,9 @@ export class RepairService {
   private unsubscribables: Unsubscribable[] = [];
   private solutions$: Subject<PlaceSolution[]> = new BehaviorSubject<
     PlaceSolution[]
+  >([]);
+  private precisionSolutions$: Subject<TransitionSolution[]> = new BehaviorSubject<
+    TransitionSolution[]
   >([]);
 
   constructor(private toastr: ToastrService, private overlay: Overlay) {}
@@ -37,6 +41,10 @@ export class RepairService {
 
   getSolutions$(): Observable<PlaceSolution[]> {
     return this.solutions$;
+  }
+
+  getPrecisionSolutions$(): Observable<TransitionSolution[]> {
+    return this.precisionSolutions$;
   }
 
   showRepairPopoverForSolution(ref: DOMRect, solution?: PlaceSolution): void {
@@ -105,7 +113,7 @@ export class RepairService {
     }
 
     this.currentOpenElement =
-      solution.type === 'newPlace'
+      solution.type === 'warning'
         ? solution.wrongContinuations
         : solution.transition;
     if (this.outsideClickSubscription) {
@@ -169,10 +177,10 @@ export class RepairService {
       return;
     }
 
-    const solutionsForTransition = this.solutions.find(
-      (s) => s.type !== 'newTransition' && s.place === transition
+    const solutionsForTransition = this.precisionSolutions.find(
+      (s) => s.type !== 'warning' && s.transition === transition
     );
-    this.showRepairPopoverForSolution(ref, solutionsForTransition);
+    this.showRepairPopoverForSolutionPrecision(ref, solutionsForTransition);
   }
 
   private clearOverlay(): void {
@@ -182,5 +190,10 @@ export class RepairService {
 
     this.unsubscribables.forEach((u) => u.unsubscribe());
     this.unsubscribables = [];
+  }
+
+  @Output() triggeredBuildContent = new EventEmitter<string>();
+  triggerBuildContent(solutionType: string) {
+    this.triggeredBuildContent.emit(solutionType);
   }
 }

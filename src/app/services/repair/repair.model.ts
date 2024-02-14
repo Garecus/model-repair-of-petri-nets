@@ -56,7 +56,7 @@ export type NewTransitionSolution = {
 // Precision.TransitionSolution
 export type TransitionSolution =
   {
-    type: 'newPlace';
+    type: 'warning';
     solutions: AutoRepairWithSolutionType[];
     wrongContinuations: string;
     transition: string;

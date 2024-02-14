@@ -5,6 +5,7 @@ import { SolutionType } from '../../algorithms/regions/ilp-solver/solver-classes
 import { AutoRepair, AutoRepairWithSolutionType} from '../../algorithms/regions/parse-solutions.fn';
 import { NetCommandService } from '../../services/repair/net-command.service';
 import { PlaceSolution, TransitionSolution } from '../../services/repair/repair.model';
+import { RepairService } from 'src/app/services/repair/repair.service';
 
 type LabelWithTooltip = {
   label: string;
@@ -24,22 +25,27 @@ export class RepairMenuComponent implements OnInit {
   infoHeader = '';
   applySolution = new EventEmitter<void>();
   transitionSolution!: TransitionSolution;
+  solutionType = "";
 
-  constructor(private netCommandService: NetCommandService) {}
+  constructor(private netCommandService: NetCommandService, private repairService: RepairService) {}
 
   // On page initialization: Show the user the RepairMenu.FirstLine and .SecondLine
   ngOnInit(): void {
+    this.repairService.triggeredBuildContent.subscribe((solutionType: string) => {
+      console.log("Show repair menu with solution type: " + solutionType);
+      this.solutionType = solutionType;
+    });
     // Precision
-    let solutionType = "precision"; // todo
-    let tmpValue = 1; // todo
-    if (solutionType == "precision") {
-      this.infoHeader = `The transition has ${tmpValue} possible wrong ${tmpValue === 1 ? 'continuation' : 'continuations'}.`; /* ${this.transitionSolution.wrongContinuations} */ // todo
+    /* if (this.solutionType == "precision") { */
+      if (this.transitionSolution) {
+      this.infoHeader = `The transition has ${this.transitionSolution.wrongContinuations.length} possible wrong ${this.transitionSolution.wrongContinuations.length === 1 ? 'continuation' : 'continuations'}.`;
       this.shownTextsForSolutions = this.generateSolutionToDisplay(
         this.transitionSolution.solutions,
         true
       );
       console.log(this.shownTextsForSolutions);
-    } else if (solutionType == "fitness") {
+      }
+   /*  } */ /* else if (this.solutionType == "fitness") { */
     // Fitness
     if (this.placeSolution.type === 'warning') {
       this.infoHeader = `The place has ${this.placeSolution.tooManyTokens} too many tokens`;
@@ -91,7 +97,7 @@ export class RepairMenuComponent implements OnInit {
     } else {
       this.shownTextsForSolutions = this.generateSolutionToDisplay(solutions);
     }
-  }
+  /* } */
     this.infoHeader += 'Choose a solution to repair the place:';
   }
 
@@ -106,7 +112,7 @@ export class RepairMenuComponent implements OnInit {
           solution
         )
         .subscribe(() => this.overlayRef?.dispose());
-    } else if (this.transitionSolution.type === 'newPlace') { // Precision
+    } else if (this.transitionSolution.type === 'warning') { // Precision
       this.netCommandService
         .repairNetForNewTransition(
           this.transitionSolution.missingPlace,

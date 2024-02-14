@@ -8,6 +8,7 @@ import {
   ParsableSolution,
   ParsableSolutionsPerType,
   PlaceSolution,
+  TransitionSolution,
 } from '../../services/repair/repair.model';
 import { RepairService } from '../../services/repair/repair.service';
 import { IlpSolver, SolutionGeneratorType } from './ilp-solver/ilp-solver';
@@ -16,7 +17,7 @@ import {
   VariableName,
   VariableType,
 } from './ilp-solver/solver-classes';
-import { AutoRepairForSinglePlace, parseSolution } from './parse-solutions.fn';
+import { AddPlaceAutoRepair, AutoRepairForSinglePlace, parseSolution } from './parse-solutions.fn';
 import { removeDuplicatePlaces } from './remove-duplicate-places.fn';
 
 const createGlpk: Promise<() => Promise<GLPK>> = import('glpk.js').then(
@@ -29,12 +30,14 @@ const createGlpk: Promise<() => Promise<GLPK>> = import('glpk.js').then(
 export class PetriNetSolutionService {
   private glpk$ = from(createGlpk.then((create) => create()));
 
-  constructor(private repairService: RepairService) {}
+  constructor(private repairService: RepairService) { }
 
   computeSolutions(
     partialOrders: any[], /* PartialOrder[] */ // ToDo
     petriNet: PetriNet,
-    invalidPlaces: { [key: string]: number }
+    invalidPlaces: { [key: string]: number },
+    wrongContinuations: string[],
+    mode: string
   ): Observable<PlaceSolution[]> {
     return this.glpk$.pipe(
       switchMap((glpk) => {
@@ -189,6 +192,180 @@ export class PetriNetSolutionService {
         this.repairService.saveNewSolutions(solutions, partialOrders.length)
       )
     );
+
+  }
+
+  computePrecisionSolutions(
+    partialOrders: any[], /* PartialOrder[] */ // ToDo
+    petriNet: PetriNet,
+    invalidTransitions: { [key: string]: number },
+    wrongContinuations: string[],
+    mode: string
+  ): Observable<TransitionSolution[]> {
+
+    /* return this.glpk$.pipe(
+      switchMap((glpk) => {
+        const invalidTransitionList: SolutionGeneratorType[] = Object.keys(
+          invalidTransitions
+        ).map((transition) => ({ type: 'warning', transitionId: transition }));
+
+        const allNetLabels = new Set<string>(
+          petriNet.transitions.map((t) => t.label)
+        );
+        const missingTransitions: { [key: string]: number } = {};
+        const allEvents = partialOrders.flatMap((po) => po.events);
+
+        for (const event of allEvents) {
+          if (allNetLabels.has(event.label)) {
+            continue;
+          }
+
+          if (missingTransitions[event.label] === undefined) {
+            missingTransitions[event.label] = 0;
+          }
+          missingTransitions[event.label]++;
+        }
+
+        const potentialValidTransitions = petriNet.transitions.filter(
+          (transition) =>
+            //transition.marking > 0 &&
+            !invalidTransitionList.find(
+              (repairType) =>
+                repairType.type === 'warning' && repairType.transitionId === transition.id
+            )
+        );
+        for (const potentialValidTransition of potentialValidTransitions) {
+          invalidTransitionList.push({
+            type: 'warning',
+            transitionId: potentialValidTransition.id,
+          });
+        }
+
+        invalidTransitionList.push(
+          ...(Object.keys(missingTransitions).map((label) => ({
+            type: 'transition',
+            newTransition: label,
+          })) as SolutionGeneratorType[])
+        );
+        if (invalidTransitionList.length === 0) {
+          return of([]);
+        }
+
+        const idToTransitionLabelMap = petriNet.transitions.reduce(
+          (acc, transition) => {
+            if (!acc[transition.id]) {
+              acc[transition.id] = transition.label;
+            }
+            return acc;
+          },
+          {} as { [key: string]: string }
+        );
+
+        const solver = new IlpSolver(
+          glpk,
+          partialOrders,
+          petriNet,
+          idToTransitionLabelMap
+        );
+
+        return combineLatest(
+          invalidTransitionList.map((transition) =>
+            solver.computeSolutions(transition).pipe(
+              map((solutions) => {
+                const existingTransition =
+                  transition.type === 'repair' || transition.type === 'warning'
+                    ? petriNet.transitions.find((p) => p.id === transition.transitionId)
+                    : undefined;
+
+                if (transition.type === 'warning') {
+                  const highestMarkingSolution: {
+                    regionSize: number;
+                    marking: number;
+                  } = solutions.reduce(
+                    (acc: { regionSize: number; marking: number }, item) => {
+                      const itemMax = Math.max(
+                        ...item.solutions.map(
+                          (solution) => solution[VariableName.INITIAL_MARKING]
+                        )
+                      );
+                      if (acc == null || itemMax > acc.regionSize) {
+                        return {
+                          regionSize: item.regionSize,
+                          marking: itemMax,
+                        };
+                      }
+                      return acc;
+                    },
+                    null as any
+                  );
+                  if (highestMarkingSolution.marking < existingTransition!.marking) {
+                    return {
+                      type: 'warning',
+                      transition: transition.transitionId,
+                      reduceTokensTo: highestMarkingSolution.marking,
+                      tooManyTokens:
+                        existingTransition!.marking - highestMarkingSolution.marking,
+                      regionSize: highestMarkingSolution.regionSize,
+                    };
+                  }
+                  return undefined;
+                }
+
+                const parsedSolutions = parseSolution(
+                  handleSolutions(solutions, solver),
+                  existingTransition,
+                  idToTransitionLabelMap
+                );
+
+                const newTokens = parsedSolutions.find(
+                  (solution) => solution.type === 'marking'
+                ) as AddPlaceAutoRepair;
+                const missingTokens =
+                  existingTransition && newTokens?.newMarking
+                    ? newTokens.newMarking - existingTransition.marking
+                    : undefined;
+
+                switch (transition.type) {
+                  case 'repair':
+                    return {
+                      type: 'warning',
+                      transition: transition.transitionId,
+                      solutions: parsedSolutions,
+                      missingTokens,
+                      invalidTraceCount: invalidTransitions[transition.transitionId],
+                    } as TransitionSolution;
+                }
+              })
+            )
+          )
+        );
+      }),
+      map(
+        (solutions) =>
+          solutions.filter((solution) => !!solution) as TransitionSolution[]
+      ),
+      tap((solutions) =>
+        this.repairService.saveNewSolutions(solutions, partialOrders.length)
+      )
+    ); */
+    petriNet.transitions[1].issueStatus = 'warning';
+    let array = [{
+      type: 'warning',
+      solutions: [],
+      wrongContinuations: "string",
+      transition: "string",
+      missingPlace: "string",
+
+      place: "string",
+      invalidTraceCount: 1,
+      missingTokens: 1,
+      regionSize: 1,
+      tooManyTokens: 1,
+      reduceTokensTo: 1,
+      missingTransition: "string",
+    }] as TransitionSolution[];
+    return of(array);
+
   }
 }
 

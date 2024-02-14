@@ -41,7 +41,7 @@ export class SourceFileTextareaComponent implements OnDestroy {
   netHint = '';
   logHint = '';
 
-  shouldShowSuggestions$: Observable<boolean>;
+  shouldShowSuggestions$: Observable<string>;
 
   constructor(
     private parserService: ParserService,

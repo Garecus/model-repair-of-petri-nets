@@ -21,7 +21,7 @@ export class DisplayService {
   private currentErrors$: Subject<Set<string>>;
   private partialOrders$: Subject<PartialOrder[] | null>;
 
-  private showSuggestions$ = new BehaviorSubject(false);
+  private showSuggestions$ = new BehaviorSubject("false");
   private showPrecisionSuggestions$ = new BehaviorSubject(false);
   private reset$: BehaviorSubject<Coordinates>;
 
@@ -37,11 +37,11 @@ export class DisplayService {
     this.sequences$ = new BehaviorSubject<ArcList[] | null>(null);
   }
 
-  getShouldShowSuggestions(): Observable<boolean> {
+  getShouldShowSuggestions(): Observable<string> {
     return this.showSuggestions$.asObservable();
   }
 
-  setShouldShowSuggestions(show: boolean): void {
+  setShouldShowSuggestions(show: string): void {
     this.showSuggestions$.next(show);
   }
 
@@ -76,10 +76,10 @@ export class DisplayService {
 
   // Precision model repair
   getShouldShowPrecisionSuggestions(): Observable<boolean> {
-    return this.showSuggestions$.asObservable();
+    return this.showPrecisionSuggestions$.asObservable();
   }
   
-  setShouldShowPrecisionSuggestions(show: boolean): void {
+  setShouldShowPrecisionSuggestions(show: string): void {
     this.showSuggestions$.next(show);
   }
 
