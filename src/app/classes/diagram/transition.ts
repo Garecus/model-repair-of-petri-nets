@@ -3,7 +3,7 @@ import { ConcreteElementWithArcs } from './draggable';
 export interface Transition extends ConcreteElementWithArcs {
   type: 'transition';
   label: string;
-  issueStatus?: 'warning' | 'error';
+  issueStatus?: 'warning' | 'error' | 'possibility';
 }
 
 export interface EventItem extends ConcreteElementWithArcs {

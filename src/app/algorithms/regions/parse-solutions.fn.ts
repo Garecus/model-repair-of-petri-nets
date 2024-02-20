@@ -4,9 +4,9 @@ import { SolutionType } from './ilp-solver/solver-classes';
 
 export type AutoRepairForSinglePlace =
   | {
-      type: 'marking';
-      newMarking: number;
-    }
+    type: 'marking';
+    newMarking: number;
+  }
   | ModifyPlaceType;
 
 type ModifyPlaceType = {
@@ -41,10 +41,10 @@ export type AddPlaceAutoRepair = {
   regionSize: number;
   repairType: SolutionType;
   places: SinglePlaceParameter[];
-  newMarking?: number;
-  incoming: ArcDefinition[];
-  outgoing: ArcDefinition[];
-};
+  //newMarking?: number;
+  //incoming: ArcDefinition[];
+  //outgoing: ArcDefinition[];
+} & SinglePlaceParameter;
 
 export function parseSolution(
   placeSolutionList: ParsableSolutionsPerType[],
@@ -76,7 +76,7 @@ export function parseSolution(
         } as AutoRepairWithSolutionType;
       }
 
-      if (singlePlaceSolution.newMarking) {
+      if (singlePlaceSolution.newMarking && parsableSolutionsPerType.type != "addPlace") {
         return {
           ...checkPlaceAndReturnMarkingIfEquals(
             mergeAllDuplicatePlaces(singlePlaceSolution),
@@ -93,15 +93,15 @@ export function parseSolution(
       const incomingAllTheSame =
         singlePlaceSolution.incoming.length > 1
           ? singlePlaceSolution.incoming.every(
-              (incoming) =>
-                incoming.transitionLabel ===
-                singlePlaceSolution.incoming[0].transitionLabel
-            )
+            (incoming) =>
+              incoming.transitionLabel ===
+              singlePlaceSolution.incoming[0].transitionLabel
+          )
           : false;
       if (
         incomingAllTheSame &&
         singlePlaceSolution.outgoing.length >=
-          singlePlaceSolution.incoming.length
+        singlePlaceSolution.incoming.length
       ) {
         const incoming = [...singlePlaceSolution.incoming];
         const outgoing = [...singlePlaceSolution.outgoing].reverse();
@@ -119,16 +119,16 @@ export function parseSolution(
         const outgoingAllTheSame =
           singlePlaceSolution.outgoing.length > 1
             ? singlePlaceSolution.outgoing.every(
-                (incoming) =>
-                  incoming.transitionLabel ===
-                  singlePlaceSolution.outgoing[0].transitionLabel
-              )
+              (incoming) =>
+                incoming.transitionLabel ===
+                singlePlaceSolution.outgoing[0].transitionLabel
+            )
             : false;
 
         if (
           outgoingAllTheSame &&
           singlePlaceSolution.incoming.length >=
-            singlePlaceSolution.outgoing.length
+          singlePlaceSolution.outgoing.length
         ) {
           const incoming = [...singlePlaceSolution.incoming].reverse();
           const outgoing = [...singlePlaceSolution.outgoing];
@@ -153,7 +153,7 @@ export function parseSolution(
         return null;
       }
 
-      if (newPlaces.length === 1) {
+      if (newPlaces.length === 1 && parsableSolutionsPerType.type != "addPlace") {
         const repair: AutoRepairForSinglePlace = {
           ...newPlaces[0],
           type: 'modify-place',
@@ -169,14 +169,39 @@ export function parseSolution(
         };
       }
 
-      const repair: AutoRepairWithSolutionType = {
-        type: 'replace-place',
-        regionSize: parsableSolutionsPerType.regionSize,
-        repairType: parsableSolutionsPerType.type,
-        places: newPlaces.map((newPlace) => mergeAllDuplicatePlaces(newPlace)),
-      };
-      return repair;
-      
+      if (parsableSolutionsPerType.type != "addPlace") {
+        const repair: AutoRepairWithSolutionType = {
+          type: 'replace-place',
+          regionSize: parsableSolutionsPerType.regionSize,
+          repairType: parsableSolutionsPerType.type,
+          places: newPlaces.map((newPlace) => mergeAllDuplicatePlaces(newPlace)),
+        };
+        return repair;
+      } else { 
+        console.log("Identified add place solution");
+        /* const repair: AutoRepairWithSolutionType = {
+          type: 'add-place',
+          regionSize: parsableSolutionsPerType.regionSize,
+          repairType: parsableSolutionsPerType.type,
+          places: newPlaces.map((newPlace) => mergeAllDuplicatePlaces(newPlace)),
+          incoming: [],
+          outgoing: [],
+        };
+        return repair; */
+        const repair: AutoRepairForSinglePlace = {
+          ...newPlaces[0],
+          type: 'modify-place',
+        };
+        return {
+          ...checkPlaceAndReturnMarkingIfEquals2(
+            mergeAllDuplicatePlaces(repair),
+            existingPlace,
+            idTransitionToLabel
+          ),
+          regionSize: parsableSolutionsPerType.regionSize,
+          repairType: parsableSolutionsPerType.type,
+        };
+      }
     })
     .filter((solution) => !!solution);
 
@@ -393,4 +418,60 @@ function getSinglePlaceSolution(
     },
     null
   );
+}
+
+function checkPlaceAndReturnMarkingIfEquals2(
+  solution: AutoRepair,
+  existingPlace: Place | undefined,
+  idTransitionToLabel: { [key: string]: string }
+): AutoRepair {
+  if (
+    solution.type === 'marking' ||
+    solution.type === 'replace-place' ||
+    !existingPlace ||
+    (solution.type === 'modify-place' && !solution.newMarking)
+  ) {
+    return solution;
+  }
+
+  const incomingEquals =
+    solution.incoming.length === existingPlace.incomingArcs.length &&
+    solution.incoming.every((incoming) =>
+      existingPlace.incomingArcs.some(
+        (arc) =>
+          incoming.transitionLabel === idTransitionToLabel[arc.source] &&
+          incoming.weight === arc.weight
+      )
+    );
+  if (!incomingEquals) {
+    return solution;
+  }
+
+  const outgoingEquals =
+    solution.outgoing.length === existingPlace.outgoingArcs.length &&
+    solution.outgoing.every((incoming) =>
+      existingPlace.outgoingArcs.some(
+        (arc) =>
+          incoming.transitionLabel === idTransitionToLabel[arc.target] &&
+          incoming.weight === arc.weight
+      )
+    );
+  if (!outgoingEquals) {
+    return solution;
+  }
+
+  console.log("checkPlaceAndReturnMarkingIfEquals");
+  return {
+    type: 'add-place',
+    newMarking: solution.newMarking!,
+    regionSize: 1,
+    repairType: "addPlace",
+    places: [{
+      newMarking: 1,
+      incoming: [{ transitionLabel: "a", weight: 2 }],
+      outgoing: [{ transitionLabel: "c", weight: 2 }]
+    }],
+    incoming: [],
+    outgoing: [],
+  };
 }

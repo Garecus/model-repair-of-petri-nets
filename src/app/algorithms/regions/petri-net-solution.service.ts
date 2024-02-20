@@ -8,7 +8,7 @@ import {
   ParsableSolution,
   ParsableSolutionsPerType,
   PlaceSolution,
-  TransitionSolution,
+  PrecisionSolution,
 } from '../../services/repair/repair.model';
 import { RepairService } from '../../services/repair/repair.service';
 import { IlpSolver, SolutionGeneratorType } from './ilp-solver/ilp-solver';
@@ -109,7 +109,7 @@ export class PetriNetSolutionService {
             solver.computeSolutions(place).pipe(
               map((solutions) => {
                 const existingPlace =
-                  place.type === 'repair' || place.type === 'warning'
+                  place.type === 'repair' || place.type === 'warning' || place.type === 'possibility'
                     ? petriNet.places.find((p) => p.id === place.placeId)
                     : undefined;
 
@@ -178,6 +178,14 @@ export class PetriNetSolutionService {
                       invalidTraceCount:
                         missingTransitions[place.newTransition],
                     } as PlaceSolution;
+                  case 'possibility':
+                    return {
+                      type: 'possibility',
+                      place: place.placeId,
+                      solutions: parsedSolutions,
+                      missingTokens,
+                      invalidTraceCount: invalidPlaces[place.placeId],
+                    } as PrecisionSolution;
                 }
               })
             )
@@ -198,16 +206,16 @@ export class PetriNetSolutionService {
   computePrecisionSolutions(
     partialOrders: any[], /* PartialOrder[] */ // ToDo
     petriNet: PetriNet,
-    invalidTransitions: { [key: string]: number },
+    invalidPlaces: { [key: string]: number },
     wrongContinuations: string[],
     mode: string
-  ): Observable<TransitionSolution[]> {
-
-    /* return this.glpk$.pipe(
+  ): Observable<PlaceSolution[]> {
+    console.log("compute Precision");
+    return this.glpk$.pipe(
       switchMap((glpk) => {
-        const invalidTransitionList: SolutionGeneratorType[] = Object.keys(
-          invalidTransitions
-        ).map((transition) => ({ type: 'warning', transitionId: transition }));
+        const invalidPlaceList: SolutionGeneratorType[] = Object.keys(
+          invalidPlaces
+        ).map((place) => ({ type: 'possibility', placeId: place }));
 
         const allNetLabels = new Set<string>(
           petriNet.transitions.map((t) => t.label)
@@ -226,28 +234,28 @@ export class PetriNetSolutionService {
           missingTransitions[event.label]++;
         }
 
-        const potentialValidTransitions = petriNet.transitions.filter(
-          (transition) =>
-            //transition.marking > 0 &&
-            !invalidTransitionList.find(
+        const potentialValidPlaces = petriNet.places.filter(
+          (place) =>
+            place.marking > 0 &&
+            !invalidPlaceList.find(
               (repairType) =>
-                repairType.type === 'warning' && repairType.transitionId === transition.id
+                repairType.type === 'possibility' && repairType.placeId === place.id
             )
         );
-        for (const potentialValidTransition of potentialValidTransitions) {
-          invalidTransitionList.push({
+        for (const potentialValidPlace of potentialValidPlaces) {
+          invalidPlaceList.push({
             type: 'warning',
-            transitionId: potentialValidTransition.id,
+            placeId: potentialValidPlace.id,
           });
         }
 
-        invalidTransitionList.push(
+        invalidPlaceList.push(
           ...(Object.keys(missingTransitions).map((label) => ({
             type: 'transition',
             newTransition: label,
           })) as SolutionGeneratorType[])
         );
-        if (invalidTransitionList.length === 0) {
+        if (invalidPlaceList.length === 0) {
           return of([]);
         }
 
@@ -268,16 +276,22 @@ export class PetriNetSolutionService {
           idToTransitionLabelMap
         );
 
+        invalidPlaceList.forEach((object, index) => {
+          console.log(`Invalid place ${index + 1}:`, object);
+        });
+
+        /* invalidPlaceList[0].type="possibility"; */
+
         return combineLatest(
-          invalidTransitionList.map((transition) =>
-            solver.computeSolutions(transition).pipe(
+          invalidPlaceList.map((place) =>
+            solver.computeSolutions(place).pipe(
               map((solutions) => {
-                const existingTransition =
-                  transition.type === 'repair' || transition.type === 'warning'
-                    ? petriNet.transitions.find((p) => p.id === transition.transitionId)
+                const existingPlace =
+                  place.type === 'warning' || place.type === 'possibility'
+                    ? petriNet.places.find((p) => p.id === place.placeId)
                     : undefined;
 
-                if (transition.type === 'warning') {
+                if (place.type === 'warning') {
                   const highestMarkingSolution: {
                     regionSize: number;
                     marking: number;
@@ -298,13 +312,13 @@ export class PetriNetSolutionService {
                     },
                     null as any
                   );
-                  if (highestMarkingSolution.marking < existingTransition!.marking) {
+                  if (highestMarkingSolution.marking < existingPlace!.marking) {
                     return {
                       type: 'warning',
-                      transition: transition.transitionId,
+                      place: place.placeId,
                       reduceTokensTo: highestMarkingSolution.marking,
                       tooManyTokens:
-                        existingTransition!.marking - highestMarkingSolution.marking,
+                        existingPlace!.marking - highestMarkingSolution.marking,
                       regionSize: highestMarkingSolution.regionSize,
                     };
                   }
@@ -313,27 +327,60 @@ export class PetriNetSolutionService {
 
                 const parsedSolutions = parseSolution(
                   handleSolutions(solutions, solver),
-                  existingTransition,
+                  existingPlace,
                   idToTransitionLabelMap
                 );
 
                 const newTokens = parsedSolutions.find(
                   (solution) => solution.type === 'marking'
-                ) as AddPlaceAutoRepair;
+                ) as AutoRepairForSinglePlace;
                 const missingTokens =
-                  existingTransition && newTokens?.newMarking
-                    ? newTokens.newMarking - existingTransition.marking
+                  existingPlace && newTokens?.newMarking
+                    ? newTokens.newMarking - existingPlace.marking
                     : undefined;
 
-                switch (transition.type) {
+                switch (place.type) {
                   case 'repair':
-                    return {
-                      type: 'warning',
-                      transition: transition.transitionId,
+                    /* let testvalue =  {
+                      type: 'error',
+                      place: place.placeId,
                       solutions: parsedSolutions,
                       missingTokens,
-                      invalidTraceCount: invalidTransitions[transition.transitionId],
-                    } as TransitionSolution;
+                      invalidTraceCount: invalidPlaces[place.placeId],
+                    } as PlaceSolution;
+                    console.log(testvalue); */
+                    return {
+                      type: 'error',
+                      place: place.placeId,
+                      solutions: parsedSolutions,
+                      missingTokens,
+                      invalidTraceCount: invalidPlaces[place.placeId],
+                    } as PlaceSolution;
+                  case 'transition':
+                    return {
+                      type: 'newTransition',
+                      missingTransition: place.newTransition,
+                      solutions: parsedSolutions,
+                      invalidTraceCount:
+                        missingTransitions[place.newTransition],
+                    } as PlaceSolution;
+                  case 'possibility':
+                    let testvalue =  {
+                      type: 'possibility',
+                      place: place.placeId,
+                      solutions: parsedSolutions,
+                      missingTokens,
+                      invalidTraceCount: invalidPlaces[place.placeId],
+                    } as PlaceSolution;
+                    console.log(testvalue);
+                    return {
+                      type: 'possibility',
+                      place: place.placeId,
+                      solutions: parsedSolutions,
+                      missingTokens: 0,
+                      invalidTraceCount: invalidPlaces[place.placeId],
+                      wrongContinuations: wrongContinuations,
+                    } as unknown as PlaceSolution;
                 }
               })
             )
@@ -342,29 +389,105 @@ export class PetriNetSolutionService {
       }),
       map(
         (solutions) =>
-          solutions.filter((solution) => !!solution) as TransitionSolution[]
+          solutions.filter((solution) => !!solution) as PlaceSolution[]
       ),
       tap((solutions) =>
         this.repairService.saveNewSolutions(solutions, partialOrders.length)
       )
-    ); */
-    petriNet.transitions[1].issueStatus = 'warning';
-    let array = [{
-      type: 'warning',
-      solutions: [],
+    );
+
+    /* petriNet.transitions[1].issueStatus = 'possibility'; */
+    /* let array = [{
+      type: 'possibility',
+      solutions: [
+        {
+            "type": "modify-place",
+            "incoming": [
+                {
+                    "transitionLabel": "a",
+                    "weight": 1
+                },
+                {
+                    "transitionLabel": "b",
+                    "weight": 1
+                }
+            ],
+            "outgoing": [
+                {
+                    "transitionLabel": "b",
+                    "weight": 1
+                },
+                {
+                    "transitionLabel": "c",
+                    "weight": 1
+                }
+            ],
+            "regionSize": 6,
+            "repairType": "changeIncoming"
+        },
+        {
+            "type": "replace-place",
+            "repairType": "multiplePlaces",
+            "regionSize": 6,
+            "places": [
+                {
+                    "incoming": [
+                        {
+                            "transitionLabel": "a",
+                            "weight": 1
+                        },
+                        {
+                            "transitionLabel": "b",
+                            "weight": 1
+                        }
+                    ],
+                    "outgoing": [
+                        {
+                            "transitionLabel": "b",
+                            "weight": 1
+                        },
+                        {
+                            "transitionLabel": "c",
+                            "weight": 1
+                        }
+                    ]
+                },
+                {
+                    "incoming": [
+                        {
+                            "transitionLabel": "a",
+                            "weight": 1
+                        }
+                    ],
+                    "outgoing": [
+                        {
+                            "transitionLabel": "c",
+                            "weight": 1
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "marking",
+            "newMarking": 3,
+            "regionSize": 25,
+            "repairType": "changeMarking"
+        }
+    ],
       wrongContinuations: "string",
       transition: "string",
       missingPlace: "string",
 
-      place: "string",
-      invalidTraceCount: 1,
-      missingTokens: 1,
+      place: "p1",
+      invalidTraceCount: 2,
+      missingTokens: 3,
       regionSize: 1,
       tooManyTokens: 1,
       reduceTokensTo: 1,
       missingTransition: "string",
-    }] as TransitionSolution[];
-    return of(array);
+    }] as PrecisionSolution[];
+    return of(array); */
 
   }
 }

@@ -4,7 +4,7 @@ import { Component, EventEmitter, OnInit } from '@angular/core';
 import { SolutionType } from '../../algorithms/regions/ilp-solver/solver-classes';
 import { AutoRepair, AutoRepairWithSolutionType} from '../../algorithms/regions/parse-solutions.fn';
 import { NetCommandService } from '../../services/repair/net-command.service';
-import { PlaceSolution, TransitionSolution } from '../../services/repair/repair.model';
+import { PlaceSolution, PrecisionSolution } from '../../services/repair/repair.model';
 import { RepairService } from 'src/app/services/repair/repair.service';
 
 type LabelWithTooltip = {
@@ -24,7 +24,7 @@ export class RepairMenuComponent implements OnInit {
   overlayRef?: OverlayRef;
   infoHeader = '';
   applySolution = new EventEmitter<void>();
-  transitionSolution!: TransitionSolution;
+  transitionSolution!: PrecisionSolution;
   solutionType = "";
 
   constructor(private netCommandService: NetCommandService, private repairService: RepairService) {}
@@ -37,14 +37,14 @@ export class RepairMenuComponent implements OnInit {
     });
     // Precision
     /* if (this.solutionType == "precision") { */
-      if (this.transitionSolution) {
+      /* if (this.transitionSolution) {
       this.infoHeader = `The transition has ${this.transitionSolution.wrongContinuations.length} possible wrong ${this.transitionSolution.wrongContinuations.length === 1 ? 'continuation' : 'continuations'}.`;
       this.shownTextsForSolutions = this.generateSolutionToDisplay(
         this.transitionSolution.solutions,
         true
       );
       console.log(this.shownTextsForSolutions);
-      }
+      } */
    /*  } */ /* else if (this.solutionType == "fitness") { */
     // Fitness
     if (this.placeSolution.type === 'warning') {
@@ -91,6 +91,14 @@ export class RepairMenuComponent implements OnInit {
       }.<br/>`;
     }
 
+    if (this.placeSolution.type === 'possibility') {
+      this.infoHeader = `The transition has ${this.placeSolution.wrongContinuations.length} possible wrong ${this.placeSolution.wrongContinuations.length === 1 ? 'continuation' : 'continuations'}. `;
+      this.shownTextsForSolutions = this.generateSolutionToDisplay(
+        this.placeSolution.solutions,
+        true
+      );
+      }
+
     const solutions = this.placeSolution.solutions;
     if (!solutions) {
       console.error('No solution found!');
@@ -104,7 +112,6 @@ export class RepairMenuComponent implements OnInit {
   // Apply the selected solution to the petri net
   useSolution(solution: AutoRepair): void {
     this.applySolution.next();
-
     if (this.placeSolution.type === 'newTransition') {
       this.netCommandService
         .repairNetForNewTransition(
@@ -112,14 +119,14 @@ export class RepairMenuComponent implements OnInit {
           solution
         )
         .subscribe(() => this.overlayRef?.dispose());
-    } else if (this.transitionSolution.type === 'warning') { // Precision
+    } /* else if (this.transitionSolution.type === 'warning') { // Precision
       this.netCommandService
         .repairNetForNewTransition(
           this.transitionSolution.missingPlace,
           solution
         )
         .subscribe(() => this.overlayRef?.dispose());
-    } else {
+    } */ else {
       this.netCommandService
         .repairNet(this.placeSolution.place, solution)
         .subscribe(() => this.overlayRef?.dispose());

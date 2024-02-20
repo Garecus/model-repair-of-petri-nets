@@ -27,7 +27,7 @@ import {
 import {
   NewTransitionSolution,
   PlaceSolution,
-  TransitionSolution,
+  PrecisionSolution,
 } from '../../services/repair/repair.model';
 import { RepairService } from '../../services/repair/repair.service';
 import { SvgService } from '../../services/svg/svg.service';
@@ -56,7 +56,7 @@ export class DisplayComponent implements OnInit {
 
   tracesCount$: Observable<number>;
   transitionSolutions$: Observable<NewTransitionSolution[]>;
-  precisionSolutions$: Observable<TransitionSolution[]>;
+  precisionSolutions$: Observable<PrecisionSolution[]>;
 
   shouldShowSuggestions$: Observable<string>;
   shouldShowPrecisionSuggestions$: Observable<boolean>;
@@ -104,8 +104,8 @@ export class DisplayComponent implements OnInit {
         map(
           (solutions) =>
             solutions.filter(
-              (s) => s.type === 'warning'
-            ) as TransitionSolution[]
+              (s) => s.type === 'possibility'
+            ) as PrecisionSolution[]
         )
       );
 
@@ -209,7 +209,7 @@ export class DisplayComponent implements OnInit {
                   });
 
                   return this.petriNetRegionsService
-                    .computeSolutions(partialOrders, net, invalidPlaces,this.wrongContinuations, "fitness")
+                    .computeSolutions(partialOrders, net, invalidPlaces, this.wrongContinuations, "fitness")
                     .pipe(
                       tap(() => (this.computingSolutions = false)),
                       map((solutions) => ({
@@ -238,7 +238,7 @@ export class DisplayComponent implements OnInit {
                         renderChanges: false,
                       })),
                       startWith({
-                        solutions: [] as TransitionSolution[],
+                        solutions: [] as PrecisionSolution[],
                         renderChanges: false,
                       })
                     );
@@ -294,6 +294,7 @@ export class DisplayComponent implements OnInit {
     petriNet: PetriNet,
     partialOrder: PartialOrder
   ): string[] {
+    console.log("Fire Partial order");
     return new FirePartialOrder(petriNet, partialOrder).getInvalidPlaces();
   }
 
@@ -302,7 +303,7 @@ export class DisplayComponent implements OnInit {
     this.repairService.showRepairPopoverForSolution(domRect, solution);
   }
 
-  applySolutionPrecision(solution: TransitionSolution, button: MatButton): void {
+  applySolutionPrecision(solution: PrecisionSolution, button: MatButton): void {
     const domRect: DOMRect = button._elementRef.nativeElement.getBoundingClientRect();
     this.repairService.showRepairPopoverForSolutionPrecision(domRect, solution);
   }

@@ -34,16 +34,16 @@ import { Constraint, Goal, MessageLevel, Solution } from './solver-constants';
 
 export type SolutionGeneratorType =
   | {
-      type: 'repair' | 'warning';
+      type: 'repair' | 'warning' | 'possibility';
       placeId: string;
     }
   | { 
     type: 'transition';
-    newTransition: string
+    newTransition: string;
   }
   /* | { 
     type: 'warning';
-    transitionId: string
+    transitionId: string;
   } */;
 
 export class IlpSolver {
@@ -146,6 +146,31 @@ export class IlpSolver {
           }
           const problemSolution: ProblemSolution = {
             type: 'changeMarking',
+            solutions: [solution.solution.result.vars],
+            regionSize: this.generateSumForVars(solution.solution.result.vars),
+          };
+          return [problemSolution];
+        })
+      );
+    }
+
+    if (placeModel.type === 'possibility') {
+      console.log("Possibility solution");
+      const addPlaceSolution = this.populateIlpBySameWeights(
+        this.baseIlp,
+        invalidPlace!
+      );
+      if (!invalidPlace) {
+        return of([]);
+      }
+
+      return this.solveILP(addPlaceSolution).pipe(
+        map((solution) => {
+          if (solution.solution.result.status === Solution.NO_SOLUTION) {
+            return [];
+          }
+          const problemSolution: ProblemSolution = {
+            type: 'addPlace',
             solutions: [solution.solution.result.vars],
             regionSize: this.generateSumForVars(solution.solution.result.vars),
           };
@@ -486,6 +511,7 @@ export class IlpSolver {
     return this.equal(variables, 0).constraints;
   }
 
+  // New marking will not be greater than the initial marking (Fitness, page 27)
   private initialMarking(
     events: Array<EventItem>,
     i: number
@@ -754,6 +780,7 @@ export class IlpSolver {
     return helpVariableName;
   }
 
+  // Every event will not give to many tokens to the next arc (Fitness, page 27)
   protected equal(
     variables: Variable | Array<Variable>,
     value: number
@@ -772,6 +799,7 @@ export class IlpSolver {
     return { name, coef: coefficient };
   }
 
+  // Every event will get enough tokens (Fitness, page 27)
   private greaterEqualThan(
     variables: Variable | Array<Variable>,
     lowerBound: number

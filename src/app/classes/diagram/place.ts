@@ -4,5 +4,5 @@ export interface Place extends ConcreteElementWithArcs {
   type: 'place';
   marking: number;
 
-  issueStatus?: 'warning' | 'error';
+  issueStatus?: 'warning' | 'error' | 'possibility';
 }

@@ -11,16 +11,21 @@ import { DownloadFormat } from '../download.const';
 })
 export class DownloadPopoverComponent {
   fileFormat: DownloadFormat = 'pn';
+  fileFormatLog: DownloadFormat = 'txt';
+  downloadLog = 'no';
   downloadName = '';
   compression = false;
 
   constructor(
     private dialogRef: MatDialogRef<DownloadPopoverComponent>,
     private _downloadService: DownloadService
-  ) {}
+  ) { }
 
   download(): void {
     this._downloadService.downloadNet(this.downloadName, this.fileFormat);
+    if (this.downloadLog == 'yes') {
+      this._downloadService.downloadLog(this.downloadName, this.fileFormatLog);
+    }
     this.closePopover();
   }
 

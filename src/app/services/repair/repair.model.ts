@@ -43,7 +43,8 @@ export type PlaceSolution =
     reduceTokensTo: number;
     regionSize: number;
   }
-  | NewTransitionSolution;
+  | NewTransitionSolution
+  | PrecisionSolution;
 
 export type NewTransitionSolution = {
   type: 'newTransition';
@@ -54,19 +55,20 @@ export type NewTransitionSolution = {
 };
 
 // Precision.TransitionSolution
-export type TransitionSolution =
+export type PrecisionSolution =
   {
-    type: 'warning';
-    solutions: AutoRepairWithSolutionType[];
-    wrongContinuations: string;
-    transition: string;
-    missingPlace: string;
-
+    type: 'possibility';
     place: string;
+    solutions: AutoRepairWithSolutionType[];
     invalidTraceCount: number;
     missingTokens: number | undefined;
     regionSize: number;
+
     tooManyTokens: number;
     reduceTokensTo: number;
     missingTransition: string;
+
+    wrongContinuations: string;
+    transition: string;
+    missingPlace: string;
   };

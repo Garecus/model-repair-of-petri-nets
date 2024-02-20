@@ -5,7 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import { BehaviorSubject, Observable, Subject, Unsubscribable } from 'rxjs';
 
 import { RepairMenuComponent } from '../../components/repair-menu/repair-menu.component';
-import { PlaceSolution, TransitionSolution } from './repair.model';
+import { PlaceSolution, PrecisionSolution } from './repair.model';
 
 @Injectable({
   providedIn: 'root',
@@ -14,7 +14,7 @@ export class RepairService {
   private currentOpenElement?: string;
 
   private solutions: PlaceSolution[] = [];
-  private precisionSolutions: TransitionSolution[] = [];
+  private precisionSolutions: PrecisionSolution[] = [];
   private partialOrderCount = 0;
   private overlayRef?: OverlayRef;
   private outsideClickSubscription?: Unsubscribable;
@@ -23,8 +23,8 @@ export class RepairService {
   private solutions$: Subject<PlaceSolution[]> = new BehaviorSubject<
     PlaceSolution[]
   >([]);
-  private precisionSolutions$: Subject<TransitionSolution[]> = new BehaviorSubject<
-    TransitionSolution[]
+  private precisionSolutions$: Subject<PrecisionSolution[]> = new BehaviorSubject<
+    PrecisionSolution[]
   >([]);
 
   constructor(private toastr: ToastrService, private overlay: Overlay) {}
@@ -43,7 +43,7 @@ export class RepairService {
     return this.solutions$;
   }
 
-  getPrecisionSolutions$(): Observable<TransitionSolution[]> {
+  getPrecisionSolutions$(): Observable<PrecisionSolution[]> {
     return this.precisionSolutions$;
   }
 
@@ -102,7 +102,7 @@ export class RepairService {
     );
   }
 
-  showRepairPopoverForSolutionPrecision(ref: DOMRect, solution?: TransitionSolution): void {
+  showRepairPopoverForSolutionPrecision(ref: DOMRect, solution?: PrecisionSolution): void {
     if (!solution) {
       this.toastr.warning(`No solutions found`);
       return;
@@ -113,7 +113,7 @@ export class RepairService {
     }
 
     this.currentOpenElement =
-      solution.type === 'warning'
+      solution.type === 'possibility'
         ? solution.wrongContinuations
         : solution.transition;
     if (this.outsideClickSubscription) {
@@ -178,7 +178,7 @@ export class RepairService {
     }
 
     const solutionsForTransition = this.precisionSolutions.find(
-      (s) => s.type !== 'warning' && s.transition === transition
+      (s) => s.type !== 'possibility' && s.transition === transition
     );
     this.showRepairPopoverForSolutionPrecision(ref, solutionsForTransition);
   }

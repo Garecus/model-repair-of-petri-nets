@@ -6,6 +6,7 @@ import { DownloadFormat } from '../../components/download/download.const';
 import { DisplayService } from '../display.service';
 import { generateTextFromNet } from '../parser/net-to-text.func';
 import { convertPetriNetToPnml } from './run-to-pnml/petri-net-to-pnml.service';
+import { PartialOrder } from 'src/app/classes/diagram/partial-order';
 
 @Injectable({
   providedIn: 'root',
@@ -35,6 +36,20 @@ export class DownloadService implements OnDestroy {
       });
   }
 
+  downloadLog(name: string, fileFormat: DownloadFormat): void {
+    this.displayService
+      .getPartialOrders$()
+      .pipe(first())
+      .subscribe((run) => {
+        const fileEnding = getFileEndingForFormat(fileFormat);
+        const fileName = name
+          ? `${name}-log.${fileEnding}`
+          : `${Date.now()}_net.${fileEnding}`;
+
+        /* this.downloadLogRun(fileName, fileFormat, run); */
+      });
+  }
+
   private downloadRun(
     name: string,
     fileFormat: DownloadFormat,
@@ -52,7 +67,23 @@ export class DownloadService implements OnDestroy {
     downloadLink.click();
     downloadLink.remove();
   }
+
+  private downloadLogRun(
+    name: string,
+    fileFormat: DownloadFormat,
+    partialOrder: PartialOrder
+  ): void {
+    const fileContent = partialOrder.toString();
+
+    const downloadLink: HTMLAnchorElement = document.createElement('a');
+    downloadLink.download = name;
+    downloadLink.href =
+      'data:text/plain;charset=utf-16,' + encodeURIComponent(fileContent);
+    downloadLink.click();
+    downloadLink.remove();
+  }
 }
+
 
 function getFileEndingForFormat(fileFormat: DownloadFormat): string {
   return fileFormat === 'pn' ? 'pn' : 'pnml';

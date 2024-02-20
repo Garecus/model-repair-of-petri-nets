@@ -1,1 +1,1 @@
-export type DownloadFormat = 'pnml' | 'pn';
+export type DownloadFormat = 'pnml' | 'pn' | 'txt';
