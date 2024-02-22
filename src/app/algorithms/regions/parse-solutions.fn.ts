@@ -46,6 +46,7 @@ export type AddPlaceAutoRepair = {
   //outgoing: ArcDefinition[];
 } & SinglePlaceParameter;
 
+// Coming from petri-net-solution.computePrecisionSolution
 export function parseSolution(
   placeSolutionList: ParsableSolutionsPerType[],
   existingPlace: Place | undefined,
@@ -178,29 +179,23 @@ export function parseSolution(
         };
         return repair;
       } else { 
-        console.log("Identified add place solution");
+        console.log("Identified add-place solution");
         /* const repair: AutoRepairWithSolutionType = {
           type: 'add-place',
           regionSize: parsableSolutionsPerType.regionSize,
           repairType: parsableSolutionsPerType.type,
           places: newPlaces.map((newPlace) => mergeAllDuplicatePlaces(newPlace)),
-          incoming: [],
-          outgoing: [],
+          incoming: newPlaces.flatMap((newPlace) => newPlace.incoming),
+          outgoing: newPlaces.flatMap((newPlace) => newPlace.outgoing),
         };
         return repair; */
-        const repair: AutoRepairForSinglePlace = {
-          ...newPlaces[0],
-          type: 'modify-place',
-        };
-        return {
-          ...checkPlaceAndReturnMarkingIfEquals2(
-            mergeAllDuplicatePlaces(repair),
-            existingPlace,
-            idTransitionToLabel
-          ),
+        const repair: AutoRepairWithSolutionType = {
+          type: 'replace-place',
           regionSize: parsableSolutionsPerType.regionSize,
           repairType: parsableSolutionsPerType.type,
+          places: newPlaces.map((newPlace) => mergeAllDuplicatePlaces(newPlace)),
         };
+        return repair;
       }
     })
     .filter((solution) => !!solution);
@@ -468,8 +463,8 @@ function checkPlaceAndReturnMarkingIfEquals2(
     repairType: "addPlace",
     places: [{
       newMarking: 1,
-      incoming: [{ transitionLabel: "a", weight: 2 }],
-      outgoing: [{ transitionLabel: "c", weight: 2 }]
+      incoming: [{ transitionLabel: "a", weight: 1 }],
+      outgoing: [{ transitionLabel: "c", weight: 1 }]
     }],
     incoming: [],
     outgoing: [],

@@ -41,6 +41,8 @@ export class CheckWrongContinuations {
   endVariable: any;
   maxLoopNumber: any;
   wrongContinuations: string[] = [];
+  generatedCombinations: string[] = [];
+  invalidTransitions: string[] = [];
 
   constructor(petriNet: PetriNet, partialOrder: PartialOrder, partialOrders: PartialOrder[]) {
     this.petriNet = { ...petriNet };
@@ -57,7 +59,7 @@ export class CheckWrongContinuations {
    * Fires the partial order in the net and returns the ids of invalid places.
    * @returns The ids of invalid places.
    */
-  getInvalidTransitions(): string[] {
+  getWrongContinuations(mode: string): string[] {
     console.log("Start wrong continuations check.");
     /* console.log(this.partialOrders); */
     for (let i = 0; i < this.partialOrders.length; i++) {
@@ -329,8 +331,25 @@ export class CheckWrongContinuations {
       return uniqueCombinations;
     }
 
-    // Generate combinations with a default maximum of 3 'bb's
-    const generatedCombinations = generateCombinations(this.arcList2, this.startVariable, this.endVariable, this.maxLoopNumber + 1);
+    // Combine all initialEvents and finalEvents
+    for (let i10 = 0; i10 < this.partialOrders.length; i10++) {
+
+      // Remove duplicates
+      let allStartsOfSinglePartialOrder = this.partialOrders[0].initialEvents;
+      allStartsOfSinglePartialOrder = allStartsOfSinglePartialOrder?.filter((value: any, index: any, self: string | any[]) => self.indexOf(value) === index);
+
+      let allEndsOfSinglePartialOrder = this.partialOrders[0].finalEvents;
+      allEndsOfSinglePartialOrder = allEndsOfSinglePartialOrder?.filter((value, index, self) => self.indexOf(value) === index);
+
+      for (let i11 = 0; i11 < (allStartsOfSinglePartialOrder ?? []).length; i11++) {
+        // Convert it to a single string
+        this.startVariable = (allStartsOfSinglePartialOrder ?? [])[i11];
+        this.endVariable = (allEndsOfSinglePartialOrder ?? [])[i11];
+        // Generate combinations with a default maximum of x 'bb's
+        this.generatedCombinations = [...this.generatedCombinations, ...generateCombinations(this.arcList2, this.startVariable, this.endVariable, this.maxLoopNumber + 1)];
+        this.generatedCombinations = this.generatedCombinations?.filter((value, index, self) => self.indexOf(value) === index);
+      }
+    }
 
     // Output the generated combinations
     /* console.log("Generated Combinations:", generatedCombinations); */
@@ -338,7 +357,7 @@ export class CheckWrongContinuations {
     // Compare the lists
     // generatedCombinations minus event log this.caseList.sequence = wrong continuations
     const sequences = this.caseList.map(obj => obj.sequence);
-    this.wrongContinuations = generatedCombinations.filter(obj => !sequences.includes(obj));
+    this.wrongContinuations = this.generatedCombinations.filter(obj => !sequences.includes(obj));
     /* console.log("Wrong continuations: " + this.wrongContinuations);
     console.log("Possible continuations based on the log: " + this.continuations); */
 
@@ -352,8 +371,57 @@ export class CheckWrongContinuations {
     // Adjust petri net to add to the transition the marker to show the hint in the drawing
     /* this.petriNet.transitions[1].issueStatus = 'warning'; */
 
+    // Get the transitions
+    /*     if (mode == "getTransitions"){
+          return this.invalidTransitions;
+        } */
+
     // Dann Anzeigen von Lösungen
     /* return ["ab","abbbbc"]; */
     return this.wrongContinuations;
+  }
+
+  getInvalidTransitions(): string[] {
+    let transitions = this.getWrongContinuations("getTransitions");
+    function identifyTransitions(inputArray: string[]): string[] {
+      const followsArray: string[] = [];
+
+      // Identify letters that follow the same letter
+      for (let i = 0; i < inputArray.length; i++) {
+        const currentString = inputArray[i];
+
+        for (let j = 0; j < currentString.length - 1; j++) {
+          if (currentString[j] === currentString[j + 1]) {
+            followsArray.push(currentString[j]);
+          }
+        }
+      }
+
+      // Remove duplicates
+      const uniqueFollowsArray = Array.from(new Set(followsArray));
+
+      // Indentify strings with no follows-relations
+      const noFollowsArray: string[] = [];
+      for (let i = 0; i < inputArray.length; i++) {
+        const currentString = inputArray[i];
+
+        if (!followsArray.some(letter => currentString.includes(letter))) {
+          const newString = currentString.slice(0, -1);
+          const lastLetter = newString.charAt(newString.length - 1);
+          noFollowsArray.push(lastLetter);
+        }
+      }
+
+      // Remove duplicates
+      const uniqueNoFollowsArray = Array.from(new Set(noFollowsArray));
+
+      // Combine the arrays
+      let resultArray = [...uniqueFollowsArray, ...uniqueNoFollowsArray];
+      resultArray = Array.from(new Set(resultArray));
+      return resultArray;
+    }
+
+    transitions = identifyTransitions(this.wrongContinuations);
+    return transitions;
   }
 }

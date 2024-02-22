@@ -380,6 +380,19 @@ export class IlpSolver {
       ).constraints
     );
 
+    // This removes split place as repair option:
+/*     result.subjectTo = result.subjectTo.concat(
+      this.smallerThan(
+        this.variable(
+          this.transitionVariableName(
+            causalPair[1],
+            VariableName.OUTGOING_ARC_WEIGHT_PREFIX
+          )
+        ),
+        0
+      ).constraints
+    ); */
+
     return result;
   }
 
@@ -557,7 +570,7 @@ export class IlpSolver {
 
     Object.entries(this.constraintsForNewTransitions).forEach(
       ([key, value]) => {
-        result.subjectTo = result.subjectTo.concat(
+/*         result.subjectTo = result.subjectTo.concat(
           this.equal(
             this.variable(
               this.transitionVariableName(
@@ -577,7 +590,48 @@ export class IlpSolver {
             0
           ).constraints,
           ...value
+        ); */
+                console.log("smallerThan");
+        result.subjectTo = result.subjectTo.concat(
+          this.equal(
+            this.variable(
+              this.transitionVariableName(
+                key,
+                VariableName.OUTGOING_ARC_WEIGHT_PREFIX
+              )
+            ),
+            0
+          ).constraints,
+          this.equal(
+            this.variable(
+              this.transitionVariableName(
+                key,
+                VariableName.INGOING_ARC_WEIGHT_PREFIX
+              )
+            ),
+            0
+          ).constraints,
+          this.smallerThan(
+            this.variable(
+              this.transitionVariableName(
+                key,
+                VariableName.OUTGOING_ARC_WEIGHT_PREFIX
+              )
+            ),
+            0
+          ).constraints,
+          this.equal(
+            this.variable(
+              this.transitionVariableName(
+                key,
+                VariableName.INGOING_ARC_WEIGHT_PREFIX
+              )
+            ),
+            0
+          ).constraints,
+          ...value
         );
+
       }
     );
 
@@ -836,4 +890,20 @@ export class IlpSolver {
       )
       .join(' ');
   }
+
+  // Precision, avoid that a wrong continuation can be executed
+  private smallerThan(
+    variables: Variable | Array<Variable>,
+    upperBound: number
+  ): ConstraintsWithNewVariables {
+    console.debug(`${this.formatVariableList(variables)} < ${upperBound}`);
+    return new ConstraintsWithNewVariables(
+      this.constrain(arraify(variables), {
+        type: Constraint.UPPER_BOUND,
+        ub: upperBound,
+        lb: 0,
+      })
+    );
+  }
+
 }

@@ -106,6 +106,7 @@ export class PetriNetSolutionService {
 
         return combineLatest(
           invalidPlaceList.map((place) =>
+          // Go to ilp-solver.ts
             solver.computeSolutions(place).pipe(
               map((solutions) => {
                 const existingPlace =
@@ -207,6 +208,7 @@ export class PetriNetSolutionService {
     partialOrders: any[], /* PartialOrder[] */ // ToDo
     petriNet: PetriNet,
     invalidPlaces: { [key: string]: number },
+    invalidTransitions: { [key: string]: number },
     wrongContinuations: string[],
     mode: string
   ): Observable<PlaceSolution[]> {
@@ -216,6 +218,10 @@ export class PetriNetSolutionService {
         const invalidPlaceList: SolutionGeneratorType[] = Object.keys(
           invalidPlaces
         ).map((place) => ({ type: 'possibility', placeId: place }));
+
+        const invalidTransitionList: SolutionGeneratorType[] = Object.keys(
+          invalidTransitions
+        ).map((transition) => ({ type: 'transition', newTransition: transition }));
 
         const allNetLabels = new Set<string>(
           petriNet.transitions.map((t) => t.label)
@@ -278,6 +284,10 @@ export class PetriNetSolutionService {
 
         invalidPlaceList.forEach((object, index) => {
           console.log(`Invalid place ${index + 1}:`, object);
+        });
+
+        invalidTransitionList.forEach((object, index) => {
+          console.log(`Invalid transition ${index + 1}:`, object);
         });
 
         /* invalidPlaceList[0].type="possibility"; */

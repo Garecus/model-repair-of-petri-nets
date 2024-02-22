@@ -51,6 +51,7 @@ export class DisplayComponent implements OnInit {
   @ViewChild('svg_wrapper') svgWrapper: ElementRef<HTMLElement> | undefined;
 
   invalidPlaceCount$: Subject<{ count: number } | null>;
+  invalidTransitionCount$ : Subject<{ count: number } | null>;
   wrongContinuationCount$: Subject<{ count: number } | null>;
   wrongContinuations: string[] = [];
 
@@ -84,6 +85,10 @@ export class DisplayComponent implements OnInit {
     );
 
     this.wrongContinuationCount$ = new BehaviorSubject<{ count: number } | null>(
+      null
+    );
+
+    this.invalidTransitionCount$ = new BehaviorSubject<{ count: number } | null>(
       null
     );
 
@@ -138,6 +143,8 @@ export class DisplayComponent implements OnInit {
               switchMap((showSuggestions) => {
                 if (showSuggestions == "precision") {
                   this.precisionActive = true;
+                } else {
+                  this.precisionActive = false;
                 }
                 if (!showSuggestions || showSuggestions != "precision" && showSuggestions != "fitness") {
                   
@@ -157,6 +164,7 @@ export class DisplayComponent implements OnInit {
                 }
 
                 this.computingSolutions = true;
+                // Identification of invalidPlaces to know where repairs can be performed
                 const invalidPlaces: {
                   [key: string]: number;
                 } = {};
@@ -179,6 +187,7 @@ export class DisplayComponent implements OnInit {
                   count: placeIds.length,
                 });
 
+                // Identification of wrongContinuations to be able to handle them
                 /*
                 for (let index = 0; index < partialOrders.length; index++) {
                   this.wrongContinuations = this.checkWrongContinuations(net, partialOrders[index], partialOrders);
@@ -188,6 +197,29 @@ export class DisplayComponent implements OnInit {
 
                 this.wrongContinuationCount$.next({
                   count: this.wrongContinuations.length,
+                });
+
+                // Identification of transitions that are directly affected by wrongContinuations
+                const invalidTransitions: {
+                  [key: string]: number;
+                } = {};
+                for (let index = 0; index < partialOrders.length; index++) {
+                  const currentInvalid = this.identifyTransitionsWithWrongContinuations(
+                    net,
+                    partialOrders[index], partialOrders
+                  );
+
+                  currentInvalid.forEach((transition) => {
+                    if (invalidTransitions[transition] === undefined) {
+                      invalidTransitions[transition] = 0;
+                    }
+                    invalidTransitions[transition]++;
+                  });
+                }
+
+                const transitionIds = Object.keys(invalidTransitions);
+                this.invalidTransitionCount$.next({
+                  count: transitionIds.length,
                 });
 
                 const places: Place[] = net.places.filter((place) =>
@@ -230,7 +262,7 @@ export class DisplayComponent implements OnInit {
                   });
 
                   return this.petriNetRegionsService
-                    .computePrecisionSolutions(partialOrders, net, invalidPlaces, this.wrongContinuations, "precision")
+                    .computePrecisionSolutions(partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations, "precision")
                     .pipe(
                       tap(() => (this.computingSolutions = false)),
                       map((solutions) => ({
@@ -309,6 +341,14 @@ export class DisplayComponent implements OnInit {
   }
 
   private checkWrongContinuations(
+    petriNet: PetriNet,
+    partialOrder: PartialOrder,
+    partialOrders: PartialOrder[]
+  ): string[] {
+    return new CheckWrongContinuations(petriNet, partialOrder, partialOrders).getWrongContinuations("wrongContinuations");
+  }
+
+  private identifyTransitionsWithWrongContinuations(
     petriNet: PetriNet,
     partialOrder: PartialOrder,
     partialOrders: PartialOrder[]
