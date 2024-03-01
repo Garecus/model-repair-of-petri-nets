@@ -326,6 +326,7 @@ function generateArcsForSolution(
     );
   }
 
+  if (solution.places){
   return filteredArcs.concat(
     solution.places.flatMap((place, index) => [
       ...place.incoming.map((incoming) => ({
@@ -344,6 +345,10 @@ function generateArcsForSolution(
       })),
     ])
   );
+} else {
+  console.log("missing places");
+  return [];
+}
 }
 
 type SimpleArcDefinition = { source: string; target: string; weight: number };

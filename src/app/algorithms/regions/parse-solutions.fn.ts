@@ -7,7 +7,7 @@ export type AutoRepairForSinglePlace =
     type: 'marking';
     newMarking: number;
   }
-  | ModifyPlaceType;
+  | ModifyPlaceType | AddPlaceAutoRepair;
 
 type ModifyPlaceType = {
   type: 'modify-place';
@@ -38,12 +38,12 @@ type ArcDefinition = { transitionLabel: string; weight: number };
 // Precision.AutoRepair
 export type AddPlaceAutoRepair = {
   type: 'add-place';
-  regionSize: number;
-  repairType: SolutionType;
-  places: SinglePlaceParameter[];
+  regionSize?: number;
+  repairType?: SolutionType;
+  places?: SinglePlaceParameter[];
   //newMarking?: number;
-  //incoming: ArcDefinition[];
-  //outgoing: ArcDefinition[];
+  //incoming?: ArcDefinition[];
+  //outgoing?: ArcDefinition[];
 } & SinglePlaceParameter;
 
 // Coming from petri-net-solution.computePrecisionSolution
@@ -178,8 +178,23 @@ export function parseSolution(
           places: newPlaces.map((newPlace) => mergeAllDuplicatePlaces(newPlace)),
         };
         return repair;
-      } else { 
+      } else {
         console.log("Identified add-place solution");
+        console.log(newPlaces[0]);
+        console.log(newPlaces[1]);
+        const repair: AutoRepairForSinglePlace = {
+          ...newPlaces[0],
+          type: 'add-place'
+        };
+        return {
+          ...checkPlaceAndReturnMarkingIfEquals(
+            mergeAllDuplicatePlaces(repair),
+            existingPlace,
+            idTransitionToLabel
+          ),
+          regionSize: parsableSolutionsPerType.regionSize,
+          repairType: parsableSolutionsPerType.type,
+        };
         /* const repair: AutoRepairWithSolutionType = {
           type: 'add-place',
           regionSize: parsableSolutionsPerType.regionSize,
@@ -189,13 +204,13 @@ export function parseSolution(
           outgoing: newPlaces.flatMap((newPlace) => newPlace.outgoing),
         };
         return repair; */
-        const repair: AutoRepairWithSolutionType = {
+        /* const repair: AutoRepairWithSolutionType = {
           type: 'replace-place',
           regionSize: parsableSolutionsPerType.regionSize,
           repairType: parsableSolutionsPerType.type,
           places: newPlaces.map((newPlace) => mergeAllDuplicatePlaces(newPlace)),
         };
-        return repair;
+        return repair; */
       }
     })
     .filter((solution) => !!solution);
@@ -409,6 +424,7 @@ function getSinglePlaceSolution(
           }
           break;
       }
+      console.log(acc);
       return acc;
     },
     null

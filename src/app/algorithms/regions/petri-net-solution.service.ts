@@ -106,7 +106,7 @@ export class PetriNetSolutionService {
 
         return combineLatest(
           invalidPlaceList.map((place) =>
-          // Go to ilp-solver.ts
+            // Go to ilp-solver.ts
             solver.computeSolutions(place).pipe(
               map((solutions) => {
                 const existingPlace =
@@ -213,6 +213,8 @@ export class PetriNetSolutionService {
     mode: string
   ): Observable<PlaceSolution[]> {
     console.log("compute Precision");
+    console.log(invalidPlaces);
+    invalidPlaces = {["p1"]: 2} // XXX
     return this.glpk$.pipe(
       switchMap((glpk) => {
         const invalidPlaceList: SolutionGeneratorType[] = Object.keys(
@@ -294,7 +296,7 @@ export class PetriNetSolutionService {
 
         return combineLatest(
           invalidPlaceList.map((place) =>
-            solver.computeSolutions(place).pipe(
+            solver.computePrecisionSolutions(place).pipe(
               map((solutions) => {
                 const existingPlace =
                   place.type === 'warning' || place.type === 'possibility'
@@ -322,15 +324,19 @@ export class PetriNetSolutionService {
                     },
                     null as any
                   );
-                  if (highestMarkingSolution.marking < existingPlace!.marking) {
-                    return {
-                      type: 'warning',
-                      place: place.placeId,
-                      reduceTokensTo: highestMarkingSolution.marking,
-                      tooManyTokens:
-                        existingPlace!.marking - highestMarkingSolution.marking,
-                      regionSize: highestMarkingSolution.regionSize,
-                    };
+                  if (highestMarkingSolution && highestMarkingSolution.marking !== null) { //XXX
+
+
+                    if (highestMarkingSolution.marking < existingPlace!.marking) {
+                      return {
+                        type: 'warning',
+                        place: place.placeId,
+                        reduceTokensTo: highestMarkingSolution.marking,
+                        tooManyTokens:
+                          existingPlace!.marking - highestMarkingSolution.marking,
+                        regionSize: highestMarkingSolution.regionSize,
+                      };
+                    }
                   }
                   return undefined;
                 }
@@ -375,19 +381,19 @@ export class PetriNetSolutionService {
                         missingTransitions[place.newTransition],
                     } as PlaceSolution;
                   case 'possibility':
-                    let testvalue =  {
+                    /* let testvalue = {
                       type: 'possibility',
                       place: place.placeId,
                       solutions: parsedSolutions,
                       missingTokens,
                       invalidTraceCount: invalidPlaces[place.placeId],
                     } as PlaceSolution;
-                    console.log(testvalue);
+                    console.log(testvalue); */
                     return {
                       type: 'possibility',
                       place: place.placeId,
                       solutions: parsedSolutions,
-                      missingTokens: 0,
+                      missingTokens: missingTokens,
                       invalidTraceCount: invalidPlaces[place.placeId],
                       wrongContinuations: wrongContinuations,
                     } as unknown as PlaceSolution;
