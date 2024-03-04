@@ -131,7 +131,6 @@ export class IlpSolver {
       (p) => p.id === placeModel.placeId
     );
     if (placeModel.type === 'warning') {
-      console.log("Iam here");
       const changeMarkingSolution = this.populateIlpBySameWeights(
         this.baseIlp,
         invalidPlace!
@@ -139,7 +138,8 @@ export class IlpSolver {
       if (!invalidPlace) {
         return of([]);
       }
-
+      console.log("changeMarkingSolution: ");
+      console.log(changeMarkingSolution);
       return this.solveILP(changeMarkingSolution).pipe(
         map((solution) => {
           if (solution.solution.result.status === Solution.NO_SOLUTION) {
@@ -558,7 +558,6 @@ export class IlpSolver {
     existingPlace: Place
   ): LP {
     const result = clonedeep(baseIlp);
-
     if (existingPlace.incomingArcs.length > 0) {
       existingPlace.incomingArcs.forEach((arc) => {
         const transitionLabel = this.idToTransitionLabelMap[arc.source];
@@ -1024,10 +1023,127 @@ export class IlpSolver {
           )
         );
         console.log("Variablen in smallerThan: ");
-    console.log(variables);
+        console.log(variables);
         result.subjectTo = result.subjectTo.concat(
           this.smallerThan(variables, 0).constraints // if 3 or greater than different solution
         );
+
+
+
+        const variables2 = [];
+        variables2.push(
+          this.variable(
+            "0_m0_a",
+            +1
+          )
+        );
+        result.subjectTo = result.subjectTo.concat(
+          this.equal(variables2, 0).constraints // if 3 or greater than different solution
+        );
+
+        const variables3 = [];
+        variables3.push(
+          this.variable(
+            "in_a_1",
+            +1
+          )
+        );
+        result.subjectTo = result.subjectTo.concat(
+          this.equal(variables3, 0).constraints // YYYYYY
+        );
+
+        const variables4 = [];
+        variables4.push(
+          this.variable(
+            "out_a_0",
+            +1
+          )
+        );
+        result.subjectTo = result.subjectTo.concat(
+          this.equal(variables4, 0).constraints // if 3 or greater than different solution
+        );
+
+        const variables5 = [];
+        variables5.push(
+          this.variable(
+            "out_c_4",
+            +1
+          )
+        );
+        result.subjectTo = result.subjectTo.concat(
+          this.greaterEqualThan(variables5, 1).constraints // if 3 or greater than different solution
+        );
+
+        const variables6 = [];
+        variables6.push(
+          this.variable(
+            "out_b_2",
+            +1
+          )
+        );
+        result.subjectTo = result.subjectTo.concat(
+          this.equal(variables6, 0).constraints // YYYYYY
+        );
+
+        const variables7 = [];
+        variables7.push(
+          this.variable(
+            "in_b_3",
+            +1
+          )
+        );
+        result.subjectTo = result.subjectTo.concat(
+          this.greaterEqualThan(variables7, 1).constraints // if 3 or greater than different solution
+        );
+
+        const variables8 = [];
+        variables8.push(
+          this.variable(
+            "in_c_5",
+            +1
+          )
+        );
+        result.subjectTo = result.subjectTo.concat(
+          this.equal(variables8, 0).constraints // if 3 or greater than different solution
+        );
+
+
+        /* 0_Arc_a_to_b
+: 
+-0
+0_Arc_b1_to_b2
+: 
+-0
+0_Arc_b2_to_c
+: 
+-0
+0_Arc_b_to_b1
+: 
+-0
+0_Arc_c_to_mf
+: 
+-0
+0_m0_a
+: 
+1
+1_Arc_a_to_b
+: 
+-0
+1_Arc_b_to_c
+: 
+-0
+1_Arc_c_to_mf
+: 
+-0 */
+
+
+        /*         +in_a_1 = 0
+        ilp-solver.ts:862 +in_b_3 = 0
+        ilp-solver.ts:862 +in_c_5 = 0
+        ilp-solver.ts:862 +out_a_0 = 1
+        ilp-solver.ts:753 getRulesForNoOtherArcs
+        ilp-solver.ts:862 +out_b_2 = 0
+        ilp-solver.ts:862 +out_c_4 = 0 */
       });
 
     }
@@ -1048,6 +1164,8 @@ export class IlpSolver {
     //this.addConstraintsForSameOutgoingWeights(existingPlace, result); // activating this will give an add place solution that is strange
     return result;
   }
+
+  solutionToSkip: any;
 
   /**
  * Generates a place for every invalid place in the net.
@@ -1094,27 +1212,27 @@ export class IlpSolver {
     );
     if (placeModel.type === 'warning') {
       console.log("Model Type warning and execute again populateIlpBySameWeights");
-      const changeMarkingSolution = this.populateIlpBySameWeights(
-        this.baseIlp,
-        invalidPlace!
-      );
-      if (!invalidPlace) {
-        return of([]);
-      }
+      /*       const changeMarkingSolution = this.populateIlpBySameWeights(
+              this.baseIlp,
+              invalidPlace!
+            );
+            if (!invalidPlace) {
+              return of([]);
+            } */
 
-      return this.solveILP(changeMarkingSolution).pipe(
-        map((solution) => {
-          if (solution.solution.result.status === Solution.NO_SOLUTION) {
-            return [];
-          }
-          const problemSolution: ProblemSolution = {
-            type: 'changeMarking',
-            solutions: [solution.solution.result.vars],
-            regionSize: this.generateSumForVars(solution.solution.result.vars),
-          };
-          return [problemSolution];
-        })
-      );
+      /*       return this.solveILP(changeMarkingSolution).pipe(
+              map((solution) => {
+                if (solution.solution.result.status === Solution.NO_SOLUTION) {
+                  return [];
+                }
+                const problemSolution: ProblemSolution = {
+                  type: 'changeMarking',
+                  solutions: [solution.solution.result.vars],
+                  regionSize: this.generateSumForVars(solution.solution.result.vars),
+                };
+                return [problemSolution];
+              })
+            ); */
     }
 
     if (placeModel.type === 'possibility') {
@@ -1140,17 +1258,19 @@ export class IlpSolver {
             solutions: [solution.solution.result.vars],
             regionSize: this.generateSumForVars(solution.solution.result.vars),
           };
+          console.log("problemSolution: ");
           console.log(problemSolution);
+          this.solutionToSkip = problemSolution;
           return [problemSolution];
         })
       );
     }
-    console.log("working here?");
+
     const unhandledPairs = this.getUnhandledPairs(invalidPlace!);
 
     return combineLatest(
       unhandledPairs.map((pair) =>
-        this.solveILP(this.populateIlpByCausalPairs(this.baseIlp, pair)).pipe(
+        this.solveILP(this.avoidWrongContinuationIlp(this.baseIlp, invalidPlace!)).pipe( // populateIlpByCausalPairs(this.baseIlp, pair)
           switchMap((solution) => {
             if (solution.solution.result.status !== Solution.NO_SOLUTION) {
               return of(solution);
@@ -1179,7 +1299,7 @@ export class IlpSolver {
           })[]
         ) => {
           const ilpsToSolve: { type: SolutionType; ilp: LP }[] = [
-            {
+            /* {
               type: 'changeMarking' as SolutionType,
               ilp: this.populateIlpBySameWeights(this.baseIlp, invalidPlace!),
             },
@@ -1189,10 +1309,10 @@ export class IlpSolver {
                 this.baseIlp,
                 invalidPlace!
               ),
-            },
+            } , */
             {
               type: 'addPlace' as SolutionType,
-              ilp: this.populateIlpBySameOutgoingWeights( // XXX
+              ilp: this.avoidWrongContinuationIlp( // XXX
                 this.baseIlp,
                 invalidPlace!
               ),
@@ -1208,7 +1328,7 @@ export class IlpSolver {
                 }))
               )
             )
-          ).pipe(map((solutions) => [...solutions, ...multiplePlaces]));
+          ).pipe(map((solutions) => [...solutions,])); //...multiplePlaces
         }
       ),
       toArray(),
@@ -1222,6 +1342,8 @@ export class IlpSolver {
           addPlace: { sum: 0, vars: [] }, // Precision
         };
 
+        console.log("placeSolutions :");
+        console.log(placeSolutions);
         placeSolutions.forEach((placeSolution) => {
           placeSolution
             .filter(

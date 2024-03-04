@@ -163,6 +163,12 @@ export class SvgService {
           ? 'var(--warn-color)'
           : 'var(--error-color)'
       );
+      markingEl.setAttribute(
+        'fill',
+        transition.issueStatus === 'warning'
+          ? 'var(--warn-color)'
+          : 'var(--error-color)'
+      );
       markingEl.setAttribute('font-size', '2em');
       result.push(markingEl);
 
@@ -248,6 +254,12 @@ export class SvgService {
       markingEl.setAttribute('height', '48');
       markingEl.setAttribute(
         'stroke',
+        place.issueStatus === 'warning'
+          ? 'var(--warn-color)'
+          : 'var(--error-color)'
+      );
+      markingEl.setAttribute(
+        'fill',
         place.issueStatus === 'warning'
           ? 'var(--warn-color)'
           : 'var(--error-color)'

@@ -40,9 +40,9 @@ svg foreignObject {
 
 
 :root {
-    --success-color: #4CAF50;
-    --warn-color: #ff8000;
-    --error-color: #f44336;
+    --success-color: rgba(42, 100, 42, 1);
+    --warn-color: rgba(255, 255, 150, 1);
+    --error-color: rgba(255, 60, 60, 1);
     --fancy-grey: #f5f5f5;
     --dark-grey: #d3d3d3;
 

@@ -80,8 +80,9 @@ export class RepairMenuComponent implements OnInit {
       );
       return;
     }
-
+    if (this.placeSolution.type != 'possibility') {
     this.infoHeader = `The place cannot fire for ${this.placeSolution.invalidTraceCount} (${percentage}) traces.<br/>`;
+    }
 
     if (this.placeSolution.missingTokens) {
       this.infoHeader += `The place has ${

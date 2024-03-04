@@ -214,7 +214,7 @@ export class PetriNetSolutionService {
   ): Observable<PlaceSolution[]> {
     console.log("compute Precision");
     console.log(invalidPlaces);
-    invalidPlaces = {["p1"]: 2} // XXX
+    invalidPlaces = { ["p1"]: 2 } // XXX
     return this.glpk$.pipe(
       switchMap((glpk) => {
         const invalidPlaceList: SolutionGeneratorType[] = Object.keys(
@@ -324,7 +324,7 @@ export class PetriNetSolutionService {
                     },
                     null as any
                   );
-                  if (highestMarkingSolution && highestMarkingSolution.marking !== null) { //XXX
+                  /* if (highestMarkingSolution && highestMarkingSolution.marking !== null) { //XXX
 
 
                     if (highestMarkingSolution.marking < existingPlace!.marking) {
@@ -337,7 +337,7 @@ export class PetriNetSolutionService {
                         regionSize: highestMarkingSolution.regionSize,
                       };
                     }
-                  }
+                  } */
                   return undefined;
                 }
 
@@ -346,6 +346,8 @@ export class PetriNetSolutionService {
                   existingPlace,
                   idToTransitionLabelMap
                 );
+                console.log("Parsed solutions: ");
+                console.log(parsedSolutions);
 
                 const newTokens = parsedSolutions.find(
                   (solution) => solution.type === 'marking'

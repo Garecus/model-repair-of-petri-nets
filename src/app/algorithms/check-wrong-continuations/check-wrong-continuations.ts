@@ -377,7 +377,7 @@ export class CheckWrongContinuations {
         } */
 
     // Dann Anzeigen von Lösungen
-    /* return ["ab","abbbbc"]; */
+    /* return ["ac","abbbb"]; */
     return this.wrongContinuations;
   }
 

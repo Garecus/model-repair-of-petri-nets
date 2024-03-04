@@ -179,9 +179,8 @@ export function parseSolution(
         };
         return repair;
       } else {
-        console.log("Identified add-place solution");
+        console.log("Identified add-place solution. New places: ");
         console.log(newPlaces[0]);
-        console.log(newPlaces[1]);
         const repair: AutoRepairForSinglePlace = {
           ...newPlaces[0],
           type: 'add-place'
@@ -214,7 +213,7 @@ export function parseSolution(
       }
     })
     .filter((solution) => !!solution);
-
+  console.log(returnList);
   return returnList as AutoRepairWithSolutionType[];
 }
 
@@ -424,65 +423,10 @@ function getSinglePlaceSolution(
           }
           break;
       }
+      console.log("acc: ");
       console.log(acc);
       return acc;
     },
     null
   );
-}
-
-function checkPlaceAndReturnMarkingIfEquals2(
-  solution: AutoRepair,
-  existingPlace: Place | undefined,
-  idTransitionToLabel: { [key: string]: string }
-): AutoRepair {
-  if (
-    solution.type === 'marking' ||
-    solution.type === 'replace-place' ||
-    !existingPlace ||
-    (solution.type === 'modify-place' && !solution.newMarking)
-  ) {
-    return solution;
-  }
-
-  const incomingEquals =
-    solution.incoming.length === existingPlace.incomingArcs.length &&
-    solution.incoming.every((incoming) =>
-      existingPlace.incomingArcs.some(
-        (arc) =>
-          incoming.transitionLabel === idTransitionToLabel[arc.source] &&
-          incoming.weight === arc.weight
-      )
-    );
-  if (!incomingEquals) {
-    return solution;
-  }
-
-  const outgoingEquals =
-    solution.outgoing.length === existingPlace.outgoingArcs.length &&
-    solution.outgoing.every((incoming) =>
-      existingPlace.outgoingArcs.some(
-        (arc) =>
-          incoming.transitionLabel === idTransitionToLabel[arc.target] &&
-          incoming.weight === arc.weight
-      )
-    );
-  if (!outgoingEquals) {
-    return solution;
-  }
-
-  console.log("checkPlaceAndReturnMarkingIfEquals");
-  return {
-    type: 'add-place',
-    newMarking: solution.newMarking!,
-    regionSize: 1,
-    repairType: "addPlace",
-    places: [{
-      newMarking: 1,
-      incoming: [{ transitionLabel: "a", weight: 1 }],
-      outgoing: [{ transitionLabel: "c", weight: 1 }]
-    }],
-    incoming: [],
-    outgoing: [],
-  };
 }

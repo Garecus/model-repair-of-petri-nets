@@ -24,7 +24,7 @@ export class NetCommandService {
   constructor(
     private uploadService: UploadService,
     private displayService: DisplayService
-  ) {}
+  ) { }
 
   repairNetForNewTransition(
     missingTransition: string,
@@ -157,9 +157,8 @@ function generateTextForNetWithTransition(
 
   newText += `${arcsAttribute}\n`;
   arcsToGenerate.forEach((arc, index) => {
-    newText += `${arc.source} ${arc.target}${
-      arc.weight > 1 ? ` ${arc.weight}` : ''
-    }`;
+    newText += `${arc.source} ${arc.target}${arc.weight > 1 ? ` ${arc.weight}` : ''
+      }`;
 
     if (index !== arcsToGenerate.length - 1) {
       newText += '\n';
@@ -221,6 +220,17 @@ function generateTextForNewNet(
     }
   });
 
+  if (solution.type === 'add-place') {
+    newText += `${generatePlaceForSolution(
+      "p2",
+      0,
+      solution
+    )}\n`;
+
+    petriNet.places.push(petriNet.places[1]); // XXX
+    petriNet.places[2].id = "p2"; // XXX
+  }
+
   const oldPlace: Place = petriNet.places[placeIndex];
   const arcsToGenerate = generateArcsForSolution(
     oldPlace.id,
@@ -231,15 +241,15 @@ function generateTextForNewNet(
 
   newText += `${arcsAttribute}\n`;
   arcsToGenerate.forEach((arc, index) => {
-    newText += `${arc.source} ${arc.target}${
-      arc.weight > 1 ? ` ${arc.weight}` : ''
-    }`;
+    newText += `${arc.source} ${arc.target}${arc.weight > 1 ? ` ${arc.weight}` : ''
+      }`;
 
     if (index !== arcsToGenerate.length - 1) {
       newText += '\n';
     }
   });
-
+  console.log("New net: ");
+  console.log(newText);
   return newText;
 }
 
@@ -264,6 +274,15 @@ function getRequiredTransitions(solution: AutoRepair): string[] {
     );
   }
 
+  if (solution.type === 'add-place') {
+    return Array.from(
+      new Set([
+        ...solution.incoming.map((arc) => arc.transitionLabel),
+        ...solution.outgoing.map((arc) => arc.transitionLabel),
+      ])
+    );
+  }
+
   return [];
 }
 
@@ -278,12 +297,14 @@ function generatePlaceForSolution(
   if (solution.type === 'modify-place' && solution.newMarking) {
     return `${placeId} ${solution.newMarking}`;
   }
+  if (solution.type === 'add-place' && solution.newMarking) {
+    return `${placeId} ${solution.newMarking}`;
+  }
   if (solution.type === 'replace-place') {
     let textToReturn = '';
     for (let index = 0; index < solution.places.length; index++) {
-      textToReturn += `${placeId}_${index} ${
-        solution.places[index].newMarking ?? 0
-      }`;
+      textToReturn += `${placeId}_${index} ${solution.places[index].newMarking ?? 0
+        }`;
       if (index < solution.places.length - 1) {
         textToReturn += '\n';
       }
@@ -326,29 +347,48 @@ function generateArcsForSolution(
     );
   }
 
-  if (solution.places){
-  return filteredArcs.concat(
-    solution.places.flatMap((place, index) => [
-      ...place.incoming.map((incoming) => ({
+  if (solution.type === 'add-place') {
+    return filteredArcs.concat(
+      ...solution.incoming.map((incoming) => ({
         source:
           labelToIdMap.get(incoming.transitionLabel) ||
           incoming.transitionLabel,
-        target: `${oldPlaceId}_${index}`,
+        target: oldPlaceId,
         weight: incoming.weight,
       })),
-      ...place.outgoing.map((outgoing) => ({
-        source: `${oldPlaceId}_${index}`,
+      ...solution.outgoing.map((outgoing) => ({
+        source: oldPlaceId,
         target:
           labelToIdMap.get(outgoing.transitionLabel) ||
           outgoing.transitionLabel,
         weight: outgoing.weight,
-      })),
-    ])
-  );
-} else {
-  console.log("missing places");
-  return [];
-}
+      }))
+    );
+  }
+
+  if (solution.places) {
+    return filteredArcs.concat(
+      solution.places.flatMap((place, index) => [
+        ...place.incoming.map((incoming) => ({
+          source:
+            labelToIdMap.get(incoming.transitionLabel) ||
+            incoming.transitionLabel,
+          target: `${oldPlaceId}_${index}`,
+          weight: incoming.weight,
+        })),
+        ...place.outgoing.map((outgoing) => ({
+          source: `${oldPlaceId}_${index}`,
+          target:
+            labelToIdMap.get(outgoing.transitionLabel) ||
+            outgoing.transitionLabel,
+          weight: outgoing.weight,
+        })),
+      ])
+    );
+  } else {
+    console.log("missing places");
+    return [];
+  }
 }
 
 type SimpleArcDefinition = { source: string; target: string; weight: number };
