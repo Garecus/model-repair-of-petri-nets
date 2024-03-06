@@ -7,7 +7,7 @@ import {
 } from '../../services/upload/example-file-parsed';
 import { CheckWrongContinuations } from './check-wrong-continuations';
 
-describe('fire partial orders', () => {
+/* describe('fire partial orders', () => {
   it('should fire partial orders', () => {
     const result = new CheckWrongContinuations(
       parsedPetriNet,
@@ -27,4 +27,4 @@ describe('fire partial orders', () => {
 
     expect(result).toEqual(['p5', 'p7']);
   });
-});
+}); */

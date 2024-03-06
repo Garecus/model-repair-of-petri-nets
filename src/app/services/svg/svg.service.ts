@@ -38,7 +38,7 @@ export class SvgService {
   private lastElements: SVGElement[] = [];
   private currentElements: SVGElement[] = [];
 
-  constructor(private repairService: RepairService) {}
+  constructor(private repairService: RepairService) { }
 
   createNetElements(
     net: PetriNet,
@@ -119,17 +119,18 @@ export class SvgService {
     textEl.setAttribute(
       'y',
       '' +
-        (getNumber(transition.y) +
-          parseInt(style.height) / 2 +
-          this.TEXT_OFFSET +
-          offset.y -
-          foreignElementYOffset)
+      (getNumber(transition.y) +
+        parseInt(style.height) / 2 +
+        this.TEXT_OFFSET +
+        offset.y -
+        foreignElementYOffset)
     );
     //return [transEl, textEl];
     // Precision
-    
+
     const result = [transEl, textEl];
-    console.log("Drawing.");
+    console.log("Drawing. Transition issue status: ");
+    console.log(transition.issueStatus);
     if (transition.issueStatus) {
       if (transition.issueStatus === 'warning') {
         transEl.classList.add('transition--warning');
@@ -217,11 +218,11 @@ export class SvgService {
     textEl.setAttribute(
       'y',
       '' +
-        (getNumber(place.y) +
-          parseInt(PLACE_STYLE.r) +
-          this.TEXT_OFFSET +
-          offset.y -
-          foreignElementYOffset)
+      (getNumber(place.y) +
+        parseInt(PLACE_STYLE.r) +
+        this.TEXT_OFFSET +
+        offset.y -
+        foreignElementYOffset)
     );
     const result = [placeEl, textEl];
 

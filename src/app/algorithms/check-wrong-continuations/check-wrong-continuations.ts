@@ -16,6 +16,7 @@ import {
   EventItem,
   Transition,
 } from '../../classes/diagram/transition';
+import { forEach } from 'jszip';
 
 type InnerFireResult = { branchPlaces: string[] };
 type ValidPlacesType = Array<boolean>;
@@ -290,12 +291,16 @@ export class CheckWrongContinuations {
 
       // Add additional 'b's to combinations containing 'bb' until the maxBb limit is reached
       let finalCombinations: string[] = [];
+      let stopWhile = false;
       if (bbInEntries) {
         for (const combination of combinationsWithoutBs) {
           let newCombinations: string[] = [combination];
           const regex2 = new RegExp(`(${repeatingLetters[0]})\\1+`);
-          while ((newCombinations[0].match(/b/g) || []).length < maxBb) { /* newCombinations[0].match(/b/g) */
+          while ((newCombinations[0].match(/b/g) || []).length < maxBb) {
             const newEntries: string[] = [];
+            /* if (stopWhile === true) {
+              break;
+            } */
             for (const newCombination of newCombinations) {
               let bIndex: number = 0;
               if (repeatingLetters[0] !== null) {
@@ -305,11 +310,20 @@ export class CheckWrongContinuations {
               }
               const firstPart = newCombination.slice(0, bIndex + 1);
               const secondPart = newCombination.slice(bIndex + 1);
-              newEntries.push(firstPart + repeatingLetters[0] + secondPart);
-              const newCombinationCandidate = firstPart + secondPart;
+              if ((newCombinations[0].match(/b/g) || []).length === maxBb - 1) {
+                newEntries.push(firstPart + repeatingLetters[0] + secondPart);
+                newEntries[newEntries.length - 1] = newEntries[newEntries.length - 1].substring(0, newEntries[newEntries.length - 1].length - 1);
+                /* newCombinations = newEntries;
+                finalCombinations = finalCombinations.concat(newCombinations); */
+                /* stopWhile = true; */
+              } else {
+                newEntries.push(firstPart + repeatingLetters[0] + secondPart);
+              }
+              console.log(newEntries[newEntries.length - 1]);
+              /* const newCombinationCandidate = firstPart + secondPart;
               if (!newEntries.includes(newCombinationCandidate)) {
                 newEntries.push(newCombinationCandidate);
-              }
+              } */
             }
             newCombinations = newEntries;
             finalCombinations = finalCombinations.concat(newCombinations);
@@ -347,7 +361,7 @@ export class CheckWrongContinuations {
         this.endVariable = (allEndsOfSinglePartialOrder ?? [])[i11];
         // Generate combinations with a default maximum of x 'bb's
         this.generatedCombinations = [...this.generatedCombinations, ...generateCombinations(this.arcList2, this.startVariable, this.endVariable, this.maxLoopNumber + 1)];
-        this.generatedCombinations = this.generatedCombinations?.filter((value, index, self) => self.indexOf(value) === index);
+        this.generatedCombinations = this.generatedCombinations?.filter((value, index, self) => self.indexOf(value) === index); // self.indexOf(value) === index)
       }
     }
 
@@ -358,6 +372,13 @@ export class CheckWrongContinuations {
     // generatedCombinations minus event log this.caseList.sequence = wrong continuations
     const sequences = this.caseList.map(obj => obj.sequence);
     this.wrongContinuations = this.generatedCombinations.filter(obj => !sequences.includes(obj));
+    /*     for (let i12 = 0; i12 < this.wrongContinuations.length; i12++) {
+          if (BB >= this.maxLoopNumber) {
+            let j = 3;
+            this.wrongContinuations[i12] = this.wrongContinuations[i12].slice(0,j);
+          }
+        } */
+
     /* console.log("Wrong continuations: " + this.wrongContinuations);
     console.log("Possible continuations based on the log: " + this.continuations); */
 
@@ -381,12 +402,12 @@ export class CheckWrongContinuations {
     return this.wrongContinuations;
   }
 
-  getInvalidTransitions(): string[] {
-    let transitions = this.getWrongContinuations("getTransitions");
+  getInvalidTransitions(wrongContinuations: string[]): string[] {
+    let transitions: string[] = [];
     function identifyTransitions(inputArray: string[]): string[] {
       const followsArray: string[] = [];
 
-      // Identify letters that follow the same letter
+      // Identify letters that follow the same letter (event loops)
       for (let i = 0; i < inputArray.length; i++) {
         const currentString = inputArray[i];
 
@@ -400,14 +421,13 @@ export class CheckWrongContinuations {
       // Remove duplicates
       const uniqueFollowsArray = Array.from(new Set(followsArray));
 
-      // Indentify strings with no follows-relations
+      // Indentify events with no follows-relations
       const noFollowsArray: string[] = [];
       for (let i = 0; i < inputArray.length; i++) {
         const currentString = inputArray[i];
 
         if (!followsArray.some(letter => currentString.includes(letter))) {
-          const newString = currentString.slice(0, -1);
-          const lastLetter = newString.charAt(newString.length - 1);
+          const lastLetter = currentString.charAt(currentString.length - 2);
           noFollowsArray.push(lastLetter);
         }
       }
@@ -421,7 +441,7 @@ export class CheckWrongContinuations {
       return resultArray;
     }
 
-    transitions = identifyTransitions(this.wrongContinuations);
+    transitions = identifyTransitions(wrongContinuations);
     return transitions;
   }
 }

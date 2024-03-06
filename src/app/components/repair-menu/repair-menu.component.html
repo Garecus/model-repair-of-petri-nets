@@ -1,5 +1,5 @@
 <div>
-  <div class="more-info-header">
+  <div class="more-info-header" *ngIf="placeSolution">
     <mat-icon
       aria-hidden="false"
       [class]="'icon--' + placeSolution.type"
@@ -7,6 +7,7 @@
     ></mat-icon>
     <span [innerHTML]="infoHeader"> </span>
   </div>
+
   <ng-container *ngIf="shownTextsForSolutions.length > 0; else emptyText">
     <button
       mat-button

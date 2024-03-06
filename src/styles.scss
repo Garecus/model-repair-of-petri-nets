@@ -41,7 +41,7 @@ svg foreignObject {
 
 :root {
     --success-color: rgba(42, 100, 42, 1);
-    --warn-color: rgba(255, 255, 150, 1);
+    --warn-color: rgb(200, 200, 0);
     --error-color: rgba(255, 60, 60, 1);
     --fancy-grey: #f5f5f5;
     --dark-grey: #d3d3d3;
@@ -118,5 +118,17 @@ circle.place.place--warning {
 .mat-tooltip.repair-menu-tooltip {
   font-size: 0.9rem;
   max-width: 400px !important;
+}
+
+rect.transition--invalid {
+  cursor: pointer;
+  color: var(--error-color);
+  stroke: var(--error-color);
+}
+
+rect.transition--warning {
+  cursor: pointer;
+  color: var(--warn-color);
+  stroke: var(--error-color);
 }
 

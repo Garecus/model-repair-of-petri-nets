@@ -35,9 +35,7 @@ export class PetriNetSolutionService {
   computeSolutions(
     partialOrders: any[], /* PartialOrder[] */ // ToDo
     petriNet: PetriNet,
-    invalidPlaces: { [key: string]: number },
-    wrongContinuations: string[],
-    mode: string
+    invalidPlaces: { [key: string]: number }
   ): Observable<PlaceSolution[]> {
     return this.glpk$.pipe(
       switchMap((glpk) => {
@@ -209,15 +207,15 @@ export class PetriNetSolutionService {
     petriNet: PetriNet,
     invalidPlaces: { [key: string]: number },
     invalidTransitions: { [key: string]: number },
-    wrongContinuations: string[],
-    mode: string
+    wrongContinuations: string[]
   ): Observable<PlaceSolution[]> {
-    console.log("compute Precision");
+    console.log("Compute precision with invalid places and transitions: ");
     console.log(invalidPlaces);
-    invalidPlaces = { ["p1"]: 2 } // XXX
+    console.log(invalidTransitions);
+
     return this.glpk$.pipe(
       switchMap((glpk) => {
-        const invalidPlaceList: SolutionGeneratorType[] = Object.keys(
+        let invalidPlaceList: SolutionGeneratorType[] = Object.keys(
           invalidPlaces
         ).map((place) => ({ type: 'possibility', placeId: place }));
 
@@ -263,6 +261,7 @@ export class PetriNetSolutionService {
             newTransition: label,
           })) as SolutionGeneratorType[])
         );
+        /* invalidPlaceList = []; */
         if (invalidPlaceList.length === 0) {
           return of([]);
         }
@@ -296,7 +295,7 @@ export class PetriNetSolutionService {
 
         return combineLatest(
           invalidPlaceList.map((place) =>
-            solver.computePrecisionSolutions(place).pipe(
+            solver.computePrecisionSolutions(place, wrongContinuations).pipe(
               map((solutions) => {
                 const existingPlace =
                   place.type === 'warning' || place.type === 'possibility'
@@ -396,8 +395,9 @@ export class PetriNetSolutionService {
                       place: place.placeId,
                       solutions: parsedSolutions,
                       missingTokens: missingTokens,
-                      invalidTraceCount: invalidPlaces[place.placeId],
+                      invalidTraceCount: invalidTransitions[place.placeId],
                       wrongContinuations: wrongContinuations,
+                      newTransition: "a" //XXX
                     } as unknown as PlaceSolution;
                 }
               })

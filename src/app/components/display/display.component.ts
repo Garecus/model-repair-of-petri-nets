@@ -34,6 +34,7 @@ import { SvgService } from '../../services/svg/svg.service';
 import { CanvasComponent } from '../canvas/canvas.component';
 import { ParserService } from 'src/app/services/parser/parser.service';
 import { CheckWrongContinuations } from 'src/app/algorithms/check-wrong-continuations/check-wrong-continuations';
+import { Transition } from 'src/app/classes/diagram/transition';
 
 @Component({
   selector: 'app-display',
@@ -187,6 +188,16 @@ export class DisplayComponent implements OnInit {
                   count: placeIds.length,
                 });
 
+                const places: Place[] = net.places.filter((place) =>
+                  placeIds.includes(place.id)
+                );
+                net.places.forEach((place) => {
+                  place.issueStatus = undefined;
+                });
+                places.forEach((invalidPlace) => {
+                  invalidPlace.issueStatus = 'error';
+                });
+
                 // Identification of wrongContinuations to be able to handle them
                 /*
                 for (let index = 0; index < partialOrders.length; index++) {
@@ -206,7 +217,7 @@ export class DisplayComponent implements OnInit {
                 for (let index = 0; index < partialOrders.length; index++) {
                   const currentInvalid = this.identifyTransitionsWithWrongContinuations(
                     net,
-                    partialOrders[index], partialOrders
+                    partialOrders[index], partialOrders, this.wrongContinuations
                   );
 
                   currentInvalid.forEach((transition) => {
@@ -222,14 +233,14 @@ export class DisplayComponent implements OnInit {
                   count: transitionIds.length,
                 });
 
-                const places: Place[] = net.places.filter((place) =>
-                  placeIds.includes(place.id)
+                const transitions: Transition[] = net.transitions.filter((transition) =>
+                transitionIds.includes(transition.id)
                 );
-                net.places.forEach((place) => {
-                  place.issueStatus = undefined;
+                net.transitions.forEach((transition) => {
+                  transition.issueStatus = undefined;
                 });
-                places.forEach((invalidPlace) => {
-                  invalidPlace.issueStatus = 'error';
+                transitions.forEach((invalidTransition) => {
+                  invalidTransition.issueStatus = 'error';
                 });
 
                 if (showSuggestions == "fitness") {
@@ -241,7 +252,7 @@ export class DisplayComponent implements OnInit {
                   });
 
                   return this.petriNetRegionsService
-                    .computeSolutions(partialOrders, net, invalidPlaces, this.wrongContinuations, "fitness")
+                    .computeSolutions(partialOrders, net, invalidPlaces)
                     .pipe(
                       tap(() => (this.computingSolutions = false)),
                       map((solutions) => ({
@@ -262,7 +273,7 @@ export class DisplayComponent implements OnInit {
                   });
 
                   return this.petriNetRegionsService
-                    .computePrecisionSolutions(partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations, "precision")
+                    .computePrecisionSolutions(partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations)
                     .pipe(
                       tap(() => (this.computingSolutions = false)),
                       map((solutions) => ({
@@ -351,8 +362,9 @@ export class DisplayComponent implements OnInit {
   private identifyTransitionsWithWrongContinuations(
     petriNet: PetriNet,
     partialOrder: PartialOrder,
-    partialOrders: PartialOrder[]
+    partialOrders: PartialOrder[],
+    wrongContinuations: string[]
   ): string[] {
-    return new CheckWrongContinuations(petriNet, partialOrder, partialOrders).getInvalidTransitions();
+    return new CheckWrongContinuations(petriNet, partialOrder, partialOrders).getInvalidTransitions(wrongContinuations);
   }
 }

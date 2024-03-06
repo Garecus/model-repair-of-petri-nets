@@ -31,9 +31,9 @@ export interface SolutionVariable {
 }
 
 export type SolutionType =
-  | 'changeIncoming'
-  | 'changeMarking'
-  | 'multiplePlaces'
+  | 'changeIncoming' // Fitness
+  | 'changeMarking' // Fitness
+  | 'multiplePlaces' // Fitness
   | 'addPlace'; // Precision
 
 export interface ProblemSolutionWithoutType {

@@ -27,7 +27,7 @@ export class RepairService {
     PrecisionSolution[]
   >([]);
 
-  constructor(private toastr: ToastrService, private overlay: Overlay) {}
+  constructor(private toastr: ToastrService, private overlay: Overlay) { }
 
   saveNewSolutions(
     solutions: PlaceSolution[],
@@ -102,7 +102,7 @@ export class RepairService {
     );
   }
 
-  showRepairPopoverForSolutionPrecision(ref: DOMRect, solution?: PrecisionSolution): void {
+  showRepairPopoverForSolutionPrecision(ref: DOMRect, solution?: any): void { //  solution?: PrecisionSolution //YYY
     if (!solution) {
       this.toastr.warning(`No solutions found`);
       return;
@@ -114,8 +114,8 @@ export class RepairService {
 
     this.currentOpenElement =
       solution.type === 'possibility'
-        ? solution.wrongContinuations
-        : solution.transition;
+        ? solution.newTransition
+        : solution.place;
     if (this.outsideClickSubscription) {
       this.outsideClickSubscription.unsubscribe();
     }
@@ -149,7 +149,7 @@ export class RepairService {
 
     const componentRef = this.overlayRef.attach(componentPortal);
     componentRef.instance.overlayRef = this.overlayRef;
-    componentRef.instance.transitionSolution = solution;
+    componentRef.instance.placeSolution = solution;
     componentRef.instance.partialOrderCount = this.partialOrderCount;
 
     this.unsubscribables.push(
@@ -171,15 +171,18 @@ export class RepairService {
   }
 
   showRepairPopoverPrecision(ref: DOMRect, transition: string): void {
+    console.log("showRepairPopoverPrecision");//YYY
+    console.log(transition);
     if (this.currentOpenElement === transition) {
       this.currentOpenElement = undefined;
       this.overlayRef?.dispose();
       return;
     }
-
-    const solutionsForTransition = this.precisionSolutions.find(
-      (s) => s.type !== 'possibility' && s.transition === transition
+    console.log(this.solutions);
+    const solutionsForTransition = this.solutions.find( // const solutionsForTransition = this.precisionSolutions.find( //YYY
+      (s) => s.type === 'possibility' && s.newTransition === transition // && s.transition === transition
     );
+    console.log(solutionsForTransition);
     this.showRepairPopoverForSolutionPrecision(ref, solutionsForTransition);
   }
 

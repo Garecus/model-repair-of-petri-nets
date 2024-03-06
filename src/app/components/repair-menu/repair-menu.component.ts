@@ -2,7 +2,7 @@ import { OverlayRef } from '@angular/cdk/overlay';
 import { Component, EventEmitter, OnInit } from '@angular/core';
 
 import { SolutionType } from '../../algorithms/regions/ilp-solver/solver-classes';
-import { AutoRepair, AutoRepairWithSolutionType} from '../../algorithms/regions/parse-solutions.fn';
+import { AutoRepair, AutoRepairWithSolutionType } from '../../algorithms/regions/parse-solutions.fn';
 import { NetCommandService } from '../../services/repair/net-command.service';
 import { PlaceSolution, PrecisionSolution } from '../../services/repair/repair.model';
 import { RepairService } from 'src/app/services/repair/repair.service';
@@ -24,10 +24,10 @@ export class RepairMenuComponent implements OnInit {
   overlayRef?: OverlayRef;
   infoHeader = '';
   applySolution = new EventEmitter<void>();
-  transitionSolution!: PrecisionSolution;
+
   solutionType = "";
 
-  constructor(private netCommandService: NetCommandService, private repairService: RepairService) {}
+  constructor(private netCommandService: NetCommandService, private repairService: RepairService) { }
 
   // On page initialization: Show the user the RepairMenu.FirstLine and .SecondLine
   ngOnInit(): void {
@@ -35,26 +35,26 @@ export class RepairMenuComponent implements OnInit {
       console.log("Show repair menu with solution type: " + solutionType);
       this.solutionType = solutionType;
     });
+
     // Precision
     /* if (this.solutionType == "precision") { */
-      /* if (this.transitionSolution) {
-      this.infoHeader = `The transition has ${this.transitionSolution.wrongContinuations.length} possible wrong ${this.transitionSolution.wrongContinuations.length === 1 ? 'continuation' : 'continuations'}.`;
-      this.shownTextsForSolutions = this.generateSolutionToDisplay(
-        this.transitionSolution.solutions,
-        true
-      );
-      console.log(this.shownTextsForSolutions);
-      } */
-   /*  } */ /* else if (this.solutionType == "fitness") { */
+    /* if (this.transitionSolution) {
+    this.infoHeader = `The transition has ${this.transitionSolution.wrongContinuations.length} possible wrong ${this.transitionSolution.wrongContinuations.length === 1 ? 'continuation' : 'continuations'}.`;
+    this.shownTextsForSolutions = this.generateSolutionToDisplay(
+      this.transitionSolution.solutions,
+      true
+    );
+    console.log(this.shownTextsForSolutions);
+    } */
+    /*  } */ /* else if (this.solutionType == "fitness") { */
     // Fitness
     if (this.placeSolution.type === 'warning') {
       this.infoHeader = `The place has ${this.placeSolution.tooManyTokens} too many tokens`;
       this.shownTextsForSolutions = [
         {
           text: {
-            label: `<b>Change marking to ${
-              this.placeSolution.reduceTokensTo
-            }</b><br/>${getSubLabel(this.placeSolution)}`,
+            label: `<b>Change marking to ${this.placeSolution.reduceTokensTo
+              }</b><br/>${getSubLabel(this.placeSolution)}`,
           },
           solution: {
             type: 'marking',
@@ -81,15 +81,13 @@ export class RepairMenuComponent implements OnInit {
       return;
     }
     if (this.placeSolution.type != 'possibility') {
-    this.infoHeader = `The place cannot fire for ${this.placeSolution.invalidTraceCount} (${percentage}) traces.<br/>`;
+      this.infoHeader = `The place cannot fire for ${this.placeSolution.invalidTraceCount} (${percentage}) traces.<br/>`;
     }
 
     if (this.placeSolution.missingTokens) {
-      this.infoHeader += `The place has ${
-        this.placeSolution.missingTokens
-      } missing ${
-        this.placeSolution.missingTokens === 1 ? 'token' : 'tokens'
-      }.<br/>`;
+      this.infoHeader += `The place has ${this.placeSolution.missingTokens
+        } missing ${this.placeSolution.missingTokens === 1 ? 'token' : 'tokens'
+        }.<br/>`;
     }
 
     if (this.placeSolution.type === 'possibility') {
@@ -98,7 +96,7 @@ export class RepairMenuComponent implements OnInit {
         this.placeSolution.solutions,
         true
       );
-      }
+    }
 
     const solutions = this.placeSolution.solutions;
     if (!solutions) {
@@ -106,7 +104,7 @@ export class RepairMenuComponent implements OnInit {
     } else {
       this.shownTextsForSolutions = this.generateSolutionToDisplay(solutions);
     }
-  /* } */
+    /* } */
     this.infoHeader += 'Choose a solution to repair the place:';
   }
 
@@ -120,14 +118,11 @@ export class RepairMenuComponent implements OnInit {
           solution
         )
         .subscribe(() => this.overlayRef?.dispose());
-    } /* else if (this.transitionSolution.type === 'warning') { // Precision
+    } else if (this.placeSolution.type === 'possibility') { // Precision
       this.netCommandService
-        .repairNetForNewTransition(
-          this.transitionSolution.missingPlace,
-          solution
-        )
+        .repairNet(this.placeSolution.place, solution)
         .subscribe(() => this.overlayRef?.dispose());
-    } */ else {
+    } else {
       this.netCommandService
         .repairNet(this.placeSolution.place, solution)
         .subscribe(() => this.overlayRef?.dispose());

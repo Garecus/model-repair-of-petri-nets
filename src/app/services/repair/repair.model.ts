@@ -71,4 +71,5 @@ export type PrecisionSolution =
     wrongContinuations: string;
     transition: string;
     missingPlace: string;
+    newTransition: string;
   };

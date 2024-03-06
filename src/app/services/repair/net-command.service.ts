@@ -221,14 +221,40 @@ function generateTextForNewNet(
   });
 
   if (solution.type === 'add-place') {
+    petriNet.places.push(petriNet.places[petriNet.places.length - 1]); //XXX
+    petriNet.places[petriNet.places.length - 1].id = "p" + petriNet.places.length + "_new";
+/*     console.log("HERE");
+    console.log(petriNet.places[petriNet.places.length - 1]); */
+    petriNet.places[petriNet.places.length - 1].marking = 0;
+    petriNet.places[petriNet.places.length - 1].issueStatus = undefined;
+/*     petriNet.places[petriNet.places.length - 1].incomingArcs = [
+      {
+        "weight": 1,
+        "source": "a",
+        "target": "p1",
+        "breakpoints": []
+      }
+    ];
+    petriNet.places[petriNet.places.length - 1].outgoingArcs = [
+      {
+        "weight": 1,
+        "source": "p1",
+        "target": "b",
+        "breakpoints": []
+      },
+      {
+        "weight": 1,
+        "source": "p1",
+        "target": "c",
+        "breakpoints": []
+      }
+    ]; */
+
     newText += `${generatePlaceForSolution(
-      "p2",
+      petriNet.places[petriNet.places.length - 1].id,
       0,
       solution
     )}\n`;
-
-    petriNet.places.push(petriNet.places[1]); // XXX
-    petriNet.places[2].id = "p2"; // XXX
   }
 
   const oldPlace: Place = petriNet.places[placeIndex];
