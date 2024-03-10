@@ -129,8 +129,8 @@ export class SvgService {
     // Precision
 
     const result = [transEl, textEl];
-    console.log("Drawing. Transition issue status: ");
-    console.log(transition.issueStatus);
+    /* console.log("Drawing. Transition issue status: ");
+    console.log(transition.issueStatus); */
     if (transition.issueStatus) {
       if (transition.issueStatus === 'warning') {
         transEl.classList.add('transition--warning');

@@ -52,7 +52,7 @@ export class DisplayComponent implements OnInit {
   @ViewChild('svg_wrapper') svgWrapper: ElementRef<HTMLElement> | undefined;
 
   invalidPlaceCount$: Subject<{ count: number } | null>;
-  invalidTransitionCount$ : Subject<{ count: number } | null>;
+  invalidTransitionCount$: Subject<{ count: number } | null>;
   wrongContinuationCount$: Subject<{ count: number } | null>;
   wrongContinuations: string[] = [];
 
@@ -148,7 +148,7 @@ export class DisplayComponent implements OnInit {
                   this.precisionActive = false;
                 }
                 if (!showSuggestions || showSuggestions != "precision" && showSuggestions != "fitness") {
-                  
+
                   net.places.forEach((place) => {
                     place.issueStatus = undefined;
                   });
@@ -158,7 +158,7 @@ export class DisplayComponent implements OnInit {
                   this.repairService.saveNewSolutions([], 0);
                   return of({ solutions: [], renderChanges: true });
                 }
-                
+
                 if (!partialOrders || partialOrders.length === 0) {
                   this.repairService.saveNewSolutions([], 0);
                   return of({ solutions: [], renderChanges: true });
@@ -234,7 +234,7 @@ export class DisplayComponent implements OnInit {
                 });
 
                 const transitions: Transition[] = net.transitions.filter((transition) =>
-                transitionIds.includes(transition.id)
+                  transitionIds.includes(transition.id)
                 );
                 net.transitions.forEach((transition) => {
                   transition.issueStatus = undefined;
@@ -264,13 +264,18 @@ export class DisplayComponent implements OnInit {
                         renderChanges: false,
                       })
                     );
-                } else if (showSuggestions == "precision"){
+                } else if (showSuggestions == "precision") {
                   net.places.forEach((place) => {
                     place.issueStatus = undefined;
                   });
                   this.invalidPlaceCount$.next({
                     count: 0,
                   });
+
+                  
+                  let invalidPlaces = { //XXX
+                    "p99": 1
+                  }
 
                   return this.petriNetRegionsService
                     .computePrecisionSolutions(partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations)
@@ -301,7 +306,7 @@ export class DisplayComponent implements OnInit {
                   this.repairService.saveNewSolutions([], 0);
                   return of({ solutions: [], renderChanges: true });
                 }
-              
+
               }),
               map(({ solutions, renderChanges }) => {
                 for (const place of solutions) {

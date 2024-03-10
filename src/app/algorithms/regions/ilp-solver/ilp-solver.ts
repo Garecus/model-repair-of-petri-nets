@@ -1054,7 +1054,7 @@ export class IlpSolver {
     handledTransitions.push("in_" + lastValidTransition);
 
     // Set all not set values to 0
-    
+
     for (let i = 0; i < partialOrders.length; i++) {
       const events = partialOrders[i].events;
       for (const e of events) {
@@ -1074,9 +1074,9 @@ export class IlpSolver {
               0
             ).constraints
           );
-          
+
           handledTransitions.push(transitionLabelIn);
-        } 
+        }
         // "out_" + e.label not in handledTransitions 
         else if (!handledTransitions.includes(transitionLabelOut)) {
           result.subjectTo = result.subjectTo.concat(
@@ -1197,7 +1197,7 @@ export class IlpSolver {
 
     // Calculate how many tokens are required for current place
     const invalidPlace = this.petriNet.places.find(
-      (p) => p.id === placeModel.placeId
+      (p) => p.id === "p1"//placeModel.placeId //"p1" //XXX
     );
     /*  if (placeModel.type === 'warning') {
        console.log("Model Type warning and execute again populateIlpBySameWeights"); */

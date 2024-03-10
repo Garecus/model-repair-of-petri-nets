@@ -240,7 +240,7 @@ export class PetriNetSolutionService {
           missingTransitions[event.label]++;
         }
 
-        const potentialValidPlaces = petriNet.places.filter(
+        /* const potentialValidPlaces = petriNet.places.filter(
           (place) =>
             place.marking > 0 &&
             !invalidPlaceList.find(
@@ -261,10 +261,10 @@ export class PetriNetSolutionService {
             newTransition: label,
           })) as SolutionGeneratorType[])
         );
-        /* invalidPlaceList = []; */
+        
         if (invalidPlaceList.length === 0) {
           return of([]);
-        }
+        } */
 
         const idToTransitionLabelMap = petriNet.transitions.reduce(
           (acc, transition) => {
@@ -297,9 +297,14 @@ export class PetriNetSolutionService {
           invalidPlaceList.map((place) =>
             solver.computePrecisionSolutions(place, wrongContinuations).pipe(
               map((solutions) => {
-                const existingPlace =
+                /* const existingPlace =
                   place.type === 'warning' || place.type === 'possibility'
                     ? petriNet.places.find((p) => p.id === place.placeId)
+                    : undefined; */
+
+                    const existingPlace =
+                  place.type === 'warning' || place.type === 'possibility'
+                    ? petriNet.places.find((p) => p.id === "p1")//place.placeId)//"p1") //XXX
                     : undefined;
 
                 if (place.type === 'warning') {

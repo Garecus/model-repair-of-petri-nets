@@ -52,6 +52,8 @@ export function parseSolution(
   existingPlace: Place | undefined,
   idTransitionToLabel: { [key: string]: string }
 ): AutoRepairWithSolutionType[] {
+  console.log("1. existingPlace");
+  console.log(existingPlace);
   const returnList: (AutoRepairWithSolutionType | null)[] = placeSolutionList
     .map((parsableSolutionsPerType) => {
       const placeSolutions = parsableSolutionsPerType.solutionParts;

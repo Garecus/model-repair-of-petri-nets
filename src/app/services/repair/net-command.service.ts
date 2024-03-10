@@ -57,6 +57,10 @@ export class NetCommandService {
       return of(null);
     }
 
+    if (placeId == "p99") {
+      placeId = "p1"; //XXX
+    }
+
     return this.displayService.getPetriNet$().pipe(
       first(),
       map((petriNet) => {

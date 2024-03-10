@@ -17,6 +17,7 @@ import {
   Transition,
 } from '../../classes/diagram/transition';
 import { forEach } from 'jszip';
+import { VariableBinding } from '@angular/compiler';
 
 type InnerFireResult = { branchPlaces: string[] };
 type ValidPlacesType = Array<boolean>;
@@ -371,7 +372,48 @@ export class CheckWrongContinuations {
     // Compare the lists
     // generatedCombinations minus event log this.caseList.sequence = wrong continuations
     const sequences = this.caseList.map(obj => obj.sequence);
+    console.log(sequences);
     this.wrongContinuations = this.generatedCombinations.filter(obj => !sequences.includes(obj));
+    // If c is getting the token from a place after b, then it is no wrong continuation
+    this.wrongContinuations = this.wrongContinuations.filter((currentWC) => {
+      let lastValidTransition = currentWC.charAt(currentWC.length - 2);
+      let firstInvalidTransition = currentWC.charAt(currentWC.length - 1);
+      const isMatching = this.petriNet.arcs.some(arc => {
+        if(arc.target === firstInvalidTransition && currentWC.charAt(currentWC.length - 3) != lastValidTransition) {
+        console.log("last valid: " + lastValidTransition);
+        console.log("first invalid: " + firstInvalidTransition);
+        console.log("Source of 1: " + arc.source);
+        console.log("Target of 1: " + arc.target);
+        const isPlaceSource = arc.source.startsWith('p') && !isNaN(parseInt(arc.source.substring(1)));
+        if (isPlaceSource) {
+          let firstArcSource = arc.source;
+          const otherArcWithSameTarget = this.petriNet.arcs.find((anotherArc) => anotherArc.target === firstArcSource);
+          if (otherArcWithSameTarget) {
+            let secondArcSource = otherArcWithSameTarget.source;
+            const check = secondArcSource === lastValidTransition && this.petriNet.arcs.some((otherArc) => {
+              console.log("Source of 2: " + otherArc.source);
+              console.log("Target of 2: " + otherArc.target);
+              let check3 = otherArc.target === firstInvalidTransition && otherArc.source != firstArcSource;
+              return check3;
+            });
+            return check;
+          }
+          return;
+        } else {
+          const check1 = arc.source === lastValidTransition && arc.target === firstInvalidTransition;
+          const check2 = this.petriNet.arcs.some((otherArc) => otherArc.target === firstInvalidTransition && otherArc.source === lastValidTransition);
+          return check1 && check2;
+        }
+      } else {
+        return;
+      }});
+      console.log("Total:" + !isMatching);
+      return !isMatching;
+    
+    });
+
+    this.wrongContinuations.sort((a, b) => a.localeCompare(b));
+    console.log(this.wrongContinuations);
     /*     for (let i12 = 0; i12 < this.wrongContinuations.length; i12++) {
           if (BB >= this.maxLoopNumber) {
             let j = 3;
