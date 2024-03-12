@@ -6,11 +6,13 @@ export type AutoRepairForSinglePlace =
   | {
     type: 'marking';
     newMarking: number;
+    wrongContinuationNotRepairable?: string;
   }
   | ModifyPlaceType | AddPlaceAutoRepair;
 
 type ModifyPlaceType = {
   type: 'modify-place';
+  wrongContinuationNotRepairable?: string;
 } & SinglePlaceParameter;
 
 export type AutoRepair = AutoRepairForSinglePlace | ReplacePlaceAutoRepair | AddPlaceAutoRepair;
@@ -20,6 +22,7 @@ export type ReplacePlaceAutoRepair = {
   regionSize: number;
   repairType: SolutionType;
   places: SinglePlaceParameter[];
+  wrongContinuationNotRepairable?: string;
 };
 
 export type AutoRepairWithSolutionType = AutoRepair & {
@@ -37,10 +40,11 @@ type ArcDefinition = { transitionLabel: string; weight: number };
 
 // Precision.AutoRepair
 export type AddPlaceAutoRepair = {
-  type: 'add-place';
+  type: 'add-place' | 'add-trace';
   regionSize?: number;
   repairType?: SolutionType;
   places?: SinglePlaceParameter[];
+  wrongContinuationNotRepairable?: string;
   //newMarking?: number;
   //incoming?: ArcDefinition[];
   //outgoing?: ArcDefinition[];
@@ -50,10 +54,35 @@ export type AddPlaceAutoRepair = {
 export function parseSolution(
   placeSolutionList: ParsableSolutionsPerType[],
   existingPlace: Place | undefined,
-  idTransitionToLabel: { [key: string]: string }
+  idTransitionToLabel: { [key: string]: string },
+  wrongContinuations: string[]
 ): AutoRepairWithSolutionType[] {
   console.log("1. existingPlace");
   console.log(existingPlace);
+  if(Object.keys(placeSolutionList).length == 0 ) { //XXX change here to above function to test
+    let returnList2 = [
+      {
+          "type": "add-trace",
+          "incoming": [
+              {
+                  "transitionLabel": "",
+                  "weight": 0
+              }
+          ],
+          "outgoing": [
+              {
+                  "transitionLabel": "",
+                  "weight": 0
+              }
+          ],
+          "regionSize": 0,
+          "repairType": "addTrace",
+          "wrongContinuationNotRepairable": wrongContinuations[0] //XXX change to wrong continuation that was not possible to get a solution for
+      }
+  ]
+  return returnList2 as AutoRepairWithSolutionType[];;
+  }
+
   const returnList: (AutoRepairWithSolutionType | null)[] = placeSolutionList
     .map((parsableSolutionsPerType) => {
       const placeSolutions = parsableSolutionsPerType.solutionParts;
@@ -79,7 +108,7 @@ export function parseSolution(
         } as AutoRepairWithSolutionType;
       }
 
-      if (singlePlaceSolution.newMarking && parsableSolutionsPerType.type != "addPlace") {
+      if (singlePlaceSolution.newMarking && parsableSolutionsPerType.type != "addPlace" && parsableSolutionsPerType.type != "addTrace") {
         return {
           ...checkPlaceAndReturnMarkingIfEquals(
             mergeAllDuplicatePlaces(singlePlaceSolution),
@@ -156,7 +185,7 @@ export function parseSolution(
         return null;
       }
 
-      if (newPlaces.length === 1 && parsableSolutionsPerType.type != "addPlace") {
+      if (newPlaces.length === 1 && parsableSolutionsPerType.type != "addPlace" && parsableSolutionsPerType.type != "addTrace") {
         const repair: AutoRepairForSinglePlace = {
           ...newPlaces[0],
           type: 'modify-place',
@@ -172,7 +201,7 @@ export function parseSolution(
         };
       }
 
-      if (parsableSolutionsPerType.type != "addPlace") {
+      if (parsableSolutionsPerType.type != "addPlace" && parsableSolutionsPerType.type != "addTrace") {
         const repair: AutoRepairWithSolutionType = {
           type: 'replace-place',
           regionSize: parsableSolutionsPerType.regionSize,
@@ -180,8 +209,39 @@ export function parseSolution(
           places: newPlaces.map((newPlace) => mergeAllDuplicatePlaces(newPlace)),
         };
         return repair;
-      } else {
+      } else if (parsableSolutionsPerType.type != "addPlace" && parsableSolutionsPerType.type != "addTrace") {
         console.log("Identified add-place solution. New places: ");
+        const repair: AutoRepairForSinglePlace = {
+          ...newPlaces[0],
+          type: 'add-trace'
+        };
+        return {
+          ...checkPlaceAndReturnMarkingIfEquals(
+            mergeAllDuplicatePlaces(repair),
+            existingPlace,
+            idTransitionToLabel
+          ),
+          regionSize: parsableSolutionsPerType.regionSize,
+          repairType: parsableSolutionsPerType.type,
+        };
+        /* const repair: AutoRepairWithSolutionType = {
+          type: 'add-place',
+          regionSize: parsableSolutionsPerType.regionSize,
+          repairType: parsableSolutionsPerType.type,
+          places: newPlaces.map((newPlace) => mergeAllDuplicatePlaces(newPlace)),
+          incoming: newPlaces.flatMap((newPlace) => newPlace.incoming),
+          outgoing: newPlaces.flatMap((newPlace) => newPlace.outgoing),
+        };
+        return repair; */
+        /* const repair: AutoRepairWithSolutionType = {
+          type: 'replace-place',
+          regionSize: parsableSolutionsPerType.regionSize,
+          repairType: parsableSolutionsPerType.type,
+          places: newPlaces.map((newPlace) => mergeAllDuplicatePlaces(newPlace)),
+        };
+        return repair; */
+      } else {
+        console.log("Identified add-trace solution.");
         console.log(newPlaces[0]);
         const repair: AutoRepairForSinglePlace = {
           ...newPlaces[0],

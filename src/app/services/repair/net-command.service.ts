@@ -8,11 +8,18 @@ import { DisplayService } from '../display.service';
 import { generateTextFromNet } from '../parser/net-to-text.func';
 import {
   arcsAttribute,
+  attributesAttribute,
+  caseIdAttribute,
+  conceptNameAttribute,
+  eventsAttribute,
+  logTypeKey,
   netTypeKey,
   placesAttribute,
   transitionsAttribute,
 } from '../parser/parsing-constants';
 import { UploadService } from '../upload/upload.service';
+import { PartialOrder } from 'src/app/classes/diagram/partial-order';
+import { CheckWrongContinuations } from 'src/app/algorithms/check-wrong-continuations/check-wrong-continuations';
 
 @Injectable({
   providedIn: 'root',
@@ -57,7 +64,7 @@ export class NetCommandService {
       return of(null);
     }
 
-    if (placeId == "p99") {
+    if (placeId == "p_new") {
       placeId = "p1"; //XXX
     }
 
@@ -75,6 +82,32 @@ export class NetCommandService {
       tap((newNet) => {
         if (newNet) {
           this.uploadService.setUploadText(newNet);
+        }
+      })
+    );
+  }
+
+  repairSpecification(placeId: string, solution: AutoRepair): Observable<string | null> {
+    console.log("repairSpecification");
+    if (!placeId) {
+      return of(null);
+    }
+
+    if (placeId == "p_new") {
+      placeId = "p1"; //XXX
+    }
+
+    return this.displayService.getPartialOrders$().pipe(
+      first(),
+      map((specification) => {
+        if (specification != null) {
+          return generateTraceForLog(specification, solution);
+        }
+        return "";
+      }),
+      tap((newSpecification) => {
+        if (newSpecification) {
+          this.uploadService.setUploadLog(newSpecification);
         }
       })
     );
@@ -227,32 +260,32 @@ function generateTextForNewNet(
   if (solution.type === 'add-place') {
     petriNet.places.push(petriNet.places[petriNet.places.length - 1]); //XXX
     petriNet.places[petriNet.places.length - 1].id = "p" + petriNet.places.length + "_new";
-/*     console.log("HERE");
-    console.log(petriNet.places[petriNet.places.length - 1]); */
+    /*     console.log("HERE");
+        console.log(petriNet.places[petriNet.places.length - 1]); */
     petriNet.places[petriNet.places.length - 1].marking = 0;
     petriNet.places[petriNet.places.length - 1].issueStatus = undefined;
-/*     petriNet.places[petriNet.places.length - 1].incomingArcs = [
-      {
-        "weight": 1,
-        "source": "a",
-        "target": "p1",
-        "breakpoints": []
-      }
-    ];
-    petriNet.places[petriNet.places.length - 1].outgoingArcs = [
-      {
-        "weight": 1,
-        "source": "p1",
-        "target": "b",
-        "breakpoints": []
-      },
-      {
-        "weight": 1,
-        "source": "p1",
-        "target": "c",
-        "breakpoints": []
-      }
-    ]; */
+    /*     petriNet.places[petriNet.places.length - 1].incomingArcs = [
+          {
+            "weight": 1,
+            "source": "a",
+            "target": "p1",
+            "breakpoints": []
+          }
+        ];
+        petriNet.places[petriNet.places.length - 1].outgoingArcs = [
+          {
+            "weight": 1,
+            "source": "p1",
+            "target": "b",
+            "breakpoints": []
+          },
+          {
+            "weight": 1,
+            "source": "p1",
+            "target": "c",
+            "breakpoints": []
+          }
+        ]; */
 
     newText += `${generatePlaceForSolution(
       petriNet.places[petriNet.places.length - 1].id,
@@ -279,6 +312,31 @@ function generateTextForNewNet(
     }
   });
   console.log("New net: ");
+  console.log(newText);
+  return newText;
+}
+
+
+function generateTraceForLog(
+  specification: PartialOrder[],
+  solution: AutoRepair,
+): string {
+  let newText = `${logTypeKey}\n${attributesAttribute}\n${caseIdAttribute}\n${conceptNameAttribute}\n${eventsAttribute}\n`;
+  specification.forEach((trace, index) => {
+    for (let i = 0; i < trace.events.length; i++) {
+      let j = index + 1;
+      newText += `${j} ${trace.events[i].label} \n`;
+    }
+  });
+  let wrongContinuationSplitted = [""];
+  /* let wrongContinuationNotRepairable = "abbc"; */
+  if (solution.wrongContinuationNotRepairable != undefined) {
+    wrongContinuationSplitted = solution.wrongContinuationNotRepairable.split('');
+    for (let i = 0; i < wrongContinuationSplitted.length; i++) {
+      newText += `${specification.length + 1} ${wrongContinuationSplitted[i]} \n`;
+    }
+  }
+  console.log(specification);
   console.log(newText);
   return newText;
 }

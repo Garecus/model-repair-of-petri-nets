@@ -118,9 +118,13 @@ export class RepairMenuComponent implements OnInit {
           solution
         )
         .subscribe(() => this.overlayRef?.dispose());
+    } else if (this.placeSolution.type === 'possibility'  && this.placeSolution.regionSize == 0) { // Precision
+      this.netCommandService
+        .repairSpecification(this.placeSolution.place, solution)
+        .subscribe(() => this.overlayRef?.dispose());
     } else if (this.placeSolution.type === 'possibility') { // Precision
       this.netCommandService
-        .repairNet(this.placeSolution.place, solution)
+        .repairNet(this.placeSolution.place, solution) //XXX change here to above function to test
         .subscribe(() => this.overlayRef?.dispose());
     } else {
       this.netCommandService
@@ -164,6 +168,12 @@ function generateTextForAutoRepair(
     };
   }
 
+  if (solution.type === 'add-trace') {
+    return {
+      label: `${baseText}${getSubLabel(solution)}`,
+    };
+  }
+
   return {
     label: `${baseText}${getSubLabel(solution)}`,
   };
@@ -175,6 +185,7 @@ const solutionTypeToText: { [key in SolutionType]: string } = {
   changeIncoming: 'Add ingoing tokens',
   multiplePlaces: 'Split place',
   addPlace: 'Add place',
+  addTrace: 'Add wrong continuation to specification',
 };
 
 // Generate the text of the RepairMenu.SolutionList.Record.SecondLine
@@ -190,6 +201,9 @@ function generateBaseText(
   let text = solutionTypeToText[solution.repairType];
   if (solution.type === 'add-place') {
     text = 'Add place';
+  }
+  if (solution.type === 'add-trace') {
+    text = 'Add wrong continuation to specification';
   }
   if (solution.type === 'marking') {
     text = 'Add tokens';

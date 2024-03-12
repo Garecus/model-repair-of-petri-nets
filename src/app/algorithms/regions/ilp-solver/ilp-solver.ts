@@ -228,6 +228,7 @@ export class IlpSolver {
           multiplePlaces: { sum: 0, vars: [] },
           changeMarking: { sum: 0, vars: [] },
           addPlace: { sum: 0, vars: [] }, // Precision
+          addTrace: { sum: 0, vars: [] }, // Precision
         };
 
         placeSolutions.forEach((placeSolution) => {
@@ -1244,11 +1245,20 @@ export class IlpSolver {
             console.log("Empty solution");
             return [];
           }
-          const problemSolution: ProblemSolution = {
+          let problemSolution: ProblemSolution = {
             type: 'addPlace',
             solutions: [solution.solution.result.vars],
             regionSize: this.generateSumForVars(solution.solution.result.vars),
           };
+
+          if (problemSolution.regionSize == 0) {
+            console.log("addTrace");
+            problemSolution = {
+              type: 'addTrace',
+              solutions: [solution.solution.result.vars],
+              regionSize: 0,
+            };
+          }
           console.log("problemSolution: ");
           console.log(problemSolution);
           this.solutionToSkip = problemSolution;
@@ -1310,6 +1320,15 @@ export class IlpSolver {
                 this.partialOrders
               ),
             },
+            {
+              type: 'addTrace' as SolutionType,
+              ilp: this.avoidWrongContinuationIlp( // XXX
+                this.baseIlp,
+                invalidPlace!,
+                wrongContinuations,
+                this.partialOrders
+              ),
+            }
           ];
 
           return combineLatest(
@@ -1333,6 +1352,7 @@ export class IlpSolver {
           multiplePlaces: { sum: 0, vars: [] },
           changeMarking: { sum: 0, vars: [] },
           addPlace: { sum: 0, vars: [] }, // Precision
+          addTrace: { sum: 0, vars: [] }, // Precision
         };
 
         console.log("placeSolutions :");

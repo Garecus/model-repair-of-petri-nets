@@ -7,6 +7,7 @@ import { DisplayService } from '../display.service';
 import { generateTextFromNet } from '../parser/net-to-text.func';
 import { convertPetriNetToPnml } from './run-to-pnml/petri-net-to-pnml.service';
 import { PartialOrder } from 'src/app/classes/diagram/partial-order';
+import { generateTextFromLog } from './run-to-log/log-to-txt.service';
 
 @Injectable({
   providedIn: 'root',
@@ -29,8 +30,8 @@ export class DownloadService implements OnDestroy {
       .subscribe((run) => {
         const fileEnding = getFileEndingForFormat(fileFormat);
         const fileName = name
-          ? `${name}.${fileEnding}`
-          : `${Date.now()}_net.${fileEnding}`;
+          ? `${name}-net.${fileEnding}`
+          : `${Date.now()}-net.${fileEnding}`;
 
         this.downloadRun(fileName, fileFormat, run);
       });
@@ -41,12 +42,14 @@ export class DownloadService implements OnDestroy {
       .getPartialOrders$()
       .pipe(first())
       .subscribe((run) => {
-        const fileEnding = getFileEndingForFormat(fileFormat);
+        const fileEnding = getFileEndingForFormatLog(fileFormat);
         const fileName = name
           ? `${name}-log.${fileEnding}`
-          : `${Date.now()}_net.${fileEnding}`;
+          : `${Date.now()}-log.${fileEnding}`;
 
-        /* this.downloadLogRun(fileName, fileFormat, run); */
+        if (run != null) {
+          this.downloadLogRun(fileName, fileFormat, run);
+        }
       });
   }
 
@@ -70,10 +73,14 @@ export class DownloadService implements OnDestroy {
 
   private downloadLogRun(
     name: string,
-    fileFormat: DownloadFormat,
-    partialOrder: PartialOrder
+    fileFormatLog: DownloadFormat,
+    partialOrder: PartialOrder[]
   ): void {
-    const fileContent = partialOrder.toString();
+    //const fileContent = JSON.stringify(partialOrder);
+    const fileContent =
+      fileFormatLog === 'txt'
+        ? generateTextFromLog(partialOrder)
+        : JSON.stringify(partialOrder);
 
     const downloadLink: HTMLAnchorElement = document.createElement('a');
     downloadLink.download = name;
@@ -87,4 +94,8 @@ export class DownloadService implements OnDestroy {
 
 function getFileEndingForFormat(fileFormat: DownloadFormat): string {
   return fileFormat === 'pn' ? 'pn' : 'pnml';
+}
+
+function getFileEndingForFormatLog(fileFormat: DownloadFormat): string {
+  return fileFormat === 'txt' ? 'txt' : 'txt';
 }

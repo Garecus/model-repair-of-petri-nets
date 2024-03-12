@@ -274,7 +274,7 @@ export class DisplayComponent implements OnInit {
 
                   
                   let invalidPlaces = { //XXX
-                    "p99": 1
+                    "p_new": 1
                   }
 
                   return this.petriNetRegionsService

@@ -34,7 +34,8 @@ export type SolutionType =
   | 'changeIncoming' // Fitness
   | 'changeMarking' // Fitness
   | 'multiplePlaces' // Fitness
-  | 'addPlace'; // Precision
+  | 'addPlace' // Precision
+  | 'addTrace'; // Precision
 
 export interface ProblemSolutionWithoutType {
   ilp: LP;

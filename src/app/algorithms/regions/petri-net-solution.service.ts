@@ -149,7 +149,8 @@ export class PetriNetSolutionService {
                 const parsedSolutions = parseSolution(
                   handleSolutions(solutions, solver),
                   existingPlace,
-                  idToTransitionLabelMap
+                  idToTransitionLabelMap,
+                  [""]
                 );
 
                 const newTokens = parsedSolutions.find(
@@ -302,7 +303,7 @@ export class PetriNetSolutionService {
                     ? petriNet.places.find((p) => p.id === place.placeId)
                     : undefined; */
 
-                    const existingPlace =
+                const existingPlace =
                   place.type === 'warning' || place.type === 'possibility'
                     ? petriNet.places.find((p) => p.id === "p1")//place.placeId)//"p1") //XXX
                     : undefined;
@@ -348,7 +349,8 @@ export class PetriNetSolutionService {
                 const parsedSolutions = parseSolution(
                   handleSolutions(solutions, solver),
                   existingPlace,
-                  idToTransitionLabelMap
+                  idToTransitionLabelMap,
+                  wrongContinuations
                 );
                 console.log("Parsed solutions: ");
                 console.log(parsedSolutions);

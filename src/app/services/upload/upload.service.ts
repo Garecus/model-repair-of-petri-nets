@@ -29,6 +29,10 @@ export class UploadService {
     this.currentNetUpload$.next(text);
   }
 
+  setUploadLog(text: string): void {
+    this.currentLogUpload$.next(text);
+  }
+
   getNetUpload$(): Observable<string> {
     return this.currentNetUpload$.asObservable();
   }
