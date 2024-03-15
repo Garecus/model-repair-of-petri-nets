@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { GLPK } from 'glpk.js';
 import { combineLatest, from, map, Observable, of, switchMap, tap } from 'rxjs';
 
-import { PartialOrder } from '../../classes/diagram/partial-order';
+import { PartialOrder, wrongContinuation } from '../../classes/diagram/partial-order';
 import { PetriNet } from '../../classes/diagram/petri-net';
 import {
   ParsableSolution,
@@ -150,7 +150,7 @@ export class PetriNetSolutionService {
                   handleSolutions(solutions, solver),
                   existingPlace,
                   idToTransitionLabelMap,
-                  [""]
+                  []
                 );
 
                 const newTokens = parsedSolutions.find(
@@ -208,7 +208,7 @@ export class PetriNetSolutionService {
     petriNet: PetriNet,
     invalidPlaces: { [key: string]: number },
     invalidTransitions: { [key: string]: number },
-    wrongContinuations: string[]
+    wrongContinuations: wrongContinuation[]
   ): Observable<PlaceSolution[]> {
     console.log("Compute precision with invalid places and transitions: ");
     console.log(invalidPlaces);
@@ -404,7 +404,7 @@ export class PetriNetSolutionService {
                       missingTokens: missingTokens,
                       invalidTraceCount: invalidTransitions[place.placeId],
                       wrongContinuations: wrongContinuations,
-                      newTransition: "a" //XXX
+                      newTransition: wrongContinuations[0].wrongContinuation.charAt(wrongContinuations[0].wrongContinuation.length - 2) //XXX
                     } as unknown as PlaceSolution;
                 }
               })

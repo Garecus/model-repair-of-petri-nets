@@ -90,13 +90,13 @@
         <ng-container *ngIf="wrongContinuationCount.count === 1">
           <mat-icon class="color_hint"> error_outline </mat-icon>
           <span
-            >{{ wrongContinuationCount.count }} wrong continuation found. Here is a list: {{ wrongContinuations }}</span
+            >{{ wrongContinuationCount.count }} wrong continuation found. Here is a list: {{ wrongContinuationsString }}</span
           >
         </ng-container>
         <ng-container *ngIf="wrongContinuationCount.count > 1">
           <mat-icon class="color_hint"> error_outline </mat-icon>
           <span
-            >{{ wrongContinuationCount.count }} wrong continuations found. Here is a list: {{ wrongContinuations }}</span
+            >{{ wrongContinuationCount.count }} wrong continuations found. Here is a list: {{ wrongContinuationsString }}</span
           >
         </ng-container>
       </div>

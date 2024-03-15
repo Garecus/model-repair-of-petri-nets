@@ -264,6 +264,7 @@ function generateTextForNewNet(
         console.log(petriNet.places[petriNet.places.length - 1]); */
     petriNet.places[petriNet.places.length - 1].marking = 0;
     petriNet.places[petriNet.places.length - 1].issueStatus = undefined;
+    placeIndex = +petriNet.places.length - 1;
     /*     petriNet.places[petriNet.places.length - 1].incomingArcs = [
           {
             "weight": 1,

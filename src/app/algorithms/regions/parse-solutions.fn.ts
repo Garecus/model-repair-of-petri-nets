@@ -1,3 +1,4 @@
+import { wrongContinuation } from 'src/app/classes/diagram/partial-order';
 import { Place } from '../../classes/diagram/place';
 import { ParsableSolution, ParsableSolutionsPerType } from '../../services/repair/repair.model';
 import { SolutionType } from './ilp-solver/solver-classes';
@@ -55,33 +56,38 @@ export function parseSolution(
   placeSolutionList: ParsableSolutionsPerType[],
   existingPlace: Place | undefined,
   idTransitionToLabel: { [key: string]: string },
-  wrongContinuations: string[]
+  wrongContinuations: wrongContinuation[]
 ): AutoRepairWithSolutionType[] {
   console.log("1. existingPlace");
   console.log(existingPlace);
-  if(Object.keys(placeSolutionList).length == 0 ) { //XXX change here to above function to test
-    let returnList2 = [
-      {
+  /* if (Object.keys(placeSolutionList).length == 0) { */ //XXX change here and comment the if clause
+    let transferWrongContinuation = "";
+    if (wrongContinuations[0] && wrongContinuations[0].type == "not repairable") {
+      transferWrongContinuation = wrongContinuations[0].wrongContinuation;
+
+      let returnList2 = [
+        {
           "type": "add-trace",
           "incoming": [
-              {
-                  "transitionLabel": "",
-                  "weight": 0
-              }
+            {
+              "transitionLabel": "",
+              "weight": 0
+            }
           ],
           "outgoing": [
-              {
-                  "transitionLabel": "",
-                  "weight": 0
-              }
+            {
+              "transitionLabel": "",
+              "weight": 0
+            }
           ],
           "regionSize": 0,
           "repairType": "addTrace",
-          "wrongContinuationNotRepairable": wrongContinuations[0] //XXX change to wrong continuation that was not possible to get a solution for
-      }
-  ]
-  return returnList2 as AutoRepairWithSolutionType[];;
-  }
+          "wrongContinuationNotRepairable": transferWrongContinuation //XXX change to wrong continuation that was not possible to get a solution for
+        }
+      ]
+      return returnList2 as AutoRepairWithSolutionType[];
+    }
+  /* } */
 
   const returnList: (AutoRepairWithSolutionType | null)[] = placeSolutionList
     .map((parsableSolutionsPerType) => {
@@ -209,8 +215,8 @@ export function parseSolution(
           places: newPlaces.map((newPlace) => mergeAllDuplicatePlaces(newPlace)),
         };
         return repair;
-      } else if (parsableSolutionsPerType.type != "addPlace" && parsableSolutionsPerType.type != "addTrace") {
-        console.log("Identified add-place solution. New places: ");
+      } else if (parsableSolutionsPerType.type != "addPlace" && parsableSolutionsPerType.type == "addTrace") {
+        console.log("Identified add-trace solution. ");
         const repair: AutoRepairForSinglePlace = {
           ...newPlaces[0],
           type: 'add-trace'
@@ -241,7 +247,7 @@ export function parseSolution(
         };
         return repair; */
       } else {
-        console.log("Identified add-trace solution.");
+        console.log("Identified add-place solution.");
         console.log(newPlaces[0]);
         const repair: AutoRepairForSinglePlace = {
           ...newPlaces[0],

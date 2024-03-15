@@ -16,7 +16,7 @@ import {
 
 import { FirePartialOrder } from '../../algorithms/fire-partial-orders/fire-partial-order';
 import { PetriNetSolutionService } from '../../algorithms/regions/petri-net-solution.service';
-import { LogList, PartialOrder } from '../../classes/diagram/partial-order';
+import { LogList, PartialOrder, wrongContinuation } from '../../classes/diagram/partial-order';
 import { PetriNet } from '../../classes/diagram/petri-net';
 import { Place } from '../../classes/diagram/place';
 import { DisplayService } from '../../services/display.service';
@@ -54,7 +54,8 @@ export class DisplayComponent implements OnInit {
   invalidPlaceCount$: Subject<{ count: number } | null>;
   invalidTransitionCount$: Subject<{ count: number } | null>;
   wrongContinuationCount$: Subject<{ count: number } | null>;
-  wrongContinuations: string[] = [];
+  wrongContinuations: wrongContinuation[] = [];
+  wrongContinuationsString: string[] = [];
 
   tracesCount$: Observable<number>;
   transitionSolutions$: Observable<NewTransitionSolution[]>;
@@ -205,6 +206,7 @@ export class DisplayComponent implements OnInit {
                 }
                 */
                 this.wrongContinuations = this.checkWrongContinuations(net, partialOrders[0], partialOrders);
+                this.wrongContinuationsString = this.wrongContinuations.map(a=> a.wrongContinuation);
 
                 this.wrongContinuationCount$.next({
                   count: this.wrongContinuations.length,
@@ -360,15 +362,15 @@ export class DisplayComponent implements OnInit {
     petriNet: PetriNet,
     partialOrder: PartialOrder,
     partialOrders: PartialOrder[]
-  ): string[] {
-    return new CheckWrongContinuations(petriNet, partialOrder, partialOrders).getWrongContinuations("wrongContinuations");
+  ): wrongContinuation[] {
+    return new CheckWrongContinuations(petriNet, partialOrder, partialOrders).getWrongContinuations();
   }
 
   private identifyTransitionsWithWrongContinuations(
     petriNet: PetriNet,
     partialOrder: PartialOrder,
     partialOrders: PartialOrder[],
-    wrongContinuations: string[]
+    wrongContinuations: wrongContinuation[]
   ): string[] {
     return new CheckWrongContinuations(petriNet, partialOrder, partialOrders).getInvalidTransitions(wrongContinuations);
   }

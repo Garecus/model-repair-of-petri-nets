@@ -50,3 +50,9 @@ export interface CaseList {
 export interface ArcList {
   arc: string,
 }
+
+export interface wrongContinuation {
+  id: number;
+  type: string;
+  wrongContinuation: string;
+}

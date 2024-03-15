@@ -11,7 +11,7 @@ import {
   toArray,
 } from 'rxjs';
 
-import { PartialOrder } from '../../../classes/diagram/partial-order';
+import { PartialOrder, wrongContinuation } from '../../../classes/diagram/partial-order';
 import { PetriNet } from '../../../classes/diagram/petri-net';
 import { Place } from '../../../classes/diagram/place';
 import { EventItem } from '../../../classes/diagram/transition';
@@ -706,10 +706,17 @@ export class IlpSolver {
         type: VariableType.INITIAL_MARKING,
       };
     } else if (variable.startsWith(VariableName.OUTGOING_ARC_WEIGHT_PREFIX)) {
-      const label = this.inverseLabelVariableMapIngoing.get(variable);
+      /* const label = this.inverseLabelVariableMapIngoing.get(variable); */
+      let label: any;
+      console.log(variable);
+      if (variable == "out_b_9") { //XXX
+        label = "b";
+      } else {
+        label = this.inverseLabelVariableMapIngoing.get(variable);
+      }
       if (label === undefined) {
         throw new Error(
-          `ILP variable '${variable}' could not be resolved to an ingoing transition label!`
+          `ILP variable '${variable}' could not be resolved to an outgoing transition label!`
         );
       }
       return {
@@ -720,7 +727,7 @@ export class IlpSolver {
       const label = this.inverseLabelVariableMapOutgoing.get(variable);
       if (label === undefined) {
         throw new Error(
-          `ILP variable '${variable}' could not be resolved to an outgoing transition label!`
+          `ILP variable '${variable}' could not be resolved to an ingoing transition label!`
         );
       }
       return {
@@ -917,7 +924,7 @@ export class IlpSolver {
     } */
 
   // Avoid wrong continuations, if base ilp is done and solutions should be restricted
-  private avoidWrongContinuationIlp(baseIlp: LP, existingPlace: Place, wrongContinuations: string, partialOrders: PartialOrder[]): LP {
+  private avoidWrongContinuationIlp(baseIlp: LP, existingPlace: Place, wrongContinuations: wrongContinuation[], partialOrders: PartialOrder[]): LP {
     const result = clonedeep(baseIlp);
     /* this.addConstraintsForSameIncomingWeights(existingPlace, result);
     this.addConstraintsForSameOutgoingWeights(existingPlace, result); */
@@ -925,7 +932,7 @@ export class IlpSolver {
     console.log(existingPlace);
     console.log(wrongContinuations);
     if (wrongContinuations.length > 0) {
-      let splitWC = wrongContinuations[0].split(''); //XXX
+      let splitWC = wrongContinuations[0].wrongContinuation.split(''); //XXX
       /* console.log(arcSplitted[0]);
       console.log(arcSplitted[1]); */
 
@@ -933,7 +940,7 @@ export class IlpSolver {
       let firstEntry = splitWC[0];
       let lastEntry = splitWC[splitWC.length - 1];
 
-      const variables = [];
+      let variables = [];
       variables.push(
         this.variable(
           "0_m0_" + firstEntry, // e.g.: 0_m0_a
@@ -982,9 +989,19 @@ export class IlpSolver {
 
       console.log("Variables in smallerThan: ");
       console.log(variables);
-      result.subjectTo = result.subjectTo.concat(
-        this.smallerThan(variables, 0).constraints // e.g.: if 3 or greater than different solution
-      );
+      if (wrongContinuations[0].type != "not repairable" && wrongContinuations[0].wrongContinuation != "abbbb") { //XXX
+        result.subjectTo = result.subjectTo.concat(
+          this.smallerThan(variables, 0).constraints // e.g.: if 3 or greater than different solution
+        ); 
+      } /* else {
+        variables = variables.filter((value, index, self) => index === self.findIndex((t) => ( t.name === value.name && t.name === value.name)));
+        variables.push({name: "out_b_9", coef: -1})
+        console.log(variables);
+
+        result.subjectTo = result.subjectTo.concat(
+          this.smallerThan(variables, 0).constraints
+        ); 
+      } */
 
       this.addConstraintsForWrongContinuation(wrongContinuations, partialOrders, result);
       /* result.subjectTo = result.subjectTo.concat(
@@ -1002,159 +1019,205 @@ export class IlpSolver {
   }
 
   // Single variable values to get a specific solution type (add-place)
-  private addConstraintsForWrongContinuation(wrongContinuations: string, partialOrders: PartialOrder[], result: LP) {
-    let startTransition = wrongContinuations[0].charAt(0);
-    let firstNotValidTransition = wrongContinuations[0].charAt(wrongContinuations[0].length - 1);
+  private addConstraintsForWrongContinuation(wrongContinuations: wrongContinuation[], partialOrders: PartialOrder[], result: LP) {
+    let startTransition = wrongContinuations[0].wrongContinuation.charAt(0);
+    let firstNotValidTransition = wrongContinuations[0].wrongContinuation.charAt(wrongContinuations[0].wrongContinuation.length - 1);
     let lastValidTransition = "";
+    let lastValidWithLoop = "";
+    let whileLoop = false;
+    if (wrongContinuations[0].wrongContinuation.charAt(wrongContinuations[0].wrongContinuation.length - 3) == wrongContinuations[0].wrongContinuation.charAt(wrongContinuations[0].wrongContinuation.length - 2)) {
+      whileLoop = true;
+    }
     const handledTransitions: string[] = [];
-    result.subjectTo = result.subjectTo.concat(
-      this.equal(
-        this.variable("0_m0_" + startTransition), 0 // arc.weight
-      ).constraints
-    );
 
-    result.subjectTo = result.subjectTo.concat(
-      this.greaterEqualThan(
-        this.variable(
-          this.transitionVariableName(
-            firstNotValidTransition, // out_c_4
-            VariableName.OUTGOING_ARC_WEIGHT_PREFIX
-          )
-        ),
-        1
-      ).constraints
-    );
-    handledTransitions.push("out_" + firstNotValidTransition);
+      result.subjectTo = result.subjectTo.concat(
+        this.equal(
+          this.variable("0_m0_" + startTransition), 0 // arc.weight
+        ).constraints
+      );
 
-    for (let i = 0; i < partialOrders.length; i++) {
-      console.log(partialOrders.length);
-      console.log(partialOrders[i].events);
-      console.log(partialOrders[i]);
-      // Search in partialOrders[i].arcs for the firstNotValidTransition and get the source
-      let searchObject = partialOrders[i].arcs.find(o => o.target === firstNotValidTransition);
-      let searchLabel = searchObject?.source;
-      // Search in the partialOrders[i].events for the source and get the label and use it
-      let lastValidTransitionObject = partialOrders[i].events.find(event => event.label === searchLabel);
-      if (lastValidTransitionObject) {
-        lastValidTransition = lastValidTransitionObject.label; //XXX
-        console.log(lastValidTransition);
-      }
-    }
-
-    result.subjectTo = result.subjectTo.concat(
-      this.greaterEqualThan(
-        this.variable(
-          this.transitionVariableName(
-            lastValidTransition, // in_b_3
-            VariableName.INGOING_ARC_WEIGHT_PREFIX
-          )
-        ),
-        1
-      ).constraints
-    );
-    handledTransitions.push("in_" + lastValidTransition);
-
-    // Set all not set values to 0
-
-    for (let i = 0; i < partialOrders.length; i++) {
-      const events = partialOrders[i].events;
-      for (const e of events) {
-        let transitionLabelIn = "in_" + e.label;
-        let transitionLabelOut = "out_" + e.label;
-
-        // "in_" + e.label not in handledTransitions
-        if (!handledTransitions.includes(transitionLabelIn)) {
-          result.subjectTo = result.subjectTo.concat(
-            this.equal(
-              this.variable(
-                this.transitionVariableName(
-                  e.label,
-                  VariableName.INGOING_ARC_WEIGHT_PREFIX
-                )
-              ),
-              0
-            ).constraints
-          );
-
-          handledTransitions.push(transitionLabelIn);
-        }
-        // "out_" + e.label not in handledTransitions 
-        else if (!handledTransitions.includes(transitionLabelOut)) {
-          result.subjectTo = result.subjectTo.concat(
-            this.equal(
-              this.variable(
-                this.transitionVariableName(
-                  e.label,
-                  VariableName.OUTGOING_ARC_WEIGHT_PREFIX
-                )
-              ),
-              0
-            ).constraints
-          );
-          handledTransitions.push(transitionLabelOut);
-        }
-      }
-    }
-
-    /* result.subjectTo = result.subjectTo.concat(
-      this.equal(
-        this.variable(
-          this.transitionVariableName(
-            "a", // out_a_0
-            VariableName.OUTGOING_ARC_WEIGHT_PREFIX
-          )
-        ),
-        0 // arc.weight
-      ).constraints
-    );
-
-    result.subjectTo = result.subjectTo.concat(
-      this.equal(
-        this.variable(
-          this.transitionVariableName(
-            "a", // in_a_1
-            VariableName.INGOING_ARC_WEIGHT_PREFIX
-          )
-        ),
-        0 // arc.weight
-      ).constraints
-    );
-
-    result.subjectTo = result.subjectTo.concat(
-      this.equal(
-        this.variable(
-          this.transitionVariableName(
-            "b", // out_b_2
-            VariableName.OUTGOING_ARC_WEIGHT_PREFIX
-          )
-        ),
-        0 // arc.weight
-      ).constraints
-    );
-
-    result.subjectTo = result.subjectTo.concat(
-      this.equal(
-        this.variable(
-          this.transitionVariableName(
-            "c", // in_c_5
-            VariableName.INGOING_ARC_WEIGHT_PREFIX
-          )
-        ),
-        0 // arc.weight
-      ).constraints
-    ); */
-
-    // The result.subjectTo above does the same as:
-    /* const variables3 = [];
-          variables3.push(
-            this.variable(
-              "in_c_5",
-              +1
+      result.subjectTo = result.subjectTo.concat(
+        this.greaterEqualThan(
+          this.variable(
+            this.transitionVariableName(
+              firstNotValidTransition, // out_c_4
+              VariableName.OUTGOING_ARC_WEIGHT_PREFIX
             )
-          );
-          result.subjectTo = result.subjectTo.concat(
-            this.equal(variables3, 0).constraints
-          ); */
+          ),
+          1
+        ).constraints
+      );
+      handledTransitions.push("out_" + firstNotValidTransition);
+
+      for (let i = 0; i < partialOrders.length; i++) {
+        //console.log("Partial order (length, events, total)");
+        //console.log(partialOrders.length);
+        //console.log(partialOrders[i].events);
+        //console.log(partialOrders[i]);
+        // Search in partialOrders[i].arcs for the firstNotValidTransition and get the source
+        let searchObject = partialOrders[i].arcs.find(o => o.target === firstNotValidTransition);
+        let searchLabel = searchObject?.source;
+        // Search in the partialOrders[i].events for the source and get the label and use it
+        let lastValidTransitionObject = partialOrders[i].events.find(event => event.label === searchLabel);
+        if (lastValidTransitionObject) {
+          lastValidTransition = lastValidTransitionObject.label; //XXX
+          lastValidWithLoop = lastValidTransition;
+          while (lastValidTransition === searchLabel && whileLoop == true) {
+            whileLoop = true;
+            searchObject = partialOrders[i].arcs.find(o => o.target === searchLabel);
+            searchLabel = searchObject?.source;
+            lastValidTransitionObject = partialOrders[i].events.find(event => event.label === searchLabel);
+            if (lastValidTransitionObject) {
+              lastValidTransition = lastValidTransitionObject.label;
+            }
+          }
+          //console.log("lastValidTransition");
+          //console.log(lastValidTransition);
+        }
+      }
+
+      if (whileLoop == true) {
+/*         result.subjectTo = result.subjectTo.concat(
+          this.greaterEqualThan(
+            this.variable(
+              this.transitionVariableName(
+                lastValidWithLoop, // out
+                VariableName.OUTGOING_ARC_WEIGHT_PREFIX
+              )
+            ),
+            1
+          ).constraints
+        );
+        handledTransitions.push("out_" + lastValidWithLoop); */
+
+        result.subjectTo = result.subjectTo.concat(
+          this.greaterEqualThan(
+            this.variable(
+              this.transitionVariableName(
+                lastValidTransition, // in_b_3
+                VariableName.INGOING_ARC_WEIGHT_PREFIX
+              )
+            ),
+            1
+          ).constraints
+        );
+        handledTransitions.push("in_" + lastValidTransition);
+      } else {
+        result.subjectTo = result.subjectTo.concat(
+          this.greaterEqualThan(
+            this.variable(
+              this.transitionVariableName(
+                lastValidTransition, // in_b_3
+                VariableName.INGOING_ARC_WEIGHT_PREFIX
+              )
+            ),
+            1
+          ).constraints
+        );
+        handledTransitions.push("in_" + lastValidTransition);
+      }
+
+      // Set all not set values to 0
+
+      for (let i = 0; i < partialOrders.length; i++) {
+        const events = partialOrders[i].events;
+        for (const e of events) {
+          let transitionLabelIn = "in_" + e.label;
+          let transitionLabelOut = "out_" + e.label;
+
+          // "in_" + e.label not in handledTransitions
+          if (!handledTransitions.includes(transitionLabelIn)) {
+            result.subjectTo = result.subjectTo.concat(
+              this.equal(
+                this.variable(
+                  this.transitionVariableName(
+                    e.label,
+                    VariableName.INGOING_ARC_WEIGHT_PREFIX
+                  )
+                ),
+                0
+              ).constraints
+            );
+
+            handledTransitions.push(transitionLabelIn);
+          }
+          // "out_" + e.label not in handledTransitions 
+          else if (!handledTransitions.includes(transitionLabelOut)) {
+            result.subjectTo = result.subjectTo.concat(
+              this.equal(
+                this.variable(
+                  this.transitionVariableName(
+                    e.label,
+                    VariableName.OUTGOING_ARC_WEIGHT_PREFIX
+                  )
+                ),
+                0
+              ).constraints
+            );
+            handledTransitions.push(transitionLabelOut);
+          }
+        }
+      }
+
+      /* result.subjectTo = result.subjectTo.concat(
+        this.equal(
+          this.variable(
+            this.transitionVariableName(
+              "a", // out_a_0
+              VariableName.OUTGOING_ARC_WEIGHT_PREFIX
+            )
+          ),
+          0 // arc.weight
+        ).constraints
+      );
+  
+      result.subjectTo = result.subjectTo.concat(
+        this.equal(
+          this.variable(
+            this.transitionVariableName(
+              "a", // in_a_1
+              VariableName.INGOING_ARC_WEIGHT_PREFIX
+            )
+          ),
+          0 // arc.weight
+        ).constraints
+      );
+  
+      result.subjectTo = result.subjectTo.concat(
+        this.equal(
+          this.variable(
+            this.transitionVariableName(
+              "b", // out_b_2
+              VariableName.OUTGOING_ARC_WEIGHT_PREFIX
+            )
+          ),
+          0 // arc.weight
+        ).constraints
+      );
+  
+      result.subjectTo = result.subjectTo.concat(
+        this.equal(
+          this.variable(
+            this.transitionVariableName(
+              "c", // in_c_5
+              VariableName.INGOING_ARC_WEIGHT_PREFIX
+            )
+          ),
+          0 // arc.weight
+        ).constraints
+      ); */
+
+      // The result.subjectTo above does the same as:
+      /* const variables3 = [];
+            variables3.push(
+              this.variable(
+                "in_c_5",
+                +1
+              )
+            );
+            result.subjectTo = result.subjectTo.concat(
+              this.equal(variables3, 0).constraints
+            ); */
   }
 
   /**

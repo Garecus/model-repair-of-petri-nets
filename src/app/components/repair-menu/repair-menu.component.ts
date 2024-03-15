@@ -118,13 +118,13 @@ export class RepairMenuComponent implements OnInit {
           solution
         )
         .subscribe(() => this.overlayRef?.dispose());
-    } else if (this.placeSolution.type === 'possibility'  && this.placeSolution.regionSize == 0) { // Precision
+    } else if (this.placeSolution.type === 'possibility' && this.placeSolution.solutions[0].regionSize == 0) { // Precision
       this.netCommandService
         .repairSpecification(this.placeSolution.place, solution)
         .subscribe(() => this.overlayRef?.dispose());
     } else if (this.placeSolution.type === 'possibility') { // Precision
       this.netCommandService
-        .repairNet(this.placeSolution.place, solution) //XXX change here to above function to test
+        .repairNet(this.placeSolution.place, solution) //XXX change here to ".repairSpecification"
         .subscribe(() => this.overlayRef?.dispose());
     } else {
       this.netCommandService

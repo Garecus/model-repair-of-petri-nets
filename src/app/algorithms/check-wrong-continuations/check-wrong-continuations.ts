@@ -7,6 +7,7 @@ import {
   LogList,
   ModelList,
   PartialOrder,
+  wrongContinuation,
 } from '../../classes/diagram/partial-order';
 import { PetriNet } from '../../classes/diagram/petri-net';
 import { Place } from '../../classes/diagram/place';
@@ -45,6 +46,7 @@ export class CheckWrongContinuations {
   wrongContinuations: string[] = [];
   generatedCombinations: string[] = [];
   invalidTransitions: string[] = [];
+  wcObjects: wrongContinuation[] = [];
 
   constructor(petriNet: PetriNet, partialOrder: PartialOrder, partialOrders: PartialOrder[]) {
     this.petriNet = { ...petriNet };
@@ -61,7 +63,7 @@ export class CheckWrongContinuations {
    * Fires the partial order in the net and returns the ids of invalid places.
    * @returns The ids of invalid places.
    */
-  getWrongContinuations(mode: string): string[] {
+  getWrongContinuations(): wrongContinuation[] {
     console.log("Start wrong continuations check.");
     /* console.log(this.partialOrders); */
     for (let i = 0; i < this.partialOrders.length; i++) {
@@ -379,40 +381,41 @@ export class CheckWrongContinuations {
       let lastValidTransition = currentWC.charAt(currentWC.length - 2);
       let firstInvalidTransition = currentWC.charAt(currentWC.length - 1);
       const isMatching = this.petriNet.arcs.some(arc => {
-        if(arc.target === firstInvalidTransition && currentWC.charAt(currentWC.length - 3) != lastValidTransition) {
-        console.log("last valid: " + lastValidTransition);
-        console.log("first invalid: " + firstInvalidTransition);
-        console.log("Source of 1: " + arc.source);
-        console.log("Target of 1: " + arc.target);
-        const isPlaceSource = arc.source.startsWith('p') && !isNaN(parseInt(arc.source.substring(1)));
-        if (isPlaceSource) {
-          let firstArcSource = arc.source;
-          const otherArcWithSameTarget = this.petriNet.arcs.find((anotherArc) => anotherArc.target === firstArcSource);
-          if (otherArcWithSameTarget) {
-            let secondArcSource = otherArcWithSameTarget.source;
-            const check = secondArcSource === lastValidTransition && this.petriNet.arcs.some((otherArc) => {
-              console.log("Source of 2: " + otherArc.source);
-              console.log("Target of 2: " + otherArc.target);
-              let check3 = otherArc.target === firstInvalidTransition && otherArc.source != firstArcSource;
-              return check3;
-            });
-            return check;
+        if (arc.target === firstInvalidTransition && currentWC.charAt(currentWC.length - 3) != lastValidTransition) {
+          console.log("last valid: " + lastValidTransition);
+          console.log("first invalid: " + firstInvalidTransition);
+          console.log("Source of 1: " + arc.source);
+          console.log("Target of 1: " + arc.target);
+          const isPlaceSource = arc.source.startsWith('p') && !isNaN(parseInt(arc.source.substring(1)));
+          if (isPlaceSource) {
+            let firstArcSource = arc.source;
+            const otherArcWithSameTarget = this.petriNet.arcs.find((anotherArc) => anotherArc.target === firstArcSource);
+            if (otherArcWithSameTarget) {
+              let secondArcSource = otherArcWithSameTarget.source;
+              const check = secondArcSource === lastValidTransition && this.petriNet.arcs.some((otherArc) => {
+                console.log("Source of 2: " + otherArc.source);
+                console.log("Target of 2: " + otherArc.target);
+                let check3 = otherArc.target === firstInvalidTransition && otherArc.source != firstArcSource;
+                return check3;
+              });
+              return check;
+            }
+            return;
+          } else {
+            const check1 = arc.source === lastValidTransition && arc.target === firstInvalidTransition;
+            const check2 = this.petriNet.arcs.some((otherArc) => otherArc.target === firstInvalidTransition && otherArc.source === lastValidTransition);
+            return check1 && check2;
           }
-          return;
         } else {
-          const check1 = arc.source === lastValidTransition && arc.target === firstInvalidTransition;
-          const check2 = this.petriNet.arcs.some((otherArc) => otherArc.target === firstInvalidTransition && otherArc.source === lastValidTransition);
-          return check1 && check2;
+          return;
         }
-      } else {
-        return;
-      }});
+      });
       console.log("Total:" + !isMatching);
       return !isMatching;
-    
+
     });
 
-    this.wrongContinuations.sort((a, b) => a.localeCompare(b));
+    this.wrongContinuations.sort((a, b) => b.localeCompare(a)); //XXX change sorting (maybe) later again
     console.log(this.wrongContinuations);
     /*     for (let i12 = 0; i12 < this.wrongContinuations.length; i12++) {
           if (BB >= this.maxLoopNumber) {
@@ -439,12 +442,31 @@ export class CheckWrongContinuations {
           return this.invalidTransitions;
         } */
 
+    let wcType = "repairable"
+    for (let i = 0; i < this.wrongContinuations.length; i++) {
+      if (this.wrongContinuations[i] == "abbc") {
+        wcType = "not repairable";
+      } else {
+        wcType = "repairable";
+      }
+      let wcObject =
+      {
+        "id": i,
+        "type": wcType,
+        "wrongContinuation": this.wrongContinuations[i]
+      };
+
+      this.wcObjects.push(wcObject)
+
+    }
+    console.log(this.wcObjects);
+
     // Dann Anzeigen von Lösungen
     /* return ["ac","abbbb"]; */
-    return this.wrongContinuations;
+    return this.wcObjects;//this.wrongContinuations; 
   }
 
-  getInvalidTransitions(wrongContinuations: string[]): string[] {
+  getInvalidTransitions(wrongContinuations: wrongContinuation[]): string[] {
     let transitions: string[] = [];
     function identifyTransitions(inputArray: string[]): string[] {
       const followsArray: string[] = [];
@@ -483,7 +505,12 @@ export class CheckWrongContinuations {
       return resultArray;
     }
 
-    transitions = identifyTransitions(wrongContinuations);
+    let wrongContinuationsString = wrongContinuations.map(a=> a.wrongContinuation);
+    transitions = identifyTransitions(wrongContinuationsString);
+    transitions.sort((a, b) => a.localeCompare(b));
+    //XXX Show only 1 at a time right now:
+    console.log(transitions);
+    transitions = [transitions[0]];
     return transitions;
   }
 }
