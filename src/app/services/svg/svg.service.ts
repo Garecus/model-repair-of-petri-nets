@@ -18,6 +18,7 @@ import {
 } from '../element-style';
 import { RepairService } from '../repair/repair.service';
 import { idAttribute } from './svg-constants';
+import { wrongContinuation } from 'src/app/classes/diagram/partial-order';
 
 const hashAttribute = 'element-hash';
 
@@ -90,7 +91,7 @@ export class SvgService {
 
   private createTransitionElement(
     transition: Transition,
-    offset: Point
+    offset: Point,
   ): Array<SVGElement> {
     const transEl = this.createSvgElement('rect');
     transEl.setAttribute(idAttribute, transition.id);
@@ -172,6 +173,30 @@ export class SvgService {
       );
       markingEl.setAttribute('font-size', '2em');
       result.push(markingEl);
+
+      // Add number to mark the number of wrong continuations related to the displayed transition
+      const quantityEl = this.createTextElementForPlaceContent(
+        transition.id,
+        transition.relatedWrongContinuationsCount
+      );
+      quantityEl.setAttribute('x', '' + (getNumber(transition.x) + offset.x + 10));
+      quantityEl.setAttribute('y', '' + (getNumber(transition.y) + offset.y + 10));
+      quantityEl.setAttribute('width', '48');
+      quantityEl.setAttribute('height', '48');
+      quantityEl.setAttribute(
+        'stroke',
+        transition.issueStatus === 'warning'
+          ? 'var(--warn-color)'
+          : 'var(--error-color)'
+      );
+      quantityEl.setAttribute(
+        'fill',
+        transition.issueStatus === 'warning'
+          ? 'var(--warn-color)'
+          : 'var(--error-color)'
+      );
+      quantityEl.setAttribute('font-size', '0.8em');
+      result.push(quantityEl);
 
       transEl.addEventListener('mouseup', () => {
         if (

@@ -19,6 +19,9 @@ import {
 } from '../../classes/diagram/transition';
 import { forEach } from 'jszip';
 import { VariableBinding } from '@angular/compiler';
+import { PetriNetSolutionService } from '../regions/petri-net-solution.service';
+import { PrecisionSolution } from 'src/app/services/repair/repair.model';
+import { map, startWith, tap } from 'rxjs';
 
 type InnerFireResult = { branchPlaces: string[] };
 type ValidPlacesType = Array<boolean>;
@@ -47,8 +50,9 @@ export class CheckWrongContinuations {
   generatedCombinations: string[] = [];
   invalidTransitions: string[] = [];
   wcObjects: wrongContinuation[] = [];
+  computingSolutions = false;
 
-  constructor(petriNet: PetriNet, partialOrder: PartialOrder, partialOrders: PartialOrder[]) {
+  constructor(petriNet: PetriNet, partialOrder: PartialOrder, partialOrders: PartialOrder[], private petriNetRegionsService: PetriNetSolutionService) {
     this.petriNet = { ...petriNet };
     this.partialOrder = clonedeep(partialOrder);
     this.partialOrders = clonedeep(partialOrders);
@@ -374,29 +378,51 @@ export class CheckWrongContinuations {
     // Compare the lists
     // generatedCombinations minus event log this.caseList.sequence = wrong continuations
     const sequences = this.caseList.map(obj => obj.sequence);
-    console.log(sequences);
+    //console.log(sequences);
     this.wrongContinuations = this.generatedCombinations.filter(obj => !sequences.includes(obj));
+    //console.log(this.wrongContinuations);
     // If c is getting the token from a place after b, then it is no wrong continuation
     this.wrongContinuations = this.wrongContinuations.filter((currentWC) => {
+      console.log("Check arcs of WC: " + currentWC);
       let lastValidTransition = currentWC.charAt(currentWC.length - 2);
       let firstInvalidTransition = currentWC.charAt(currentWC.length - 1);
       const isMatching = this.petriNet.arcs.some(arc => {
-        if (arc.target === firstInvalidTransition && currentWC.charAt(currentWC.length - 3) != lastValidTransition) {
+
+        if (currentWC == "abbbb") {
+          let wcSplitted = currentWC.split('');
+          for (let i = wcSplitted.length; i >= 0; i--) {
+            if (lastValidTransition == wcSplitted[i]) {
+              currentWC = currentWC.slice(0, i + 1) + wcSplitted[wcSplitted.length - 1];
+            }
+          }
+        }
+
+        if (arc.target === firstInvalidTransition && (currentWC.charAt(currentWC.length - 3) != lastValidTransition || currentWC.charAt(currentWC.length - 2) != lastValidTransition)) {
+          console.log(currentWC);
           console.log("last valid: " + lastValidTransition);
           console.log("first invalid: " + firstInvalidTransition);
-          console.log("Source of 1: " + arc.source);
-          console.log("Target of 1: " + arc.target);
+          console.log("1. Depth source: " + arc.source);
+          console.log("1. Depth target: " + arc.target);
           const isPlaceSource = arc.source.startsWith('p') && !isNaN(parseInt(arc.source.substring(1)));
           if (isPlaceSource) {
             let firstArcSource = arc.source;
             const otherArcWithSameTarget = this.petriNet.arcs.find((anotherArc) => anotherArc.target === firstArcSource);
+            console.log(otherArcWithSameTarget);
             if (otherArcWithSameTarget) {
               let secondArcSource = otherArcWithSameTarget.source;
-              const check = secondArcSource === lastValidTransition && this.petriNet.arcs.some((otherArc) => {
-                console.log("Source of 2: " + otherArc.source);
-                console.log("Target of 2: " + otherArc.target);
-                let check3 = otherArc.target === firstInvalidTransition && otherArc.source != firstArcSource;
-                return check3;
+              console.log(secondArcSource);
+              const check = /* (secondArcSource === lastValidTransition || secondArcSource === firstInvalidTransition) && */ this.petriNet.arcs.some((otherArc) => {
+                console.log("2. Depth Source: " + otherArc.source);
+                console.log("2. Depth Target2: " + otherArc.target);
+                // If no self loop
+                if (secondArcSource === lastValidTransition) {
+                  let check3 = otherArc.target === firstInvalidTransition && otherArc.source != firstArcSource;
+                  return check3;
+                } else { // If self loop
+                  let check3 = otherArc.target === lastValidTransition && otherArc.source != firstArcSource;
+                  return check3;
+                }
+
               });
               return check;
             }
@@ -444,6 +470,23 @@ export class CheckWrongContinuations {
 
     let wcType = "repairable"
     for (let i = 0; i < this.wrongContinuations.length; i++) {
+      //XXX
+      /* let checkRepair = this.petriNetRegionsService
+        .computePrecisionSolutions(this.partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations)
+        .pipe(
+          tap(() => (this.computingSolutions = false)),
+          map((solutions) => ({
+            solutions,
+            renderChanges: false,
+          })),
+          startWith({
+            solutions: [] as PrecisionSolution[],
+            renderChanges: false,
+          })
+        );
+      if (checkRepair) {
+        wcType = "repairable";
+      } */
       if (this.wrongContinuations[i] == "abbc") {
         wcType = "not repairable";
       } else {
@@ -453,7 +496,8 @@ export class CheckWrongContinuations {
       {
         "id": i,
         "type": wcType,
-        "wrongContinuation": this.wrongContinuations[i]
+        "wrongContinuation": this.wrongContinuations[i],
+        "firstInvalidTransition": this.wrongContinuations[i].charAt(this.wrongContinuations[i].length - 1)
       };
 
       this.wcObjects.push(wcObject)
@@ -472,7 +516,8 @@ export class CheckWrongContinuations {
       const followsArray: string[] = [];
 
       // Identify letters that follow the same letter (event loops)
-      for (let i = 0; i < inputArray.length; i++) {
+      // This part is not needed, if we mark the first invalid instead of the last valid transition
+      /* for (let i = 0; i < inputArray.length; i++) {
         const currentString = inputArray[i];
 
         for (let j = 0; j < currentString.length - 1; j++) {
@@ -480,7 +525,7 @@ export class CheckWrongContinuations {
             followsArray.push(currentString[j]);
           }
         }
-      }
+      } */
 
       // Remove duplicates
       const uniqueFollowsArray = Array.from(new Set(followsArray));
@@ -491,7 +536,7 @@ export class CheckWrongContinuations {
         const currentString = inputArray[i];
 
         if (!followsArray.some(letter => currentString.includes(letter))) {
-          const lastLetter = currentString.charAt(currentString.length - 2);
+          const lastLetter = currentString.charAt(currentString.length - 1); // const lastLetter = currentString.charAt(currentString.length - 2); //YYY
           noFollowsArray.push(lastLetter);
         }
       }
@@ -505,12 +550,14 @@ export class CheckWrongContinuations {
       return resultArray;
     }
 
-    let wrongContinuationsString = wrongContinuations.map(a=> a.wrongContinuation);
+    let wrongContinuationsString = wrongContinuations.map(a => a.wrongContinuation);
     transitions = identifyTransitions(wrongContinuationsString);
-    transitions.sort((a, b) => a.localeCompare(b));
+    /* transitions.sort((a, b) => a.localeCompare(b)); */
     //XXX Show only 1 at a time right now:
+    console.log("Invalid Transitions");
     console.log(transitions);
-    transitions = [transitions[0]];
+    //transitions = [transitions[0]];
+    //YYY
     return transitions;
   }
 }

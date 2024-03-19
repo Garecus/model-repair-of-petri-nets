@@ -259,7 +259,7 @@ function generateTextForNewNet(
 
   if (solution.type === 'add-place') {
     petriNet.places.push(petriNet.places[petriNet.places.length - 1]); //XXX
-    petriNet.places[petriNet.places.length - 1].id = "p" + petriNet.places.length + "_new";
+    petriNet.places[petriNet.places.length - 1].id = "p" + (petriNet.places.length - 1) + "_new";
     /*     console.log("HERE");
         console.log(petriNet.places[petriNet.places.length - 1]); */
     petriNet.places[petriNet.places.length - 1].marking = 0;

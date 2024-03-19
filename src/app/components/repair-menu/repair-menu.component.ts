@@ -91,7 +91,8 @@ export class RepairMenuComponent implements OnInit {
     }
 
     if (this.placeSolution.type === 'possibility') {
-      this.infoHeader = `The transition has ${this.placeSolution.wrongContinuations.length} possible wrong ${this.placeSolution.wrongContinuations.length === 1 ? 'continuation' : 'continuations'}. `;
+      //this.infoHeader = `The transition has ${this.placeSolution.wrongContinuations.length} possible wrong ${this.placeSolution.wrongContinuations.length === 1 ? 'continuation' : 'continuations'}. `;
+      this.infoHeader = `The transition has at least one related wrong continuation. </br>`;
       this.shownTextsForSolutions = this.generateSolutionToDisplay(
         this.placeSolution.solutions,
         true
@@ -105,7 +106,11 @@ export class RepairMenuComponent implements OnInit {
       this.shownTextsForSolutions = this.generateSolutionToDisplay(solutions);
     }
     /* } */
-    this.infoHeader += 'Choose a solution to repair the place:';
+    if (this.placeSolution.type === 'possibility') {
+      this.infoHeader += 'Choose a solution to repair the transition:';
+    } else {
+      this.infoHeader += 'Choose a solution to repair the place:';
+    }
   }
 
   // Apply the selected solution to the petri net
@@ -118,11 +123,11 @@ export class RepairMenuComponent implements OnInit {
           solution
         )
         .subscribe(() => this.overlayRef?.dispose());
-    } else if (this.placeSolution.type === 'possibility' && this.placeSolution.solutions[0].regionSize == 0) { // Precision
+    } else if (this.placeSolution.type === 'possibility' && solution.type == "add-trace") { // Precision this.placeSolution.solutions[0].regionSize == 0 //YYY
       this.netCommandService
         .repairSpecification(this.placeSolution.place, solution)
         .subscribe(() => this.overlayRef?.dispose());
-    } else if (this.placeSolution.type === 'possibility') { // Precision
+    } else if (this.placeSolution.type === 'possibility' && solution.type == "add-place") { // Precision
       this.netCommandService
         .repairNet(this.placeSolution.place, solution) //XXX change here to ".repairSpecification"
         .subscribe(() => this.overlayRef?.dispose());
@@ -164,13 +169,13 @@ function generateTextForAutoRepair(
 
   if (solution.type === 'add-place') {
     return {
-      label: `${baseText}${getSubLabel(solution)}`,
+      label: `${baseText}${getSubLabel2(solution)}${getSubLabel(solution)}`,
     };
   }
 
   if (solution.type === 'add-trace') {
     return {
-      label: `${baseText}${getSubLabel(solution)}`,
+      label: `${baseText}${getSubLabel3(solution)}`,
     };
   }
 
@@ -200,10 +205,10 @@ function generateBaseText(
 ): string {
   let text = solutionTypeToText[solution.repairType];
   if (solution.type === 'add-place') {
-    text = 'Add place';
+    text = 'Repair wrong continuation';
   }
   if (solution.type === 'add-trace') {
-    text = 'Add wrong continuation to specification';
+    text = 'Add wrong continuation';
   }
   if (solution.type === 'marking') {
     text = 'Add tokens';
@@ -218,4 +223,14 @@ function generateBaseText(
   }
 
   return `<b>${text}</b></br>`;
+}
+
+// Generate the text of the RepairMenu.SolutionList.Record.SecondLine
+function getSubLabel2(solution: { regionSize: number }): string {
+  return `<span>by adding a new place.</span></br>`;
+}
+
+// Generate the text of the RepairMenu.SolutionList.Record.SecondLine
+function getSubLabel3(solution: { regionSize: number }): string {
+  return `<span>to the specification.</span>`;
 }

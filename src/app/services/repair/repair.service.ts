@@ -102,7 +102,7 @@ export class RepairService {
     );
   }
 
-  showRepairPopoverForSolutionPrecision(ref: DOMRect, solution?: any): void { //  solution?: PrecisionSolution //YYY
+  showRepairPopoverForSolutionPrecision(ref: DOMRect, solution?: any): void { //  solution?: PrecisionSolution //XXX
     if (!solution) {
       this.toastr.warning(`No solutions found`);
       return;
@@ -171,7 +171,7 @@ export class RepairService {
   }
 
   showRepairPopoverPrecision(ref: DOMRect, transition: string): void {
-    console.log("showRepairPopoverPrecision");//YYY
+    console.log("showRepairPopoverPrecision");//XXX
     console.log(transition);
     if (this.currentOpenElement === transition) {
       this.currentOpenElement = undefined;
@@ -179,7 +179,7 @@ export class RepairService {
       return;
     }
     console.log(this.solutions);
-    const solutionsForTransition = this.solutions.find( // const solutionsForTransition = this.precisionSolutions.find( //YYY
+    const solutionsForTransition = this.solutions.find( // const solutionsForTransition = this.precisionSolutions.find( //XXX
       (s) => s.type === 'possibility' && s.newTransition === transition // && s.transition === transition
     );
     console.log(solutionsForTransition);

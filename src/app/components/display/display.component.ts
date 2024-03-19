@@ -206,7 +206,7 @@ export class DisplayComponent implements OnInit {
                 }
                 */
                 this.wrongContinuations = this.checkWrongContinuations(net, partialOrders[0], partialOrders);
-                this.wrongContinuationsString = this.wrongContinuations.map(a=> a.wrongContinuation);
+                this.wrongContinuationsString = this.wrongContinuations.map(a => a.wrongContinuation);
 
                 this.wrongContinuationCount$.next({
                   count: this.wrongContinuations.length,
@@ -242,7 +242,14 @@ export class DisplayComponent implements OnInit {
                   transition.issueStatus = undefined;
                 });
                 transitions.forEach((invalidTransition) => {
+                  let relatedWrongContinuationsCount = 0; //XXX
+                  for (let i = 0; i < this.wrongContinuations.length; i++) {
+                    if (this.wrongContinuations[i].firstInvalidTransition == invalidTransition.id) {
+                      relatedWrongContinuationsCount = relatedWrongContinuationsCount + 1;
+                    }
+                  }
                   invalidTransition.issueStatus = 'error';
+                  invalidTransition.relatedWrongContinuationsCount = relatedWrongContinuationsCount.toString();
                 });
 
                 if (showSuggestions == "fitness") {
@@ -274,7 +281,7 @@ export class DisplayComponent implements OnInit {
                     count: 0,
                   });
 
-                  
+
                   let invalidPlaces = { //XXX
                     "p_new": 1
                   }
@@ -363,7 +370,7 @@ export class DisplayComponent implements OnInit {
     partialOrder: PartialOrder,
     partialOrders: PartialOrder[]
   ): wrongContinuation[] {
-    return new CheckWrongContinuations(petriNet, partialOrder, partialOrders).getWrongContinuations();
+    return new CheckWrongContinuations(petriNet, partialOrder, partialOrders, this.petriNetRegionsService).getWrongContinuations();
   }
 
   private identifyTransitionsWithWrongContinuations(
@@ -372,6 +379,6 @@ export class DisplayComponent implements OnInit {
     partialOrders: PartialOrder[],
     wrongContinuations: wrongContinuation[]
   ): string[] {
-    return new CheckWrongContinuations(petriNet, partialOrder, partialOrders).getInvalidTransitions(wrongContinuations);
+    return new CheckWrongContinuations(petriNet, partialOrder, partialOrders, this.petriNetRegionsService).getInvalidTransitions(wrongContinuations);
   }
 }

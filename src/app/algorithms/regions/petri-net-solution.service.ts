@@ -351,7 +351,7 @@ export class PetriNetSolutionService {
                   existingPlace,
                   idToTransitionLabelMap,
                   wrongContinuations
-                );
+                );//YYY
                 console.log("Parsed solutions: ");
                 console.log(parsedSolutions);
 
@@ -404,7 +404,7 @@ export class PetriNetSolutionService {
                       missingTokens: missingTokens,
                       invalidTraceCount: invalidTransitions[place.placeId],
                       wrongContinuations: wrongContinuations,
-                      newTransition: wrongContinuations[0].wrongContinuation.charAt(wrongContinuations[0].wrongContinuation.length - 2) //XXX
+                      newTransition: wrongContinuations[0] ? wrongContinuations[0].wrongContinuation.charAt(wrongContinuations[0].wrongContinuation.length - 1) : "" //XXX
                     } as unknown as PlaceSolution;
                 }
               })

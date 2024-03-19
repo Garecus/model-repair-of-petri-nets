@@ -55,4 +55,5 @@ export interface wrongContinuation {
   id: number;
   type: string;
   wrongContinuation: string;
+  firstInvalidTransition: string;
 }

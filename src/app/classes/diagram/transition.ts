@@ -4,6 +4,7 @@ export interface Transition extends ConcreteElementWithArcs {
   type: 'transition';
   label: string;
   issueStatus?: 'warning' | 'error' | 'possibility';
+  relatedWrongContinuationsCount?: string;
 }
 
 export interface EventItem extends ConcreteElementWithArcs {
