@@ -47,7 +47,7 @@
           <div class="button-bar__group">
             <button
               *ngIf="shouldShowSuggestions$ | async"
-              [disabled]="netCommandService.undoQueue.length === 0"
+              [disabled]="netCommandService.undoQueue.length === 0 || netCommandService.undoQueueLog.length === 0"
               mat-raised-button
               (click)="netCommandService.undo()"
               class="reset-button"
@@ -62,7 +62,7 @@
             </button>
             <button
               *ngIf="shouldShowSuggestions$ | async"
-              [disabled]="netCommandService.redoQueue.length === 0"
+              [disabled]="netCommandService.redoQueue.length === 0 || netCommandService.redoQueueLog.length === 0"
               mat-raised-button
               (click)="netCommandService.redo()"
               class="reset-button"

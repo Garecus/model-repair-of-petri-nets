@@ -388,6 +388,7 @@ export class CheckWrongContinuations {
       let firstInvalidTransition = currentWC.charAt(currentWC.length - 1);
       const isMatching = this.petriNet.arcs.some(arc => {
 
+        //XXX Can this be removed?
         if (currentWC == "abbbb") {
           let wcSplitted = currentWC.split('');
           for (let i = wcSplitted.length; i >= 0; i--) {
@@ -487,7 +488,7 @@ export class CheckWrongContinuations {
       if (checkRepair) {
         wcType = "repairable";
       } */
-      if (this.wrongContinuations[i] == "abbc") {
+      if (this.wrongContinuations[i] == "abbc") { //XXX
         wcType = "not repairable";
       } else {
         wcType = "repairable";

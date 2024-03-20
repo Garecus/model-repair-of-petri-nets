@@ -927,7 +927,7 @@ export class IlpSolver {
     } */
 
   // Avoid wrong continuations, if base ilp is done and solutions should be restricted
-  private avoidWrongContinuationIlp(baseIlp: LP, existingPlace: Place, wrongContinuations: wrongContinuation[], partialOrders: PartialOrder[]): LP {
+  private avoidWrongContinuationIlp(baseIlp: LP, existingPlace: Place, wrongContinuations: wrongContinuation[], partialOrders: PartialOrder[], z: number): LP {
     const result = clonedeep(baseIlp);
     /* this.addConstraintsForSameIncomingWeights(existingPlace, result);
     this.addConstraintsForSameOutgoingWeights(existingPlace, result); */
@@ -935,7 +935,7 @@ export class IlpSolver {
     console.log(existingPlace);
     console.log(wrongContinuations);
     if (wrongContinuations.length > 0) {
-      let splitWC = wrongContinuations[0].wrongContinuation.split(''); //XXX
+      let splitWC = wrongContinuations[z].wrongContinuation.split(''); //XXX
       /* console.log(arcSplitted[0]);
       console.log(arcSplitted[1]); */
 
@@ -1033,7 +1033,7 @@ export class IlpSolver {
 
       console.log("Variables in smallerThan: ");
       console.log(variables);
-      /* if (wrongContinuations[0].type != "not repairable") { */ //XXX  && wrongContinuations[0].wrongContinuation != "abbbb"
+      /* if (wrongContinuations[z].type != "not repairable") { */ //XXX  && wrongContinuations[z].wrongContinuation != "abbbb"
       result.subjectTo = result.subjectTo.concat(
         this.smallerThan(variables, 0).constraints // e.g.: if 3 or greater than different solution
       );
@@ -1047,7 +1047,7 @@ export class IlpSolver {
         ); 
       } */
 
-      this.addConstraintsForWrongContinuation(wrongContinuations, partialOrders, result);
+      this.addConstraintsForWrongContinuation(wrongContinuations, partialOrders, result, z);
       /* result.subjectTo = result.subjectTo.concat(
         this.getRulesForNoOtherArcs(
           Array.from(handledTransitions),
@@ -1063,13 +1063,13 @@ export class IlpSolver {
   }
 
   // Single variable values to get a specific solution type (add-place)
-  private addConstraintsForWrongContinuation(wrongContinuations: wrongContinuation[], partialOrders: PartialOrder[], result: LP) {
-    let startTransition = wrongContinuations[0].wrongContinuation.charAt(0);
-    let firstNotValidTransition = wrongContinuations[0].wrongContinuation.charAt(wrongContinuations[0].wrongContinuation.length - 1);
+  private addConstraintsForWrongContinuation(wrongContinuations: wrongContinuation[], partialOrders: PartialOrder[], result: LP, z: number) {
+    let startTransition = wrongContinuations[z].wrongContinuation.charAt(0);
+    let firstNotValidTransition = wrongContinuations[z].wrongContinuation.charAt(wrongContinuations[z].wrongContinuation.length - 1);
     let lastValidTransition = "";
     let lastValidWithLoop = "";
     let whileLoop = false;
-    if (wrongContinuations[0].wrongContinuation.charAt(wrongContinuations[0].wrongContinuation.length - 3) == wrongContinuations[0].wrongContinuation.charAt(wrongContinuations[0].wrongContinuation.length - 2)) {
+    if (wrongContinuations[z].wrongContinuation.charAt(wrongContinuations[z].wrongContinuation.length - 3) == wrongContinuations[z].wrongContinuation.charAt(wrongContinuations[z].wrongContinuation.length - 2)) {
       whileLoop = true;
     }
     const handledTransitions: string[] = [];
@@ -1269,7 +1269,7 @@ export class IlpSolver {
  * @param placeModel the id of the place to generate a new for
  */
   computePrecisionSolutions(
-    placeModel: SolutionGeneratorType, wrongContinuations: any
+    placeModel: SolutionGeneratorType, wrongContinuations: any, z:number
   ): Observable<ProblemSolution[]> {
     // Generate place for missing transition
     if (placeModel.type === 'transition') {
@@ -1380,7 +1380,7 @@ export class IlpSolver {
     console.log(unhandledPairs);
     return combineLatest(
       unhandledPairs.map((pair) =>
-        this.solveILP(this.avoidWrongContinuationIlp(this.baseIlp, invalidPlace!, wrongContinuations, this.partialOrders)).pipe( // populateIlpByCausalPairs(this.baseIlp, pair)
+        this.solveILP(this.avoidWrongContinuationIlp(this.baseIlp, invalidPlace!, wrongContinuations, this.partialOrders, z)).pipe( // populateIlpByCausalPairs(this.baseIlp, pair)
           switchMap((solution) => {
             if (solution.solution.result.status !== Solution.NO_SOLUTION) {
               return of(solution);
@@ -1415,7 +1415,8 @@ export class IlpSolver {
                 this.baseIlp,
                 invalidPlace!,
                 wrongContinuations,
-                this.partialOrders
+                this.partialOrders,
+                z
               ),
             },
             {
@@ -1424,7 +1425,8 @@ export class IlpSolver {
                 this.baseIlp,
                 invalidPlace!,
                 wrongContinuations,
-                this.partialOrders
+                this.partialOrders,
+                z
               ),
             }
           ];
@@ -1439,7 +1441,7 @@ export class IlpSolver {
                 }))
               )
             )
-          ).pipe(map((solutions) => [...solutions,])); //...multiplePlaces
+          ).pipe(map((solutions) => [...solutions,])); //...multiplePlaces //ZZZ
         }
       ),
       toArray(),
@@ -1463,10 +1465,15 @@ export class IlpSolver {
                 solution.solution.result.status !== Solution.NO_SOLUTION
             )
             .forEach((solution) => {
-              typeToSolution[solution.type].sum = Math.max(
-                typeToSolution[solution.type].sum,
-                this.generateSumForVars(solution.solution.result.vars)
-              );
+                typeToSolution[solution.type].sum = Math.max(
+                  typeToSolution[solution.type].sum,
+                  this.generateSumForVars(solution.solution.result.vars)
+                );
+
+                if (solution.type === "addTrace") {
+                  typeToSolution[solution.type].sum = 999;
+                }
+
               typeToSolution[solution.type].vars.push(
                 solution.solution.result.vars
               );

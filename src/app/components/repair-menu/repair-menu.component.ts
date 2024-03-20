@@ -205,10 +205,10 @@ function generateBaseText(
 ): string {
   let text = solutionTypeToText[solution.repairType];
   if (solution.type === 'add-place') {
-    text = 'Repair wrong continuation';
+    text = 'Repair wrong continuation ' + solution.relatedWrongContinuation?.wrongContinuation;
   }
   if (solution.type === 'add-trace') {
-    text = 'Add wrong continuation';
+    text = 'Add wrong continuation ' + solution.relatedWrongContinuation?.wrongContinuation;
   }
   if (solution.type === 'marking') {
     text = 'Add tokens';

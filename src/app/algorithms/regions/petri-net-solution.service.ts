@@ -33,7 +33,7 @@ export class PetriNetSolutionService {
   constructor(private repairService: RepairService) { }
 
   computeSolutions(
-    partialOrders: any[], /* PartialOrder[] */ // ToDo
+    partialOrders: any[], /* PartialOrder[] */ //XXX
     petriNet: PetriNet,
     invalidPlaces: { [key: string]: number }
   ): Observable<PlaceSolution[]> {
@@ -150,7 +150,8 @@ export class PetriNetSolutionService {
                   handleSolutions(solutions, solver),
                   existingPlace,
                   idToTransitionLabelMap,
-                  []
+                  [],
+                  0
                 );
 
                 const newTokens = parsedSolutions.find(
@@ -204,11 +205,12 @@ export class PetriNetSolutionService {
   }
 
   computePrecisionSolutions(
-    partialOrders: any[], /* PartialOrder[] */ // ToDo
+    partialOrders: any[], /* PartialOrder[] */ //XXX
     petriNet: PetriNet,
     invalidPlaces: { [key: string]: number },
     invalidTransitions: { [key: string]: number },
-    wrongContinuations: wrongContinuation[]
+    wrongContinuations: wrongContinuation[],
+    z: number
   ): Observable<PlaceSolution[]> {
     console.log("Compute precision with invalid places and transitions: ");
     console.log(invalidPlaces);
@@ -296,7 +298,7 @@ export class PetriNetSolutionService {
 
         return combineLatest(
           invalidPlaceList.map((place) =>
-            solver.computePrecisionSolutions(place, wrongContinuations).pipe(
+            solver.computePrecisionSolutions(place, wrongContinuations, z).pipe(
               map((solutions) => {
                 /* const existingPlace =
                   place.type === 'warning' || place.type === 'possibility'
@@ -346,11 +348,13 @@ export class PetriNetSolutionService {
                   return undefined;
                 }
 
+                console.log(solutions);
                 const parsedSolutions = parseSolution(
                   handleSolutions(solutions, solver),
                   existingPlace,
                   idToTransitionLabelMap,
-                  wrongContinuations
+                  wrongContinuations,
+                  z
                 );//YYY
                 console.log("Parsed solutions: ");
                 console.log(parsedSolutions);
@@ -404,7 +408,7 @@ export class PetriNetSolutionService {
                       missingTokens: missingTokens,
                       invalidTraceCount: invalidTransitions[place.placeId],
                       wrongContinuations: wrongContinuations,
-                      newTransition: wrongContinuations[0] ? wrongContinuations[0].wrongContinuation.charAt(wrongContinuations[0].wrongContinuation.length - 1) : "" //XXX
+                      newTransition: wrongContinuations[z] ? wrongContinuations[z].wrongContinuation.charAt(wrongContinuations[z].wrongContinuation.length - 1) : "" //XXX Possibility to change this to solutions.wrongContinuation within a for loop
                     } as unknown as PlaceSolution;
                 }
               })

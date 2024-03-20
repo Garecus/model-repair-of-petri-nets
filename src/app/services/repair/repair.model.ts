@@ -1,3 +1,4 @@
+import { wrongContinuation } from 'src/app/classes/diagram/partial-order';
 import { SolutionType } from '../../algorithms/regions/ilp-solver/solver-classes';
 import { AutoRepairWithSolutionType } from '../../algorithms/regions/parse-solutions.fn';
 
@@ -64,12 +65,12 @@ export type PrecisionSolution =
     missingTokens: number | undefined;
     regionSize: number;
 
-    tooManyTokens: number;
-    reduceTokensTo: number;
-    missingTransition: string;
+    tooManyTokens?: number;
+    reduceTokensTo?: number;
+    missingTransition?: string;
 
-    wrongContinuations: string;
-    transition: string;
-    missingPlace: string;
-    newTransition: string;
+    wrongContinuations?: wrongContinuation[]; // string //ZZZ
+    transition?: string;
+    missingPlace?: string;
+    newTransition?: string;
   };

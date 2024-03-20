@@ -27,6 +27,8 @@ import { CheckWrongContinuations } from 'src/app/algorithms/check-wrong-continua
 export class NetCommandService {
   undoQueue: string[] = [];
   redoQueue: string[] = [];
+  undoQueueLog: string[] = [];
+  redoQueueLog: string[] = [];
 
   constructor(
     private uploadService: UploadService,
@@ -76,7 +78,17 @@ export class NetCommandService {
           return null;
         }
 
+        // Store the current net in the undo list
         this.undoQueue.push(generateTextFromNet(petriNet));
+
+        // Store the current log in the undo list
+        this.uploadService
+          .getLogUpload$()
+          .pipe(first())
+          .subscribe((currentUpload) => {
+            this.undoQueueLog.push(currentUpload);
+          });
+
         return generateTextForNewNet(placeIndex, petriNet, solution);
       }),
       tap((newNet) => {
@@ -101,6 +113,8 @@ export class NetCommandService {
       first(),
       map((specification) => {
         if (specification != null) {
+          // Store the current log in the undo list
+          this.undoQueueLog.push(generateLog(specification));
           return generateTraceForLog(specification, solution);
         }
         return "";
@@ -108,17 +122,26 @@ export class NetCommandService {
       tap((newSpecification) => {
         if (newSpecification) {
           this.uploadService.setUploadLog(newSpecification);
+          // Store the current net in the undo list
+          this.uploadService
+            .getNetUpload$()
+            .pipe(first())
+            .subscribe((currentUpload) => {
+              this.undoQueue.push(currentUpload);
+            });
+
         }
       })
     );
   }
 
+  // Action that is performed, if the user uses the button "Undo correction"
   undo(): void {
+    // Get the latest net and store it, then upload the old one
     const net = this.undoQueue.pop();
     if (!net) {
       return;
     }
-
     this.uploadService
       .getNetUpload$()
       .pipe(first())
@@ -126,20 +149,46 @@ export class NetCommandService {
         this.redoQueue.push(currentUpload);
         this.uploadService.setUploadText(net);
       });
+
+    // Get the latest log and store it, then upload the old one
+    const log = this.undoQueueLog.pop();
+    if (!log) {
+      return;
+    }
+    this.uploadService
+      .getLogUpload$()
+      .pipe(first())
+      .subscribe((currentUpload) => {
+        this.redoQueueLog.push(currentUpload);
+        this.uploadService.setUploadLog(log);
+      });
   }
 
   redo(): void {
+    // Get the current net and store it, then upload the new one
     const net = this.redoQueue.pop();
     if (!net) {
       return;
     }
-
     this.uploadService
       .getNetUpload$()
       .pipe(first())
       .subscribe((currentUpload) => {
         this.undoQueue.push(currentUpload);
         this.uploadService.setUploadText(net);
+      });
+
+    // Get the current log and store it, then upload the new one
+    const log = this.redoQueueLog.pop();
+    if (!log) {
+      return;
+    }
+    this.uploadService
+      .getLogUpload$()
+      .pipe(first())
+      .subscribe((currentUpload) => {
+        this.undoQueueLog.push(currentUpload);
+        this.uploadService.setUploadLog(log);
       });
   }
 }
@@ -339,6 +388,19 @@ function generateTraceForLog(
   }
   console.log(specification);
   console.log(newText);
+  return newText;
+}
+
+function generateLog(
+  specification: PartialOrder[]
+): string {
+  let newText = `${logTypeKey}\n${attributesAttribute}\n${caseIdAttribute}\n${conceptNameAttribute}\n${eventsAttribute}\n`;
+  specification.forEach((trace, index) => {
+    for (let i = 0; i < trace.events.length; i++) {
+      let j = index + 1;
+      newText += `${j} ${trace.events[i].label} \n`;
+    }
+  });
   return newText;
 }
 

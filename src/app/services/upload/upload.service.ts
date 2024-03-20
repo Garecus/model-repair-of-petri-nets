@@ -25,7 +25,7 @@ export class UploadService {
     this.currentLogUpload$ = new ReplaySubject<string>(1);
   }
 
-  setUploadText(text: string): void {
+  setUploadText(text: string): void { //XXX Text to Net
     this.currentNetUpload$.next(text);
   }
 

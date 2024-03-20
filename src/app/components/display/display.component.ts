@@ -283,22 +283,41 @@ export class DisplayComponent implements OnInit {
 
 
                   let invalidPlaces = { //XXX
-                    "p_new": 1
+                    "p_new": 1,
                   }
 
-                  return this.petriNetRegionsService
-                    .computePrecisionSolutions(partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations)
-                    .pipe(
-                      tap(() => (this.computingSolutions = false)),
-                      map((solutions) => ({
-                        solutions,
-                        renderChanges: false,
-                      })),
-                      startWith({
-                        solutions: [] as PrecisionSolution[],
-                        renderChanges: false,
-                      })
-                    );
+                  for (let z = 0; z < this.wrongContinuations.length; z++) { //ZZZ
+                    return this.petriNetRegionsService
+                      .computePrecisionSolutions(partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations, z)
+                      .pipe(
+                        tap(() => (this.computingSolutions = false)
+                        ),
+                        map((solutions) => ({
+                          solutions,
+                          renderChanges: false,
+                        })
+                        ),
+                        startWith({
+                          solutions: [] as PrecisionSolution[],
+                          renderChanges: false,
+                        })
+                      );
+                  }
+
+                  return [];
+                  /* return this.petriNetRegionsService
+                  .computePrecisionSolutions(partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations, 0)
+                  .pipe(
+                    tap(() => (this.computingSolutions = false)),
+                    map((solutions) => ({
+                      solutions,
+                      renderChanges: false,
+                    })),
+                    startWith({
+                      solutions: [] as PrecisionSolution[],
+                      renderChanges: false,
+                    })
+                  ); */
                 } else {
                   net.transitions.forEach((transition) => {
                     transition.issueStatus = undefined;
@@ -318,6 +337,51 @@ export class DisplayComponent implements OnInit {
 
               }),
               map(({ solutions, renderChanges }) => {
+                /* console.log("HERE"); //ZZZ
+                console.log(solutions[0]);
+                solutions.push({
+                  "invalidTraceCount": 0,
+                  "missingTokens": 0,
+                  "regionSize":0,
+                  "type": "possibility",
+                  "place": "p_new",
+                  "solutions": [
+                      {
+                          "type": "add-place",
+                          "incoming": [
+                              {
+                                  "transitionLabel": "a",
+                                  "weight": 0
+                              }
+                          ],
+                          "outgoing": [
+                              {
+                                  "transitionLabel": "c",
+                                  "weight": 0
+                              }
+                          ],
+                          "regionSize": 0,
+                          "repairType": "addPlace",
+                          "wrongContinuationNotRepairable": "",
+                      }
+                  ],
+                  "wrongContinuations": [
+                      {
+                          "id": 0,
+                          "type": "not repairable",
+                          "wrongContinuation": "abbc",
+                          "firstInvalidTransition": "c"
+                      },
+                      {
+                          "id": 1,
+                          "type": "repairable",
+                          "wrongContinuation": "abbbb",
+                          "firstInvalidTransition": "b"
+                      }
+                  ],
+                  "newTransition": "c"
+              });
+              console.log(solutions); */
                 for (const place of solutions) {
                   if (place.type === 'newTransition') {
                     continue;
