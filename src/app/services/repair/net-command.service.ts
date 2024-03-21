@@ -66,7 +66,8 @@ export class NetCommandService {
       return of(null);
     }
 
-    if (placeId == "p_new") {
+    // Set the invalid place to an existing one to pass the if request 10 lines below
+    if (placeId) { //placeId == "p_new"
       placeId = "p1"; //XXX
     }
 

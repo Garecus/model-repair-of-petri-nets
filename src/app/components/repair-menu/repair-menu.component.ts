@@ -123,13 +123,13 @@ export class RepairMenuComponent implements OnInit {
           solution
         )
         .subscribe(() => this.overlayRef?.dispose());
-    } else if (this.placeSolution.type === 'possibility' && solution.type == "add-trace") { // Precision this.placeSolution.solutions[0].regionSize == 0 //YYY
+    } else if (this.placeSolution.type === 'possibility' && solution.type == "add-trace") { // Precision
       this.netCommandService
         .repairSpecification(this.placeSolution.place, solution)
         .subscribe(() => this.overlayRef?.dispose());
     } else if (this.placeSolution.type === 'possibility' && solution.type == "add-place") { // Precision
       this.netCommandService
-        .repairNet(this.placeSolution.place, solution) //XXX change here to ".repairSpecification"
+        .repairNet(this.placeSolution.place, solution)
         .subscribe(() => this.overlayRef?.dispose());
     } else {
       this.netCommandService
@@ -189,7 +189,7 @@ const solutionTypeToText: { [key in SolutionType]: string } = {
   changeMarking: 'Add tokens',
   changeIncoming: 'Add ingoing tokens',
   multiplePlaces: 'Split place',
-  addPlace: 'Add place',
+  addPlace: 'Repair wrong continuation',
   addTrace: 'Add wrong continuation to specification',
 };
 
@@ -205,10 +205,13 @@ function generateBaseText(
 ): string {
   let text = solutionTypeToText[solution.repairType];
   if (solution.type === 'add-place') {
-    text = 'Repair wrong continuation ' + solution.relatedWrongContinuation?.wrongContinuation;
+    text = 'Repair ' + solution.relatedWrongContinuation?.wrongContinuation;
   }
   if (solution.type === 'add-trace') {
-    text = 'Add wrong continuation ' + solution.relatedWrongContinuation?.wrongContinuation;
+    text = 'Add ' + solution.relatedWrongContinuation?.wrongContinuation;
+    if (solution.relatedWrongContinuation?.type == "not repairable") {
+      text = text + ' (Only one solution!)';
+    }
   }
   if (solution.type === 'marking') {
     text = 'Add tokens';

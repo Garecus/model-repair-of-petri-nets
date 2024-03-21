@@ -143,6 +143,7 @@ export class DisplayComponent implements OnInit {
           switchMap((partialOrders: PartialOrder[] | null) =>
             this.shouldShowSuggestions$.pipe(
               switchMap((showSuggestions) => {
+                
                 if (showSuggestions == "precision") {
                   this.precisionActive = true;
                 } else {
@@ -164,7 +165,7 @@ export class DisplayComponent implements OnInit {
                   this.repairService.saveNewSolutions([], 0);
                   return of({ solutions: [], renderChanges: true });
                 }
-
+                
                 this.computingSolutions = true;
                 // Identification of invalidPlaces to know where repairs can be performed
                 const invalidPlaces: {
@@ -216,7 +217,7 @@ export class DisplayComponent implements OnInit {
                 const invalidTransitions: {
                   [key: string]: number;
                 } = {};
-                for (let index = 0; index < partialOrders.length; index++) {
+                for (let index = 0; index < partialOrders.length; index++) { //ZZZ ggf. hier
                   const currentInvalid = this.identifyTransitionsWithWrongContinuations(
                     net,
                     partialOrders[index], partialOrders, this.wrongContinuations
@@ -286,8 +287,11 @@ export class DisplayComponent implements OnInit {
                     "p_new": 1,
                   }
 
-                  for (let z = 0; z < this.wrongContinuations.length; z++) { //ZZZ
+                  //let solutions: any = [];
+                  //let newSolution: any;
+                 /*  for (let z = 0; z < this.wrongContinuations.length; z++) { //ZZZ
                     return this.petriNetRegionsService
+                    //newSolution = this.petriNetRegionsService
                       .computePrecisionSolutions(partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations, z)
                       .pipe(
                         tap(() => (this.computingSolutions = false)
@@ -302,11 +306,15 @@ export class DisplayComponent implements OnInit {
                           renderChanges: false,
                         })
                       );
+                      //solutions.push(newSolution);
                   }
-
-                  return [];
-                  /* return this.petriNetRegionsService
-                  .computePrecisionSolutions(partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations, 0)
+                  this.computingSolutions = false;
+                  return of({ solutions: [], renderChanges: true }); */
+                  //console.log(solutions);
+                  //solutions = solutions[0];
+                  //return of({ solutions, renderChanges: true });
+                  return this.petriNetRegionsService
+                  .computePrecisionSolutions(partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations)
                   .pipe(
                     tap(() => (this.computingSolutions = false)),
                     map((solutions) => ({
@@ -317,7 +325,7 @@ export class DisplayComponent implements OnInit {
                       solutions: [] as PrecisionSolution[],
                       renderChanges: false,
                     })
-                  ); */
+                  );
                 } else {
                   net.transitions.forEach((transition) => {
                     transition.issueStatus = undefined;

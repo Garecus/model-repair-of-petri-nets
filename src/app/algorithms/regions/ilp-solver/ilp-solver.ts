@@ -36,15 +36,17 @@ export type SolutionGeneratorType =
   | {
     type: 'repair' | 'warning' | 'possibility';
     placeId: string;
+    newTransition?: string;
   }
   | {
     type: 'transition';
     newTransition: string;
   }
-  /* | { 
-    type: 'repair' | 'warning' | 'possibility';
-    transitionId: string;
-  } */;
+  | {
+    type: 'possibility';
+    newTransition: string;
+    placeId: string;
+  };
 
 export class IlpSolver {
   private readonly PO_ARC_SEPARATOR = '_';
@@ -1088,7 +1090,7 @@ export class IlpSolver {
             VariableName.OUTGOING_ARC_WEIGHT_PREFIX
           )
         ),
-        1 //YYY
+        1
       ).constraints
     );
     handledTransitions.push("out_" + firstNotValidTransition);
@@ -1142,7 +1144,7 @@ export class IlpSolver {
               VariableName.INGOING_ARC_WEIGHT_PREFIX
             )
           ),
-          1 //YYY
+          1
         ).constraints
       );
       handledTransitions.push("in_" + lastValidTransition);
@@ -1269,7 +1271,7 @@ export class IlpSolver {
  * @param placeModel the id of the place to generate a new for
  */
   computePrecisionSolutions(
-    placeModel: SolutionGeneratorType, wrongContinuations: any, z:number
+    placeModel: SolutionGeneratorType, wrongContinuations: any
   ): Observable<ProblemSolution[]> {
     // Generate place for missing transition
     if (placeModel.type === 'transition') {
@@ -1374,10 +1376,15 @@ export class IlpSolver {
         })
       );
     } */
-
+    /*     let newSolutions: any = [];
+        let newSolution: any;
+        for (let k1 = 0; k1 < wrongContinuations.length; k1++) {
+          if (wrongContinuations[k1].firstInvalidTransition == "c") { */
     const unhandledPairs = this.getUnhandledPairs(invalidPlace!);
     console.log("unhandledPairs");
     console.log(unhandledPairs);
+    /* newSolution =  combineLatest( */
+    let z = wrongContinuations.findIndex((vari: { firstInvalidTransition: string | string[]; }) => vari.firstInvalidTransition.includes(placeModel.placeId)); //ZZZ
     return combineLatest(
       unhandledPairs.map((pair) =>
         this.solveILP(this.avoidWrongContinuationIlp(this.baseIlp, invalidPlace!, wrongContinuations, this.partialOrders, z)).pipe( // populateIlpByCausalPairs(this.baseIlp, pair)
@@ -1408,7 +1415,8 @@ export class IlpSolver {
             type: SolutionType;
           })[]
         ) => {
-          const ilpsToSolve: { type: SolutionType; ilp: LP }[] = [
+          // If we handle the iteration here, then the solutions will be combined into one solution per type. If we handle the iteration higher, then it will not work, because the response is different and cant be handled in parse-solutionfile line 302
+          let ilpsToSolve: { type: SolutionType; ilp: LP }[] = [
             {
               type: 'addPlace' as SolutionType,
               ilp: this.avoidWrongContinuationIlp( // XXX
@@ -1430,6 +1438,30 @@ export class IlpSolver {
               ),
             }
           ];
+
+
+          /*               ilpsToSolve.push({
+                          type: 'addPlace' as SolutionType,
+                          ilp: this.avoidWrongContinuationIlp( // XXX
+                            this.baseIlp,
+                            invalidPlace!,
+                            wrongContinuations,
+                            this.partialOrders,
+                            k1
+                          ),
+                        });
+          
+                        ilpsToSolve.push({
+                          type: 'addTrace' as SolutionType,
+                          ilp: this.avoidWrongContinuationIlp( // XXX
+                            this.baseIlp,
+                            invalidPlace!,
+                            wrongContinuations,
+                            this.partialOrders,
+                            k1
+                          ),
+                        }); */
+
           console.log("ilpsToSolve");
           console.log(ilpsToSolve);
           return combineLatest(
@@ -1465,14 +1497,14 @@ export class IlpSolver {
                 solution.solution.result.status !== Solution.NO_SOLUTION
             )
             .forEach((solution) => {
-                typeToSolution[solution.type].sum = Math.max(
-                  typeToSolution[solution.type].sum,
-                  this.generateSumForVars(solution.solution.result.vars)
-                );
+              typeToSolution[solution.type].sum = Math.max(
+                typeToSolution[solution.type].sum,
+                this.generateSumForVars(solution.solution.result.vars)
+              );
 
-                if (solution.type === "addTrace") {
-                  typeToSolution[solution.type].sum = 999;
-                }
+              if (solution.type === "addTrace") {
+                typeToSolution[solution.type].sum = 999;
+              }
 
               typeToSolution[solution.type].vars.push(
                 solution.solution.result.vars
@@ -1495,5 +1527,16 @@ export class IlpSolver {
         this.filterSolutionsInSpecificOrder(foundSolutions)
       )
     );
+
+    /*         if (!newSolution || newSolution != undefined) {
+              console.log(newSolution);
+              newSolutions.push(newSolution);
+            }
+            
+          }
+          
+        }
+        return newSolutions; */
+    /* return of([]); */
   }
 }

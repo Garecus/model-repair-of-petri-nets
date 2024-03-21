@@ -107,6 +107,7 @@ export class PetriNetSolutionService {
             // Go to ilp-solver.ts
             solver.computeSolutions(place).pipe(
               map((solutions) => {
+                console.log(invalidPlaceList); //ZZZ
                 const existingPlace =
                   place.type === 'repair' || place.type === 'warning' || place.type === 'possibility'
                     ? petriNet.places.find((p) => p.id === place.placeId)
@@ -151,6 +152,7 @@ export class PetriNetSolutionService {
                   existingPlace,
                   idToTransitionLabelMap,
                   [],
+                  { "": 0 },
                   0
                 );
 
@@ -185,7 +187,7 @@ export class PetriNetSolutionService {
                       place: place.placeId,
                       solutions: parsedSolutions,
                       missingTokens,
-                      invalidTraceCount: invalidPlaces[place.placeId],
+                      invalidTraceCount: 0,
                     } as PrecisionSolution;
                 }
               })
@@ -209,8 +211,7 @@ export class PetriNetSolutionService {
     petriNet: PetriNet,
     invalidPlaces: { [key: string]: number },
     invalidTransitions: { [key: string]: number },
-    wrongContinuations: wrongContinuation[],
-    z: number
+    wrongContinuations: wrongContinuation[]
   ): Observable<PlaceSolution[]> {
     console.log("Compute precision with invalid places and transitions: ");
     console.log(invalidPlaces);
@@ -224,7 +225,7 @@ export class PetriNetSolutionService {
 
         const invalidTransitionList: SolutionGeneratorType[] = Object.keys(
           invalidTransitions
-        ).map((transition) => ({ type: 'transition', newTransition: transition }));
+        ).map((transition) => ({ type: 'possibility', placeId: transition }));
 
         const allNetLabels = new Set<string>(
           petriNet.transitions.map((t) => t.label)
@@ -297,8 +298,8 @@ export class PetriNetSolutionService {
         /* invalidPlaceList[0].type="possibility"; */
 
         return combineLatest(
-          invalidPlaceList.map((place) =>
-            solver.computePrecisionSolutions(place, wrongContinuations, z).pipe(
+          invalidTransitionList.map((place) =>
+            solver.computePrecisionSolutions(place, wrongContinuations).pipe( //XXX Rename the function with the same name
               map((solutions) => {
                 /* const existingPlace =
                   place.type === 'warning' || place.type === 'possibility'
@@ -349,13 +350,21 @@ export class PetriNetSolutionService {
                 }
 
                 console.log(solutions);
+                console.log("PLACE");
+                console.log(place);
+                console.log(place);
+                let z = 0;
+                if (place.type == "possibility") {
+                  z = wrongContinuations.findIndex(variable => variable.firstInvalidTransition.includes(place.placeId)); //ZZZ
+                }
                 const parsedSolutions = parseSolution(
                   handleSolutions(solutions, solver),
                   existingPlace,
                   idToTransitionLabelMap,
                   wrongContinuations,
+                  invalidTransitions,
                   z
-                );//YYY
+                );//ZZZ
                 console.log("Parsed solutions: ");
                 console.log(parsedSolutions);
 
@@ -406,9 +415,9 @@ export class PetriNetSolutionService {
                       place: place.placeId,
                       solutions: parsedSolutions,
                       missingTokens: missingTokens,
-                      invalidTraceCount: invalidTransitions[place.placeId],
+                      invalidTraceCount: 0,
                       wrongContinuations: wrongContinuations,
-                      newTransition: wrongContinuations[z] ? wrongContinuations[z].wrongContinuation.charAt(wrongContinuations[z].wrongContinuation.length - 1) : "" //XXX Possibility to change this to solutions.wrongContinuation within a for loop
+                      newTransition: place.placeId //wrongContinuations[z] ? wrongContinuations[z].wrongContinuation.charAt(wrongContinuations[z].wrongContinuation.length - 1) : "" //XXX Possibility to change this to solutions.wrongContinuation within a for loop
                     } as unknown as PlaceSolution;
                 }
               })

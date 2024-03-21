@@ -58,16 +58,14 @@ export function parseSolution(
   existingPlace: Place | undefined,
   idTransitionToLabel: { [key: string]: string },
   wrongContinuations: wrongContinuation[],
+  invalidTransitions: { [key: string]: number },
   z: number
 ): AutoRepairWithSolutionType[] {
-  console.log("1. existingPlace");
+  console.log("existingPlace");
   console.log(existingPlace);
   console.log(placeSolutionList);
   /* if (Object.keys(placeSolutionList).length == 0) { */ //XXX change here and comment the if clause
-  let transferWrongContinuation = "";
-  if (wrongContinuations[z] && wrongContinuations[z].type == "not repairable") {//YYY 
-    transferWrongContinuation = wrongContinuations[z].wrongContinuation;
-
+  if (wrongContinuations[z] && wrongContinuations[z].type == "not repairable") {
     let returnList2 = [
       {
         "type": "add-trace",
@@ -85,7 +83,7 @@ export function parseSolution(
         ],
         "regionSize": 0, // Not repairable solution sort be sorted to the top
         "repairType": "addTrace",
-        "wrongContinuationNotRepairable": transferWrongContinuation, //XXX change to wrong continuation that was not possible to get a solution for
+        "wrongContinuationNotRepairable": wrongContinuations[z].wrongContinuation,
         "relatedWrongContinuation": wrongContinuations[z]
       }
     ]
@@ -305,53 +303,33 @@ export function parseSolution(
       }
     })
     .filter((solution) => !!solution);
-  console.log(returnList);
-  if (wrongContinuations[z]) {
-    transferWrongContinuation = wrongContinuations[z].wrongContinuation;
-    returnList.push(
-      {
-        "type": "add-trace",
-        "incoming": [
+  if (wrongContinuations[z]) { //ZZZ Implement now that the other solution could also be added!!!!
+    let currentTransition = wrongContinuations[z].firstInvalidTransition;
+    for (let k = 0; k < wrongContinuations.length; k++) {
+      if (wrongContinuations[k] && currentTransition.includes(wrongContinuations[k].firstInvalidTransition)) {
+        returnList.push(
           {
-            "transitionLabel": "",
-            "weight": 0
+            "type": "add-trace",
+            "incoming": [
+              {
+                "transitionLabel": "",
+                "weight": 0
+              }
+            ],
+            "outgoing": [
+              {
+                "transitionLabel": "",
+                "weight": 0
+              }
+            ],
+            "regionSize": 99999,
+            "repairType": "addTrace",
+            "wrongContinuationNotRepairable": wrongContinuations[k].wrongContinuation,
+            "relatedWrongContinuation": wrongContinuations[k]
           }
-        ],
-        "outgoing": [
-          {
-            "transitionLabel": "",
-            "weight": 0
-          }
-        ],
-        "regionSize": 99999,
-        "repairType": "addTrace",
-        "wrongContinuationNotRepairable": transferWrongContinuation,
-        "relatedWrongContinuation": wrongContinuations[z]
+        )
       }
-    )
-    //ZZZ
-
-    /* returnList.push(
-      {
-        "type": "add-place",
-        "incoming": [
-          {
-            "transitionLabel": "a",
-            "weight": 0
-          }
-        ],
-        "outgoing": [
-          {
-            "transitionLabel": "c",
-            "weight": 0
-          }
-        ],
-        "regionSize": 9,
-        "repairType": "addPlace",
-        "wrongContinuationNotRepairable": "abbc", //XXX
-        "relatedWrongContinuation": wrongContinuations[1] //XXX
-      }
-    ) */
+    }
   }
   return returnList as AutoRepairWithSolutionType[];
 }

@@ -537,7 +537,8 @@ export class CheckWrongContinuations {
         const currentString = inputArray[i];
 
         if (!followsArray.some(letter => currentString.includes(letter))) {
-          const lastLetter = currentString.charAt(currentString.length - 1); // const lastLetter = currentString.charAt(currentString.length - 2); //YYY
+          // Get the transition that is the first invali transition of the wrong continuation (using -2 would give us the last valid one)
+          const lastLetter = currentString.charAt(currentString.length - 1);
           noFollowsArray.push(lastLetter);
         }
       }
@@ -558,7 +559,6 @@ export class CheckWrongContinuations {
     console.log("Invalid Transitions");
     console.log(transitions);
     //transitions = [transitions[0]];
-    //YYY
     return transitions;
   }
 }
