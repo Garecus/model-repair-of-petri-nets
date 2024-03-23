@@ -29,24 +29,42 @@ export class RepairService {
 
   constructor(private toastr: ToastrService, private overlay: Overlay) { }
 
+  /**
+   * Save the generated solution
+   * @param solutions 
+   * @param partialOrderCount 
+   */
   saveNewSolutions(
     solutions: PlaceSolution[],
     partialOrderCount: number
   ): void {
     this.solutions = solutions;
     this.partialOrderCount = partialOrderCount;
-
     this.solutions$.next(solutions);
   }
 
+  /**
+   * Get the solution of the [fitness model repair]
+   * @returns solution
+   */
   getSolutions$(): Observable<PlaceSolution[]> {
     return this.solutions$;
   }
 
+  /**
+ * Get the solution of the [precision model repair]
+ * @returns solution
+ */
   getPrecisionSolutions$(): Observable<PrecisionSolution[]> {
     return this.precisionSolutions$;
   }
 
+  /**
+   * Show the repair popover (not repair menu) [fitness model repair]
+   * @param ref where it should be shown (element)
+   * @param solution 
+   * @returns the popover itself incl. settings, location
+   */
   showRepairPopoverForSolution(ref: DOMRect, solution?: PlaceSolution): void {
     if (!solution) {
       this.toastr.warning(`No solutions found`);
@@ -79,7 +97,7 @@ export class RepairService {
       ]);
 
     // We create the overlay
-    //Then we create a portal to render a component
+    // Then we create a portal to render a component
     const componentPortal = new ComponentPortal(RepairMenuComponent);
 
     this.overlayRef.addPanelClass('current-overlay');
@@ -102,6 +120,12 @@ export class RepairService {
     );
   }
 
+  /**
+   * Show the repair popover (not repair menu) [precision model repair]
+   * @param ref where it should be shown (element)
+   * @param solution 
+   * @returns the popover itself incl. settings, location
+   */
   showRepairPopoverForSolutionPrecision(ref: DOMRect, solution?: any): void { //  solution?: PrecisionSolution //XXX
     if (!solution) {
       this.toastr.warning(`No solutions found`);
@@ -157,6 +181,12 @@ export class RepairService {
     );
   }
 
+  /**
+   * Show the model repair popover [fitness model repair]
+   * @param ref reference value
+   * @param place show it on the position of the place
+   * @returns only if the opened element is not a place
+   */
   showRepairPopover(ref: DOMRect, place: string): void {
     if (this.currentOpenElement === place) {
       this.currentOpenElement = undefined;
@@ -170,9 +200,15 @@ export class RepairService {
     this.showRepairPopoverForSolution(ref, solutionsForPlace);
   }
 
+  /**
+   * Show the model repair popover [precision model repair]
+   * @param ref reference value
+   * @param transition show it on the position of the transition
+   * @returns only if the opened element is not a transition
+   */
   showRepairPopoverPrecision(ref: DOMRect, transition: string): void {
-    console.log("showRepairPopoverPrecision");//XXX
-    console.log(transition);
+    //console.log("showRepairPopoverPrecision");
+    //console.log(transition);
     if (this.currentOpenElement === transition) {
       this.currentOpenElement = undefined;
       this.overlayRef?.dispose();
@@ -186,6 +222,9 @@ export class RepairService {
     this.showRepairPopoverForSolutionPrecision(ref, solutionsForTransition);
   }
 
+  /**
+   * Clear the repair menu popover again
+   */
   private clearOverlay(): void {
     this.currentOpenElement = undefined;
     this.overlayRef?.dispose();

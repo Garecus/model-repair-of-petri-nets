@@ -1,3 +1,6 @@
+/**
+   * Petri net example
+   */
 export const examplePetriNet = `.type pn
 .transitions
 a a

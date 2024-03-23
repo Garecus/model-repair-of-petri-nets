@@ -44,7 +44,7 @@ type LogParsingStates = 'initial' | 'type' | 'attributes' | 'events';
 @Injectable({
   providedIn: 'root',
 })
-export class ParserService {
+export class ParserService { //XXX
   constructor(private toastr: ToastrService) { }
 
   private readonly transitionRegex = /^(\S*)\s*(.*)$/;
@@ -730,7 +730,7 @@ export class ParserService {
       }
     }
     console.log("Loopanzahl: " + this.maxLoopNumber);
-    
+
 
     // Example petri net
     /*     .type pn
@@ -862,7 +862,7 @@ export class ParserService {
     console.log("Endvariable: " + this.endVariable);
 
     // Build further strings based on the connected letters
-    // a, ab, ac, bb, bc, abc, abbc, abbbc, abbbbc
+    // Example: a, ab, ac, bb, bc, abc, abbc, abbbc, abbbbc
     function generateCombinations(entries: ArcList[], startVariable: string, endVariable: string, maxBb: number = 10): string[] {
       // Filter out entries consisting of a single letter
       const filteredEntries = entries.filter(entry => entry.arc.length > 1);

@@ -39,7 +39,7 @@ export type SinglePlaceParameter = {
 
 type ArcDefinition = { transitionLabel: string; weight: number };
 
-// Precision.AutoRepair
+// Type for the repair of [precision model repair]
 export type AddPlaceAutoRepair = {
   type: 'add-place' | 'add-trace';
   regionSize?: number;
@@ -52,7 +52,16 @@ export type AddPlaceAutoRepair = {
   //outgoing?: ArcDefinition[];
 } & SinglePlaceParameter;
 
-// Coming from petri-net-solution.computePrecisionSolution
+/**
+ * This will parse the generated solution (adding context). Coming from petri-net-solution.computePrecisionSolution
+ * @param placeSolutionList 
+ * @param existingPlace 
+ * @param idTransitionToLabel 
+ * @param wrongContinuations 
+ * @param invalidTransitions 
+ * @param z counter of wrong continuations
+ * @returns parsed solution
+ */
 export function parseSolution(
   placeSolutionList: ParsableSolutionsPerType[],
   existingPlace: Place | undefined,
@@ -303,7 +312,7 @@ export function parseSolution(
       }
     })
     .filter((solution) => !!solution);
-  if (wrongContinuations[z]) { //ZZZ Implement now that the other solution could also be added!!!!
+  if (wrongContinuations[z]) {
     let currentTransition = wrongContinuations[z].firstInvalidTransition;
     for (let k = 0; k < wrongContinuations.length; k++) {
       if (wrongContinuations[k] && currentTransition.includes(wrongContinuations[k].firstInvalidTransition)) {

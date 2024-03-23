@@ -1,6 +1,10 @@
 import { Arc } from './arc';
 import { EventItem } from './transition';
 
+/**
+ * Types of log related elements and lists
+ */
+
 // Type: Partial Order or sequential log
 export interface PartialOrder {
   events: EventItem[];
@@ -10,7 +14,10 @@ export interface PartialOrder {
   finalEvents?: string[];
 }
 
-// Identify the start and end events of the log
+/**
+ * Identify the start and end events of the log
+ * @param partialOrder a object list of events
+ */
 export function determineInitialAndFinalEvents(
   partialOrder: PartialOrder
 ): void {

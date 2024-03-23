@@ -72,7 +72,7 @@ export function addArc(
 }
 
 /**
- * set references from arcs to transitions and vice versa
+ * Set references from arcs to transitions and vice versa
  * @returns all references found?
  */
 export function setRefs(net: PetriNet): boolean {

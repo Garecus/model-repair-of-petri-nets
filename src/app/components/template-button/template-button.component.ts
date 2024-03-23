@@ -5,6 +5,10 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
   templateUrl: './template-button.component.html',
   styleUrls: ['./template-button.component.scss'],
 })
+
+/**
+   * This whole component handles the template button (big button in the UI, e.g. for uploading)
+   */
 export class TemplateButtonComponent {
   @Input() styleClass?: string;
   @Input() buttonText: string | undefined;

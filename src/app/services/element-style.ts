@@ -1,3 +1,6 @@
+/** Handling style details of the elements in the displayed process model
+ */
+
 // Style details of the drawn petri net in the canvas
 export interface TransitionStyle {
   width: string;
@@ -39,7 +42,7 @@ export const DRAG_POINT_STYLE = {
   r: '10',
 };
 
-// Style details of the text below / inside the elements
+// Style details of the text below or inside the elements
 export const TEXT_STYLE = {
   'text-anchor': 'middle', // horizontal alignment
   'dominant-baseline': 'central', // vertical alignment

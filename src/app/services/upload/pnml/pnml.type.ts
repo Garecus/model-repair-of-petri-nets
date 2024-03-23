@@ -1,3 +1,7 @@
+/**
+   * Types to handle the parsing and computation for the pnml format (upload / download)
+   */
+
 export type PnmlWrapper = {
   pnml: {
     net: {

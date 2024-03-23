@@ -1,18 +1,7 @@
 import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import clonedeep from 'lodash.clonedeep';
-import {
-  BehaviorSubject,
-  distinctUntilChanged,
-  map,
-  Observable,
-  of,
-  shareReplay,
-  startWith,
-  Subject,
-  switchMap,
-  tap,
-} from 'rxjs';
+import { BehaviorSubject, distinctUntilChanged, map, Observable, of, shareReplay, startWith, Subject, switchMap, tap, } from 'rxjs';
 
 import { FirePartialOrder } from '../../algorithms/fire-partial-orders/fire-partial-order';
 import { PetriNetSolutionService } from '../../algorithms/regions/petri-net-solution.service';
@@ -20,15 +9,8 @@ import { LogList, PartialOrder, wrongContinuation } from '../../classes/diagram/
 import { PetriNet } from '../../classes/diagram/petri-net';
 import { Place } from '../../classes/diagram/place';
 import { DisplayService } from '../../services/display.service';
-import {
-  LayoutResult,
-  LayoutService,
-} from '../../services/layout/layout.service';
-import {
-  NewTransitionSolution,
-  PlaceSolution,
-  PrecisionSolution,
-} from '../../services/repair/repair.model';
+import { LayoutResult, LayoutService, } from '../../services/layout/layout.service';
+import { NewTransitionSolution, PlaceSolution, PrecisionSolution, } from '../../services/repair/repair.model';
 import { RepairService } from '../../services/repair/repair.service';
 import { SvgService } from '../../services/svg/svg.service';
 import { CanvasComponent } from '../canvas/canvas.component';
@@ -122,11 +104,12 @@ export class DisplayComponent implements OnInit {
     );
   }
 
+  /**
+   * On init: Check which process should be started based on the switch buttons
+   */
   ngOnInit(): void {
     this.displayService.triggeredBuildContent.subscribe((solutionType: string) => {
-      console.log("Display component: " + solutionType);
       this.solutionType = solutionType;
-      // Identify which logic should be used
       if (this.solutionType == "precision") {
         this.precisionActive = true;
       } else if (this.solutionType == "fitness") {
@@ -135,7 +118,7 @@ export class DisplayComponent implements OnInit {
       /* this.buildContent(); */
     });
 
-    // Default content
+    // Display the content that is up to date right now
     this.layoutResult$ = this.displayService.getPetriNet$().pipe(
       switchMap((net) =>
         this.displayService.getPartialOrders$().pipe(
@@ -143,7 +126,7 @@ export class DisplayComponent implements OnInit {
           switchMap((partialOrders: PartialOrder[] | null) =>
             this.shouldShowSuggestions$.pipe(
               switchMap((showSuggestions) => {
-                
+
                 if (showSuggestions == "precision") {
                   this.precisionActive = true;
                 } else {
@@ -165,8 +148,9 @@ export class DisplayComponent implements OnInit {
                   this.repairService.saveNewSolutions([], 0);
                   return of({ solutions: [], renderChanges: true });
                 }
-                
+
                 this.computingSolutions = true;
+
                 // Identification of invalidPlaces to know where repairs can be performed
                 const invalidPlaces: {
                   [key: string]: number;
@@ -213,11 +197,11 @@ export class DisplayComponent implements OnInit {
                   count: this.wrongContinuations.length,
                 });
 
-                // Identification of transitions that are directly affected by wrongContinuations
+                // Identification of transitions that are directly affected by wrongContinuations to work with them
                 const invalidTransitions: {
                   [key: string]: number;
                 } = {};
-                for (let index = 0; index < partialOrders.length; index++) { //ZZZ ggf. hier
+                for (let index = 0; index < partialOrders.length; index++) {
                   const currentInvalid = this.identifyTransitionsWithWrongContinuations(
                     net,
                     partialOrders[index], partialOrders, this.wrongContinuations
@@ -242,8 +226,9 @@ export class DisplayComponent implements OnInit {
                 net.transitions.forEach((transition) => {
                   transition.issueStatus = undefined;
                 });
+                // Here we generate the numbers that where shown next to each "!" in the UI to show the user how many wrong continuations are possible at these transitions
                 transitions.forEach((invalidTransition) => {
-                  let relatedWrongContinuationsCount = 0; //XXX
+                  let relatedWrongContinuationsCount = 0;
                   for (let i = 0; i < this.wrongContinuations.length; i++) {
                     if (this.wrongContinuations[i].firstInvalidTransition == invalidTransition.id) {
                       relatedWrongContinuationsCount = relatedWrongContinuationsCount + 1;
@@ -282,50 +267,49 @@ export class DisplayComponent implements OnInit {
                     count: 0,
                   });
 
-
                   let invalidPlaces = { //XXX
                     "p_new": 1,
                   }
 
                   //let solutions: any = [];
                   //let newSolution: any;
-                 /*  for (let z = 0; z < this.wrongContinuations.length; z++) { //ZZZ
-                    return this.petriNetRegionsService
-                    //newSolution = this.petriNetRegionsService
-                      .computePrecisionSolutions(partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations, z)
-                      .pipe(
-                        tap(() => (this.computingSolutions = false)
-                        ),
-                        map((solutions) => ({
-                          solutions,
-                          renderChanges: false,
-                        })
-                        ),
-                        startWith({
-                          solutions: [] as PrecisionSolution[],
-                          renderChanges: false,
-                        })
-                      );
-                      //solutions.push(newSolution);
-                  }
-                  this.computingSolutions = false;
-                  return of({ solutions: [], renderChanges: true }); */
+                  /*  for (let z = 0; z < this.wrongContinuations.length; z++) {
+                     return this.petriNetRegionsService
+                     //newSolution = this.petriNetRegionsService
+                       .computePrecisionSolutions(partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations, z)
+                       .pipe(
+                         tap(() => (this.computingSolutions = false)
+                         ),
+                         map((solutions) => ({
+                           solutions,
+                           renderChanges: false,
+                         })
+                         ),
+                         startWith({
+                           solutions: [] as PrecisionSolution[],
+                           renderChanges: false,
+                         })
+                       );
+                       //solutions.push(newSolution);
+                   }
+                   this.computingSolutions = false;
+                   return of({ solutions: [], renderChanges: true }); */
                   //console.log(solutions);
                   //solutions = solutions[0];
                   //return of({ solutions, renderChanges: true });
                   return this.petriNetRegionsService
-                  .computePrecisionSolutions(partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations)
-                  .pipe(
-                    tap(() => (this.computingSolutions = false)),
-                    map((solutions) => ({
-                      solutions,
-                      renderChanges: false,
-                    })),
-                    startWith({
-                      solutions: [] as PrecisionSolution[],
-                      renderChanges: false,
-                    })
-                  );
+                    .computePrecisionSolutions(partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations)
+                    .pipe(
+                      tap(() => (this.computingSolutions = false)),
+                      map((solutions) => ({
+                        solutions,
+                        renderChanges: false,
+                      })),
+                      startWith({
+                        solutions: [] as PrecisionSolution[],
+                        renderChanges: false,
+                      })
+                    );
                 } else {
                   net.transitions.forEach((transition) => {
                     transition.issueStatus = undefined;
@@ -344,52 +328,8 @@ export class DisplayComponent implements OnInit {
                 }
 
               }),
+              // Below this part within this method we take care that the solutions and the net are displayed in the updated form to the user
               map(({ solutions, renderChanges }) => {
-                /* console.log("HERE"); //ZZZ
-                console.log(solutions[0]);
-                solutions.push({
-                  "invalidTraceCount": 0,
-                  "missingTokens": 0,
-                  "regionSize":0,
-                  "type": "possibility",
-                  "place": "p_new",
-                  "solutions": [
-                      {
-                          "type": "add-place",
-                          "incoming": [
-                              {
-                                  "transitionLabel": "a",
-                                  "weight": 0
-                              }
-                          ],
-                          "outgoing": [
-                              {
-                                  "transitionLabel": "c",
-                                  "weight": 0
-                              }
-                          ],
-                          "regionSize": 0,
-                          "repairType": "addPlace",
-                          "wrongContinuationNotRepairable": "",
-                      }
-                  ],
-                  "wrongContinuations": [
-                      {
-                          "id": 0,
-                          "type": "not repairable",
-                          "wrongContinuation": "abbc",
-                          "firstInvalidTransition": "c"
-                      },
-                      {
-                          "id": 1,
-                          "type": "repairable",
-                          "wrongContinuation": "abbbb",
-                          "firstInvalidTransition": "b"
-                      }
-                  ],
-                  "newTransition": "c"
-              });
-              console.log(solutions); */
                 for (const place of solutions) {
                   if (place.type === 'newTransition') {
                     continue;
@@ -419,24 +359,47 @@ export class DisplayComponent implements OnInit {
     );
   }
 
+  /**
+   * Fire the net with the partial orders to get all invalid places
+   * @param petriNet 
+   * @param partialOrder 
+   * @returns list of invalid places
+   */
   private firePartialOrder(
     petriNet: PetriNet,
     partialOrder: PartialOrder
   ): string[] {
-    console.log("Fire Partial order");
+    //console.log("Fire Partial order");
     return new FirePartialOrder(petriNet, partialOrder).getInvalidPlaces();
   }
 
+  /**
+   * Apply the solution to the net after user selected it [fitness model repair]
+   * @param solution that should be applied ot the process model
+   * @param button the user pressed
+   */
   applySolution(solution: NewTransitionSolution, button: MatButton): void {
     const domRect: DOMRect = button._elementRef.nativeElement.getBoundingClientRect();
     this.repairService.showRepairPopoverForSolution(domRect, solution);
   }
 
+  /**
+   * Apply the solution to the net after user selected it [precision model repair]
+   * @param solution that should be applied ot the process model
+   * @param button the user pressed
+   */
   applySolutionPrecision(solution: PrecisionSolution, button: MatButton): void {
     const domRect: DOMRect = button._elementRef.nativeElement.getBoundingClientRect();
     this.repairService.showRepairPopoverForSolutionPrecision(domRect, solution);
   }
 
+  /**
+   * Check the net and the partial orders to generate all possible wrong continuations
+   * @param petriNet 
+   * @param partialOrder 
+   * @param partialOrders 
+   * @returns a list of wrong continuation objects
+   */
   private checkWrongContinuations(
     petriNet: PetriNet,
     partialOrder: PartialOrder,
@@ -445,6 +408,14 @@ export class DisplayComponent implements OnInit {
     return new CheckWrongContinuations(petriNet, partialOrder, partialOrders, this.petriNetRegionsService).getWrongContinuations();
   }
 
+  /**
+   * Identify the transitions that have wrong continuations related to them
+   * @param petriNet 
+   * @param partialOrder 
+   * @param partialOrders 
+   * @param wrongContinuations 
+   * @returns a list of invalid transitions
+   */
   private identifyTransitionsWithWrongContinuations(
     petriNet: PetriNet,
     partialOrder: PartialOrder,

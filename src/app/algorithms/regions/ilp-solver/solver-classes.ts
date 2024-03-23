@@ -2,6 +2,10 @@ import { LP, Result } from 'glpk.js';
 
 import { Constraint } from './solver-constants';
 
+/**
+ * Types to work with the solver and ILP and solutions out of it
+ */
+
 export type SubjectTo = {
   name: string;
   vars: Array<Variable>;
@@ -31,11 +35,11 @@ export interface SolutionVariable {
 }
 
 export type SolutionType =
-  | 'changeIncoming' // Fitness
-  | 'changeMarking' // Fitness
-  | 'multiplePlaces' // Fitness
-  | 'addPlace' // Precision
-  | 'addTrace'; // Precision
+  | 'changeIncoming'
+  | 'changeMarking'
+  | 'multiplePlaces'
+  | 'addPlace' // [precision model repair]
+  | 'addTrace'; // [precision model repair]
 
 export interface ProblemSolutionWithoutType {
   ilp: LP;
@@ -50,6 +54,7 @@ export interface ProblemSolution {
   regionSize: number;
 }
 
+// ILP related variable additions
 export enum VariableName {
   INITIAL_MARKING = 'm0',
   INGOING_ARC_WEIGHT_PREFIX = 'in',

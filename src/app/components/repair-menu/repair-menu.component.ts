@@ -29,14 +29,17 @@ export class RepairMenuComponent implements OnInit {
 
   constructor(private netCommandService: NetCommandService, private repairService: RepairService) { }
 
-  // On page initialization: Show the user the RepairMenu.FirstLine and .SecondLine
+  /**
+   * On page initialization: Show the user the RepairMenu.FirstLine and .SecondLine
+   * @returns the solutions and their descriptions
+   */
   ngOnInit(): void {
     this.repairService.triggeredBuildContent.subscribe((solutionType: string) => {
       console.log("Show repair menu with solution type: " + solutionType);
       this.solutionType = solutionType;
     });
 
-    // Precision
+    // [precision model repair]
     /* if (this.solutionType == "precision") { */
     /* if (this.transitionSolution) {
     this.infoHeader = `The transition has ${this.transitionSolution.wrongContinuations.length} possible wrong ${this.transitionSolution.wrongContinuations.length === 1 ? 'continuation' : 'continuations'}.`;
@@ -113,7 +116,10 @@ export class RepairMenuComponent implements OnInit {
     }
   }
 
-  // Apply the selected solution to the petri net
+  /**
+   * Apply the selected solution to the petri net (and if needed to the log)
+   * @param solution single solution out of the process
+   */
   useSolution(solution: AutoRepair): void {
     this.applySolution.next();
     if (this.placeSolution.type === 'newTransition') {
@@ -123,11 +129,11 @@ export class RepairMenuComponent implements OnInit {
           solution
         )
         .subscribe(() => this.overlayRef?.dispose());
-    } else if (this.placeSolution.type === 'possibility' && solution.type == "add-trace") { // Precision
+    } else if (this.placeSolution.type === 'possibility' && solution.type == "add-trace") { // [precision model repair]
       this.netCommandService
         .repairSpecification(this.placeSolution.place, solution)
         .subscribe(() => this.overlayRef?.dispose());
-    } else if (this.placeSolution.type === 'possibility' && solution.type == "add-place") { // Precision
+    } else if (this.placeSolution.type === 'possibility' && solution.type == "add-place") { // [precision model repair]
       this.netCommandService
         .repairNet(this.placeSolution.place, solution)
         .subscribe(() => this.overlayRef?.dispose());
@@ -138,6 +144,12 @@ export class RepairMenuComponent implements OnInit {
     }
   }
 
+  /**
+   * This will generate inside the repair menu popup the solution list including the solution descriptions
+   * @param solutions of the process
+   * @param newTransition to identify a different location to display it
+   * @returns the solutions text and the solution in the background to apply it by user interaction
+   */
   private generateSolutionToDisplay(
     solutions: AutoRepairWithSolutionType[],
     newTransition = false
@@ -149,13 +161,17 @@ export class RepairMenuComponent implements OnInit {
   }
 }
 
-// Display the solution text (1. Part to display RepairMenu.SolutionList.Record.FirstLine)
+/**
+ * Display the solution text (RepairMenu.SolutionList.Record.FirstLine)
+ * @param solution of the process
+ * @param newTransition special solution that is displayed differently
+ * @returns the description of RepairMenu.SolutionList.Record.FirstLine
+ */
 function generateTextForAutoRepair(
   solution: AutoRepairWithSolutionType,
   newTransition: boolean
 ): LabelWithTooltip {
   const baseText = generateBaseText(solution, newTransition);
-
   if (solution.type === 'replace-place') {
     return {
       label: `${baseText}${getSubLabel(solution)}`,
@@ -166,25 +182,24 @@ function generateTextForAutoRepair(
       label: `${baseText}${getSubLabel(solution)}`,
     };
   }
-
   if (solution.type === 'add-place') {
     return {
       label: `${baseText}${getSubLabel2(solution)}${getSubLabel(solution)}`,
     };
   }
-
   if (solution.type === 'add-trace') {
     return {
       label: `${baseText}${getSubLabel3(solution)}`,
     };
   }
-
   return {
     label: `${baseText}${getSubLabel(solution)}`,
   };
 }
 
-// Convert the solution types of the ilp-solver into solution text  (1. Part to display RepairMenu.SolutionList.Record.FirstLine)
+/**
+ * Convert the solution types of the ilp-solver into solution text, if no condition in generateBaseText will be applied (RepairMenu.SolutionList.Record.FirstLine)
+ */
 const solutionTypeToText: { [key in SolutionType]: string } = {
   changeMarking: 'Add tokens',
   changeIncoming: 'Add ingoing tokens',
@@ -193,12 +208,12 @@ const solutionTypeToText: { [key in SolutionType]: string } = {
   addTrace: 'Add wrong continuation to specification',
 };
 
-// Generate the text of the RepairMenu.SolutionList.Record.SecondLine
-function getSubLabel(solution: { regionSize: number }): string {
-  return `<span>Region size: ${solution.regionSize}</span>`;
-}
-
-// Generate the solution text (2. Part to display RepairMenu.SolutionList.Record.FirstLine)
+/**
+ * Generate the solution text (RepairMenu.SolutionList.Record.FirstLine)
+ * @param solution of the process
+ * @param newTransition special solution that is displayed differently
+ * @returns the description of RepairMenu.SolutionList.Record.FirstLine
+ */
 function generateBaseText(
   solution: AutoRepairWithSolutionType,
   newTransition: boolean
@@ -228,12 +243,29 @@ function generateBaseText(
   return `<b>${text}</b></br>`;
 }
 
-// Generate the text of the RepairMenu.SolutionList.Record.SecondLine
+/**
+ * Generate the text of the (RepairMenu.SolutionList.Record.SecondLine)
+ * @param solution 
+ * @returns solution description of RepairMenu.SolutionList.Record.SecondLine
+ */
+function getSubLabel(solution: { regionSize: number }): string {
+  return `<span>Region size: ${solution.regionSize}</span>`;
+}
+
+/**
+ * Generate the text of the RepairMenu.SolutionList.Record.SecondLine
+ * @param solution 
+ * @returns solution description of RepairMenu.SolutionList.Record.SecondLine
+ */
 function getSubLabel2(solution: { regionSize: number }): string {
   return `<span>by adding a new place.</span></br>`;
 }
 
-// Generate the text of the RepairMenu.SolutionList.Record.SecondLine
+/**
+ * Generate the text of the RepairMenu.SolutionList.Record.SecondLine
+ * @param solution 
+ * @returns solution description of RepairMenu.SolutionList.Record.SecondLine
+ */
 function getSubLabel3(solution: { regionSize: number }): string {
   return `<span>to the specification.</span>`;
 }

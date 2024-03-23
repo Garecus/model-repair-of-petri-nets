@@ -1,6 +1,11 @@
 import { Arc } from '../arc';
 import { PetriNet } from '../petri-net';
 
+/**
+ * Gets all cycles from a petri net
+ * @param run to get the cycles from
+ * @returns all the cyclic arcs
+ */
 export function getCycles(run: PetriNet): Arc[] {
   const visitedArcs = new Set<Arc>();
   const cyclicArcs: Arc[] = [];
@@ -13,7 +18,7 @@ export function getCycles(run: PetriNet): Arc[] {
 }
 
 /**
- * checks an arc sequence for cycles
+ * Checks an arc sequence for cycles
  * @param currentRun run to parse
  * @param arc starting arc
  * @param visitedArcs already visited arcs
@@ -35,14 +40,14 @@ function checkArcCycle(
   }
   visitedArcs.add(arc);
 
-  // transition already visited in this sequence?
+  // Transition already visited in this sequence, if yes return
   if (visitedTransitions.has(target.id)) {
     cyclicArcs.push(arc);
     return;
   }
   visitedTransitions.add(target.id);
 
-  //continue with the sequences
+  // Continue with all sequences
   target.outgoingArcs.forEach((outArc) => {
     checkArcCycle(
       currentRun,

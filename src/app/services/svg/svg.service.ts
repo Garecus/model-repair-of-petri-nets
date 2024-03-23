@@ -18,7 +18,6 @@ import {
 } from '../element-style';
 import { RepairService } from '../repair/repair.service';
 import { idAttribute } from './svg-constants';
-import { wrongContinuation } from 'src/app/classes/diagram/partial-order';
 
 const hashAttribute = 'element-hash';
 
@@ -41,6 +40,13 @@ export class SvgService {
 
   constructor(private repairService: RepairService) { }
 
+  /**
+   * Create all the net elements to display them in the process model
+   * @param net the petri net including all applied changes
+   * @param offset point to orientate the changes
+   * @param renderChanges can be yes or now to force the render changes in the UI
+   * @returns the net to be rendered in the UI
+   */
   createNetElements(
     net: PetriNet,
     offset: Point,
@@ -89,6 +95,12 @@ export class SvgService {
     return result;
   }
 
+  /**
+   * Create a transition element
+   * @param transition 
+   * @param offset 
+   * @returns a list of properties to display it
+   */
   private createTransitionElement(
     transition: Transition,
     offset: Point,
@@ -126,12 +138,8 @@ export class SvgService {
         offset.y -
         foreignElementYOffset)
     );
-    //return [transEl, textEl];
-    // Precision
-
+    // Without the [precision model repair] here was the end of the create transition element logic. It ended with "return [transEl, textEl];", but now we extended it to show the invalid transitions to the user:
     const result = [transEl, textEl];
-    /* console.log("Drawing. Transition issue status: ");
-    console.log(transition.issueStatus); */
     if (transition.issueStatus) {
       if (transition.issueStatus === 'warning') {
         transEl.classList.add('transition--warning');
@@ -209,21 +217,16 @@ export class SvgService {
           );
         }
       });
-    } /* else if (transition.marking > 0) {
-      const markingEl = this.createTextElementForPlaceContent(
-        transition.id,
-        '' + transition.marking
-      );
-      transEl.setAttribute(hashAttribute, `${transition.id}-${transition.marking}-text`);
-      markingEl.setAttribute('x', '' + (getNumber(transition.x) + offset.x));
-      markingEl.setAttribute('y', '' + (getNumber(transition.y) + offset.y));
-      markingEl.setAttribute('font-size', '1.5em');
-      result.push(markingEl);
-    } */
-
+    }
     return result;
   }
 
+  /**
+   * Create a place element
+   * @param place
+   * @param offset 
+   * @returns a list of properties to display it
+   */
   private createPlaceElement(place: Place, offset: Point): Array<SVGElement> {
     const placeEl = this.createSvgElement('circle');
     placeEl.classList.add('place');
@@ -319,6 +322,13 @@ export class SvgService {
     return result;
   }
 
+  /**
+ * Create an arc element
+ * @param elements that are connected with this arc
+ * @param arc
+ * @param offset 
+ * @returns a list of properties to display it
+ */
   private createArc(
     elements: (Transition | Place)[],
     arc: Arc,

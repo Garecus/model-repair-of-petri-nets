@@ -69,4 +69,4 @@ import { DownloadExampleComponent } from './components/download-example/download
   ],
   bootstrap: [AppComponent],
 })
-export class AppModule {}
+export class AppModule { }

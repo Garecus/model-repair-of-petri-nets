@@ -23,6 +23,11 @@ export class DownloadService implements OnDestroy {
     this._download$.complete();
   }
 
+  /**
+   * Start the process to download the petri net
+   * @param name as file name
+   * @param fileFormat as file format
+   */
   downloadNet(name: string, fileFormat: DownloadFormat): void {
     this.displayService
       .getPetriNet$()
@@ -33,10 +38,15 @@ export class DownloadService implements OnDestroy {
           ? `${name}-net.${fileEnding}`
           : `${Date.now()}-net.${fileEnding}`;
 
-        this.downloadRun(fileName, fileFormat, run);
+        this.downloadNetRun(fileName, fileFormat, run);
       });
   }
 
+  /**
+   * Start the process to download the log
+   * @param name as file name
+   * @param fileFormat as file format
+   */
   downloadLog(name: string, fileFormat: DownloadFormat): void {
     this.displayService
       .getPartialOrders$()
@@ -53,7 +63,13 @@ export class DownloadService implements OnDestroy {
       });
   }
 
-  private downloadRun(
+  /**
+   * Perform the real download of the petri net
+   * @param name as file name
+   * @param fileFormat as file format
+   * @param petriNet as petri net object
+   */
+  private downloadNetRun(
     name: string,
     fileFormat: DownloadFormat,
     petriNet: PetriNet
@@ -71,16 +87,21 @@ export class DownloadService implements OnDestroy {
     downloadLink.remove();
   }
 
+  /**
+   * Perform the real download of the log
+   * @param name as file name
+   * @param fileFormat as file format
+   * @param petriNet as petri net object
+   */
   private downloadLogRun(
     name: string,
     fileFormatLog: DownloadFormat,
     partialOrder: PartialOrder[]
   ): void {
-    //const fileContent = JSON.stringify(partialOrder);
     const fileContent =
       fileFormatLog === 'txt'
-        ? generateTextFromLog(partialOrder)
-        : JSON.stringify(partialOrder);
+        ? generateTextFromLog(partialOrder) // JSON.stringify(partialOrder) is not enough here, because it has to be converted from objects to lines of text to get the custom format
+        : JSON.stringify(partialOrder); // Anyway if the other solution does not work, then export it at least
 
     const downloadLink: HTMLAnchorElement = document.createElement('a');
     downloadLink.download = name;
@@ -91,11 +112,20 @@ export class DownloadService implements OnDestroy {
   }
 }
 
-
+/**
+ * Get the file format based on the user selection for the petri net download (here: used like an if request)
+ * @param fileFormat of the file that should be downloaded
+ * @returns fileFormat
+ */
 function getFileEndingForFormat(fileFormat: DownloadFormat): string {
   return fileFormat === 'pn' ? 'pn' : 'pnml';
 }
 
+/**
+ * Get the file format for the log download. Can be extended later to different formats
+ * @param fileFormat of the file that should be downloaded
+ * @returns fileFormat
+ */
 function getFileEndingForFormatLog(fileFormat: DownloadFormat): string {
   return fileFormat === 'txt' ? 'txt' : 'txt';
 }

@@ -15,7 +15,7 @@ describe('NetCommandService', () => {
         {
           provide: UploadService,
           useValue: {
-            setUploadText: jest.fn(),
+            setUploadNet: jest.fn(),
           },
         },
         {

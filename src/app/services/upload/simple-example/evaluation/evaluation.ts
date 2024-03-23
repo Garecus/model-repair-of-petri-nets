@@ -150,7 +150,7 @@ p11 e
 p9 wgh
 wgh p10`;
 
-// [Precision model repair]
+// [precision model repair]
 // Loop example
 export const firstLog =
 `

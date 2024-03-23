@@ -21,6 +21,9 @@ export class DownloadPopoverComponent {
     private _downloadService: DownloadService
   ) { }
 
+  /**
+   * Calls the download service to start the download including the download name and file format (net and log)
+   */
   download(): void {
     this._downloadService.downloadNet(this.downloadName, this.fileFormat);
     if (this.downloadLog == 'yes') {
@@ -29,6 +32,9 @@ export class DownloadPopoverComponent {
     this.closePopover();
   }
 
+  /**
+ * Will close the download popup
+ */
   closePopover(): void {
     this.dialogRef.close();
   }

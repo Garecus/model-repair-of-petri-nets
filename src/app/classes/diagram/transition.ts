@@ -7,6 +7,9 @@ export interface Transition extends ConcreteElementWithArcs {
   relatedWrongContinuationsCount?: string;
 }
 
+/**
+   * Contains all the transition / event information that are used in the displayed process model
+   */
 export interface EventItem extends ConcreteElementWithArcs {
   type: 'event';
   label: string;
@@ -18,6 +21,11 @@ export interface EventItem extends ConcreteElementWithArcs {
   localMarking?: number[];
 }
 
+/**
+   * Function to create an event object
+   * @param id of the event in the event log
+   * @returns the event object
+   */
 export function createEventItem(id: string): EventItem {
   return {
     id,
@@ -30,6 +38,11 @@ export function createEventItem(id: string): EventItem {
   };
 }
 
+/**
+   * Concat the events if they have the same id and add the event to the next or previous events list
+   * @param first event object
+   * @param second event object
+   */
 export function concatEvents(first: EventItem, second: EventItem): void {
   if (!first.nextEvents.includes(second.id)) {
     first.nextEvents.push(second.id);

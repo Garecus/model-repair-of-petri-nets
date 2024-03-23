@@ -4,19 +4,10 @@ import { combineLatest, from, map, Observable, of, switchMap, tap } from 'rxjs';
 
 import { PartialOrder, wrongContinuation } from '../../classes/diagram/partial-order';
 import { PetriNet } from '../../classes/diagram/petri-net';
-import {
-  ParsableSolution,
-  ParsableSolutionsPerType,
-  PlaceSolution,
-  PrecisionSolution,
-} from '../../services/repair/repair.model';
+import { ParsableSolution, ParsableSolutionsPerType, PlaceSolution, PrecisionSolution } from '../../services/repair/repair.model';
 import { RepairService } from '../../services/repair/repair.service';
 import { IlpSolver, SolutionGeneratorType } from './ilp-solver/ilp-solver';
-import {
-  ProblemSolution,
-  VariableName,
-  VariableType,
-} from './ilp-solver/solver-classes';
+import { ProblemSolution, VariableName, VariableType } from './ilp-solver/solver-classes';
 import { AddPlaceAutoRepair, AutoRepairForSinglePlace, parseSolution } from './parse-solutions.fn';
 import { removeDuplicatePlaces } from './remove-duplicate-places.fn';
 
@@ -32,6 +23,13 @@ export class PetriNetSolutionService {
 
   constructor(private repairService: RepairService) { }
 
+  /**
+   * Compute the solutions with the glpk.js package [fitness model repair]
+   * @param partialOrders 
+   * @param petriNet 
+   * @param invalidPlaces 
+   * @returns solutions per invalidPlace
+   */
   computeSolutions(
     partialOrders: any[], /* PartialOrder[] */ //XXX
     petriNet: PetriNet,
@@ -107,7 +105,6 @@ export class PetriNetSolutionService {
             // Go to ilp-solver.ts
             solver.computeSolutions(place).pipe(
               map((solutions) => {
-                console.log(invalidPlaceList); //ZZZ
                 const existingPlace =
                   place.type === 'repair' || place.type === 'warning' || place.type === 'possibility'
                     ? petriNet.places.find((p) => p.id === place.placeId)
@@ -206,6 +203,15 @@ export class PetriNetSolutionService {
 
   }
 
+  /**
+   * Compute the solutions with the glpk.js package [precision model repair]
+   * @param partialOrders 
+   * @param petriNet 
+   * @param invalidPlaces 
+   * @param invalidTransitions 
+   * @param wrongContinuations 
+   * @returns solutions per invalidTransition
+   */
   computePrecisionSolutions(
     partialOrders: any[], /* PartialOrder[] */ //XXX
     petriNet: PetriNet,
@@ -213,9 +219,9 @@ export class PetriNetSolutionService {
     invalidTransitions: { [key: string]: number },
     wrongContinuations: wrongContinuation[]
   ): Observable<PlaceSolution[]> {
-    console.log("Compute precision with invalid places and transitions: ");
-    console.log(invalidPlaces);
-    console.log(invalidTransitions);
+    /*     console.log("Compute precision with invalid places and transitions: ");
+        console.log(invalidPlaces);
+        console.log(invalidTransitions); */
 
     return this.glpk$.pipe(
       switchMap((glpk) => {
@@ -287,13 +293,13 @@ export class PetriNetSolutionService {
           idToTransitionLabelMap
         );
 
-        invalidPlaceList.forEach((object, index) => {
-          console.log(`Invalid place ${index + 1}:`, object);
-        });
-
-        invalidTransitionList.forEach((object, index) => {
-          console.log(`Invalid transition ${index + 1}:`, object);
-        });
+        /*         invalidPlaceList.forEach((object, index) => {
+                  console.log(`Invalid place ${index + 1}:`, object);
+                });
+        
+                invalidTransitionList.forEach((object, index) => {
+                  console.log(`Invalid transition ${index + 1}:`, object);
+                }); */
 
         /* invalidPlaceList[0].type="possibility"; */
 
@@ -349,13 +355,10 @@ export class PetriNetSolutionService {
                   return undefined;
                 }
 
-                console.log(solutions);
-                console.log("PLACE");
-                console.log(place);
-                console.log(place);
+                //console.log(place);
                 let z = 0;
                 if (place.type == "possibility") {
-                  z = wrongContinuations.findIndex(variable => variable.firstInvalidTransition.includes(place.placeId)); //ZZZ
+                  z = wrongContinuations.findIndex(variable => variable.firstInvalidTransition.includes(place.placeId));
                 }
                 const parsedSolutions = parseSolution(
                   handleSolutions(solutions, solver),
@@ -364,7 +367,7 @@ export class PetriNetSolutionService {
                   wrongContinuations,
                   invalidTransitions,
                   z
-                );//ZZZ
+                );
                 console.log("Parsed solutions: ");
                 console.log(parsedSolutions);
 
@@ -530,6 +533,12 @@ export class PetriNetSolutionService {
   }
 }
 
+/**
+ * Take the solution and the solver and map it again to the petri net elements (from variables). Remove duplicates. Sort it.
+ * @param solutions 
+ * @param solver 
+ * @returns solution to apply it to the net/UI in the next steps
+ */
 export function handleSolutions(
   solutions: ProblemSolution[],
   solver: IlpSolver

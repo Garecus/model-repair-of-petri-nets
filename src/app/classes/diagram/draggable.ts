@@ -2,6 +2,10 @@ import { Point } from '@angular/cdk/drag-drop';
 
 import { Arc } from './arc';
 
+/**
+   * Contains all the draggable elements that are displayed in the process model
+   */
+
 export interface ConcreteElement {
   type: string;
   id: string;

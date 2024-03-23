@@ -1,5 +1,9 @@
 import { ConcreteElement } from './draggable';
 
+/**
+   * Contains all the arc information that are used in the displayed process model
+   */
+
 export type Arc = {
   source: string;
   target: string;

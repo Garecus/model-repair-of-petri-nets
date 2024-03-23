@@ -16,11 +16,18 @@ export class DownloadExampleComponent implements OnInit {
   ngOnInit(): void {
   }
 
+  /**
+   * Reads a file based on
+   * @param filePath in the directory
+   * @returns the read file
+   */
   private readFile(filePath: string): Promise<Blob> {
     return fetch(filePath).then((response) => response.blob());
   }
 
-  // Simple example files (in default deactivated in the html) [Fitness model repair]
+  /**
+   * Downloads the simple example files (by default deactivated in the html) [fitness model repair]
+   */
   downloadExample(): void {
     const zip = new JSZip();
     zip.file('simple-example-net.pn', simpleExamplePetriNet);
@@ -30,7 +37,9 @@ export class DownloadExampleComponent implements OnInit {
     });
   }
 
-  // Evaluation & example files [Fitness model repair]
+  /**
+   * Downloads the evaluation & example files [fitness model repair]
+   */
   downloadEvaluationFiles(): void {
     const zip = new JSZip();
 
@@ -65,11 +74,13 @@ export class DownloadExampleComponent implements OnInit {
     );
 
     zip.generateAsync({ type: 'blob' }).then((content) => {
-      saveAs(content, 'evaluation.zip');
+      saveAs(content, 'evaluation_examples_fitness.zip');
     });
   }
 
-  // Evaluation & example files [Precision model repair]
+  /**
+   * Downloads the evaluation & example files [precision model repair]
+   */
   downloadEvaluationFilesPrecision(): void {
     const zip = new JSZip();
 
@@ -82,8 +93,7 @@ export class DownloadExampleComponent implements OnInit {
     secondFolder?.file('2-example.pn', secondPetriNet);
 
     zip.generateAsync({ type: 'blob' }).then((content) => {
-      saveAs(content, 'evaluation_examples.zip');
+      saveAs(content, 'evaluation_examples_precision.zip');
     });
   }
-
 }

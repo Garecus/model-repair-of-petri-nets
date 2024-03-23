@@ -1,3 +1,7 @@
+/**
+   * Contains all the coordinate information that are used in the displayed process model
+   */
+  
 export type CoordinatesInfo = {
   transitionName: string;
   transitionType: string;

@@ -1,13 +1,5 @@
 import { EventEmitter, Injectable, Output } from '@angular/core';
-import {
-  BehaviorSubject,
-  map,
-  Observable,
-  ReplaySubject,
-  shareReplay,
-  startWith,
-  Subject,
-} from 'rxjs';
+import { BehaviorSubject, map, Observable, ReplaySubject, shareReplay, startWith, Subject, } from 'rxjs';
 
 import { Coordinates } from '../classes/diagram/coordinates';
 import { ArcList, PartialOrder } from '../classes/diagram/partial-order';
@@ -74,20 +66,23 @@ export class DisplayService {
     return this.partialOrders$.asObservable();
   }
 
-  // Precision model repair
+  // Get the information to know which method should be used [precision model repair]
   getShouldShowPrecisionSuggestions(): Observable<boolean> {
     return this.showPrecisionSuggestions$.asObservable();
   }
-  
+
+  // Set the information to know which method should be used [precision model repair]
   setShouldShowPrecisionSuggestions(show: string): void {
     this.showSuggestions$.next(show);
   }
 
+  // Transfer the information which method should be used [precision model repair]
   @Output() triggeredBuildContent = new EventEmitter<string>();
   triggerBuildContent(solutionType: string) {
     this.triggeredBuildContent.emit(solutionType);
   }
 
+  // Get sequences of the log [precision model repair]
   getSequences$(): Observable<ArcList[] | null> {
     return this.sequences$.asObservable();
   }

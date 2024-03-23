@@ -15,7 +15,6 @@ import { StructureType, UploadService } from './services/upload/upload.service';
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent implements OnInit {
-  // Variables
   hasPartialOrders = false;
   isCurrentNetEmpty$: Observable<boolean>;
   partialOrderCount$: Observable<{ count: number }>;
@@ -41,24 +40,34 @@ export class AppComponent implements OnInit {
     window.onresize = () => this.resetSvgPositioning();
   }
 
-  //
+  /**
+   * On init: Get the count of the partial orders
+   */
   ngOnInit(): void {
     this.partialOrderCount$
       .pipe(first())
       .subscribe((count) => this.startEditing(count.count));
   }
 
-  //
+  /**
+   * Reset the svg position (displayed process model)
+   */
   resetSvgPositioning(): void {
     this.resetPositioningSubject.next();
   }
 
-  //
+  /**
+   * Open the file selector to upload files (log and net)
+   */
   openFileSelector(type: StructureType | undefined): void {
     this.uploadService.openFileSelector(type);
   }
 
-  //
+  /**
+   * On file drop, upload the files (log and net)
+   * @param event on file drop by the user
+   * @param type to identify whether its a log or net
+   */
   dropFiles(event: DragEvent, type: StructureType | undefined): void {
     if (event.dataTransfer?.files) {
       this.uploadService.uploadFiles(event.dataTransfer.files, type);
@@ -67,7 +76,10 @@ export class AppComponent implements OnInit {
 
   mainStyle: string = "defaultMain";
   introductionStyle: string = "defaultIntroduction";
-  //
+  /**
+   * Edit the view, if files are uploaded
+   * @param count 
+   */
   startEditing(count: number): void {
     if (count > 0) {
       this.hasPartialOrders = true;
@@ -79,7 +91,10 @@ export class AppComponent implements OnInit {
     }
   }
 
-  //
+  /**
+   * Handle the fitness toggle button and the influence on the precision toggle button
+   * @param event that is the click on the button by the user
+   */
   changeToggle(event: MatSlideToggleChange): void {
     if (event.checked && this.isToggled) {
       this.displayService.setShouldShowSuggestions("fitness");
@@ -100,7 +115,10 @@ export class AppComponent implements OnInit {
     }
   }
 
-  //
+  /**
+   * Handle the precision toggle button and the influence on the fitness toggle button
+   * @param event that is the click on the button by the user
+   */
   changeTogglePrecision(event: MatSlideToggleChange): void {
 
     if (event.checked && this.isToggledPrecision) {

@@ -2,6 +2,10 @@ import { wrongContinuation } from 'src/app/classes/diagram/partial-order';
 import { SolutionType } from '../../algorithms/regions/ilp-solver/solver-classes';
 import { AutoRepairWithSolutionType } from '../../algorithms/regions/parse-solutions.fn';
 
+/**
+   * Types of solutions
+   */
+
 export type ParsableSolution =
   | {
     type: 'increase-marking';
@@ -55,7 +59,7 @@ export type NewTransitionSolution = {
   regionSize: number;
 };
 
-// Precision.TransitionSolution
+// [precision model repair]
 export type PrecisionSolution =
   {
     type: 'possibility';
@@ -69,7 +73,7 @@ export type PrecisionSolution =
     reduceTokensTo?: number;
     missingTransition?: string;
 
-    wrongContinuations?: wrongContinuation[]; // string //ZZZ
+    wrongContinuations?: wrongContinuation[];
     transition?: string;
     missingPlace?: string;
     newTransition?: string;
