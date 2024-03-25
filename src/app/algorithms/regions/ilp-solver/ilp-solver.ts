@@ -992,13 +992,13 @@ export class IlpSolver {
    * @param z 
    * @returns 
    */
-  private avoidWrongContinuationIlp(baseIlp: LP, existingPlace: Place, wrongContinuations: wrongContinuation[], partialOrders: PartialOrder[], z: number): LP {
+  private avoidWrongContinuationIlp(baseIlp: LP/* , existingPlace: Place */, wrongContinuations: wrongContinuation[], partialOrders: PartialOrder[], z: number): LP {
     const result = clonedeep(baseIlp);
     /* this.addConstraintsForSameIncomingWeights(existingPlace, result);
     this.addConstraintsForSameOutgoingWeights(existingPlace, result); */
-    console.log("existingPlace and wrong continuation: ");
-    console.log(existingPlace);
-    console.log(wrongContinuations);
+    /*     console.log("existingPlace and wrong continuation: ");
+        console.log(existingPlace);
+        console.log(wrongContinuations); */
     if (wrongContinuations.length > 0) {
       let splitWC = wrongContinuations[z].wrongContinuation.split(''); //XXX
       /* console.log(arcSplitted[0]);
@@ -1326,9 +1326,92 @@ export class IlpSolver {
   }
 
   /**
- * Generates a place for every invalid transition in the net.
- * @param placeModel the id of the place to generate a new for
- */
+  * This will add restriction to the ilp so that  a net without the specific place that is implicit is generated
+  * @param baseIlp 
+  * @param existingPlace 
+  * @param partialOrders 
+  * @returns 
+  */
+  private implicitPlacesIlp(baseIlp: LP, existingPlace: Place, partialOrders: PartialOrder[]): LP {
+    const result = clonedeep(baseIlp);
+    console.log("implicit place");
+    console.log(existingPlace);
+
+    /*     existingPlace.incomingArcs.forEach((arc) => {
+          result.subjectTo = result.subjectTo.concat(
+            this.equal(
+              this.variable(
+                this.transitionVariableName(
+                  arc.source,
+                  VariableName.INGOING_ARC_WEIGHT_PREFIX
+                )
+              ),
+              0
+            ).constraints
+          );
+        });
+    
+        existingPlace.outgoingArcs.forEach((arc) => {
+          result.subjectTo = result.subjectTo.concat(
+            this.equal(
+              this.variable(
+                this.transitionVariableName(
+                  arc.target,
+                  VariableName.OUTGOING_ARC_WEIGHT_PREFIX
+                )
+              ),
+              0
+            ).constraints
+          );
+        }); */
+
+    /*     for (let i = 0; i < partialOrders.length; i++) {
+          const events = partialOrders[i].events;
+          for (const e of events) {
+            let transitionLabelIn = "in_" + e.label;
+            let transitionLabelOut = "out_" + e.label;
+    
+            // "in_" + e.label not in handledTransitions
+            if (!handledTransitions.includes(transitionLabelIn)) {
+              result.subjectTo = result.subjectTo.concat(
+                this.equal(
+                  this.variable(
+                    this.transitionVariableName(
+                      e.label,
+                      VariableName.INGOING_ARC_WEIGHT_PREFIX
+                    )
+                  ),
+                  0
+                ).constraints
+              );
+    
+              handledTransitions.push(transitionLabelIn);
+            }
+            // "out_" + e.label not in handledTransitions 
+            else if (!handledTransitions.includes(transitionLabelOut)) {
+              result.subjectTo = result.subjectTo.concat(
+                this.equal(
+                  this.variable(
+                    this.transitionVariableName(
+                      e.label,
+                      VariableName.OUTGOING_ARC_WEIGHT_PREFIX
+                    )
+                  ),
+                  0
+                ).constraints
+              );
+              handledTransitions.push(transitionLabelOut);
+            }
+          }
+        } */
+
+    return result;
+  }
+
+  /**
+  * Generates a place for every invalid transition in the net.
+  * @param placeModel the id of the place to generate a new for
+  */
   computePrecisionSolutions(
     placeModel: SolutionGeneratorType, wrongContinuations: any
   ): Observable<ProblemSolution[]> {
@@ -1367,8 +1450,8 @@ export class IlpSolver {
     const invalidPlace = this.petriNet.places.find(
       (p) => p.id === "p1"//placeModel.placeId //XXX
     );
- /*  if (placeModel.type === 'warning') {
-       console.log("Model Type warning and execute again populateIlpBySameWeights"); */
+    /*  if (placeModel.type === 'warning') {
+          console.log("Model Type warning and execute again populateIlpBySameWeights"); */
     /*       const changeMarkingSolution = this.populateIlpBySameWeights(
             this.baseIlp,
             invalidPlace!
@@ -1418,7 +1501,7 @@ export class IlpSolver {
             solutions: [solution.solution.result.vars],
             regionSize: this.generateSumForVars(solution.solution.result.vars),
           };
-
+  
           if (problemSolution.regionSize == 0) {
             console.log("addTrace");
             problemSolution = {
@@ -1434,36 +1517,59 @@ export class IlpSolver {
         })
       );
     } */
-    const unhandledPairs = this.getUnhandledPairs(invalidPlace!);
-    console.log("unhandledPairs");
-    console.log(unhandledPairs);
+    //const unhandledPairs = this.getUnhandledPairs(invalidPlace!);
+    /*    const unhandledPairs = this.getUnhandledPairs({
+         "id": "p",
+         "type": "place",
+         "marking": 0,
+         "incomingArcs": [
+             {
+                 "weight": 1,
+                 "source": "a",
+                 "target": "p1",
+                 "breakpoints": []
+             }
+         ],
+         "outgoingArcs": [
+             {
+                 "weight": 1,
+                 "source": "p1",
+                 "target": "b",
+                 "breakpoints": []
+             }
+         ]
+     }); */
+    /*     console.log("unhandledPairs");
+        console.log(unhandledPairs); */
     let z = 0;
     if (placeModel.type === 'possibility') {
       z = wrongContinuations.findIndex((invalidTransition: { firstInvalidTransition: string | string[]; }) => invalidTransition.firstInvalidTransition.includes(placeModel.placeId));
     }
     return combineLatest(
-      unhandledPairs.map((pair) =>
-        this.solveILP(this.avoidWrongContinuationIlp(this.baseIlp, invalidPlace!, wrongContinuations, this.partialOrders, z)).pipe( // populateIlpByCausalPairs(this.baseIlp, pair)
-          switchMap((solution) => {
-            if (solution.solution.result.status !== Solution.NO_SOLUTION) {
-              return of(solution);
-            }
-            return this.solveILP(
-              this.populateIlpByCausalPairs(
-                this.baseIlp,
-                pair,
-                undefined,
-                false
+            /* unhandledPairs.map((pair) => */
+             //this.solveILP(this.avoidWrongContinuationIlp(this.baseIlp/* , invalidPlace! */, wrongContinuations, this.partialOrders, z)).pipe( // populateIlpByCausalPairs(this.baseIlp, pair)
+              this.solveILP(this.baseIlp).pipe( // populateIlpByCausalPairs(this.baseIlp, pair)
+                switchMap((solution) => {
+                  if (solution.solution.result.status !== Solution.NO_SOLUTION) {
+                    return of(solution);
+                  }
+                  /* return this.solveILP(
+                    this.populateIlpByCausalPairs(
+                      this.baseIlp,
+                      pair,
+                      undefined,
+                      false
+                    )
+                  ); */
+                  return [];
+                }),
+                map((solution) => ({
+                  ilp: solution.ilp,
+                  solution: solution.solution,
+                  type: 'multiplePlaces' as SolutionType,
+                }))
               )
-            );
-          }),
-          map((solution) => ({
-            ilp: solution.ilp,
-            solution: solution.solution,
-            type: 'multiplePlaces' as SolutionType,
-          }))
-        )
-      )
+            /* ) */
     ).pipe(
       concatMap(
         (
@@ -1477,7 +1583,7 @@ export class IlpSolver {
               type: 'addPlace' as SolutionType,
               ilp: this.avoidWrongContinuationIlp(
                 this.baseIlp,
-                invalidPlace!,
+                /* invalidPlace!, */
                 wrongContinuations,
                 this.partialOrders,
                 z
@@ -1487,7 +1593,7 @@ export class IlpSolver {
               type: 'addTrace' as SolutionType,
               ilp: this.avoidWrongContinuationIlp(
                 this.baseIlp,
-                invalidPlace!,
+                /* invalidPlace!, */
                 wrongContinuations,
                 this.partialOrders,
                 z
@@ -1495,12 +1601,12 @@ export class IlpSolver {
             },
             {
               type: 'removePlace' as SolutionType,
-              ilp: this.avoidWrongContinuationIlp(
+              ilp: this.implicitPlacesIlp( //XXX implicitPlacesIlp
                 this.baseIlp,
                 invalidPlace!,
-                wrongContinuations,
+                /* wrongContinuations, */
                 this.partialOrders,
-                z
+                /* z */
               ),
             }
           ];
@@ -1546,7 +1652,7 @@ export class IlpSolver {
               );
 
               if (solution.type === "addTrace") {
-                typeToSolution[solution.type].sum = 999;
+                typeToSolution[solution.type].sum = 99999;
               }
 
               typeToSolution[solution.type].vars.push(
