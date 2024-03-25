@@ -1,15 +1,27 @@
 import { OverlayRef } from '@angular/cdk/overlay';
-import { Component, EventEmitter, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit, ViewEncapsulation } from '@angular/core';
 
 import { SolutionType } from '../../algorithms/regions/ilp-solver/solver-classes';
 import { AutoRepair, AutoRepairWithSolutionType } from '../../algorithms/regions/parse-solutions.fn';
 import { NetCommandService } from '../../services/repair/net-command.service';
 import { PlaceSolution, PrecisionSolution } from '../../services/repair/repair.model';
 import { RepairService } from 'src/app/services/repair/repair.service';
-
+import { DomSanitizer } from '@angular/platform-browser'
+import { PipeTransform, Pipe } from "@angular/core";
 type LabelWithTooltip = {
   label: string;
 };
+
+// Need to display the icons in the innerHtml in a different size and color
+// This does not work good: https://stackoverflow.com/questions/39628007/angular2-innerhtml-binding-remove-style-attribute/39630507#39630507
+// This works, but could cause security issues: https://stackoverflow.com/questions/44210786/style-not-working-for-innerhtml-in-angular
+@Pipe({ name: 'pipeHTML'})
+export class HTMLPipe implements PipeTransform  {
+  constructor(private sanitized: DomSanitizer) {}
+  transform(value: string) {
+    return this.sanitized.bypassSecurityTrustHtml(value);
+  }
+}
 
 @Component({
   selector: 'app-repair-menu',
@@ -28,6 +40,7 @@ export class RepairMenuComponent implements OnInit {
   solutionType = "";
 
   constructor(private netCommandService: NetCommandService, private repairService: RepairService) { }
+
 
   /**
    * On page initialization: Show the user the RepairMenu.FirstLine and .SecondLine
@@ -94,8 +107,15 @@ export class RepairMenuComponent implements OnInit {
     }
 
     if (this.placeSolution.type === 'possibility') {
-      //this.infoHeader = `The transition has ${this.placeSolution.wrongContinuations.length} possible wrong ${this.placeSolution.wrongContinuations.length === 1 ? 'continuation' : 'continuations'}. `;
-      this.infoHeader = `The transition has at least one related wrong continuation. </br>`;
+      let relatedWrongContinuationsCount = 0;
+      if (this.placeSolution.wrongContinuations) {
+        for (let i = 0; i < this.placeSolution.wrongContinuations.length; i++) {
+          if (this.placeSolution.wrongContinuations[i].firstInvalidTransition == this.placeSolution.newTransition) {
+            relatedWrongContinuationsCount = relatedWrongContinuationsCount + 1;
+          }
+        }
+      }
+      this.infoHeader = `The transition has ${relatedWrongContinuationsCount} possible wrong ${relatedWrongContinuationsCount === 1 ? 'continuation' : 'continuations'}. </br> `;
       this.shownTextsForSolutions = this.generateSolutionToDisplay(
         this.placeSolution.solutions,
         true
@@ -110,7 +130,7 @@ export class RepairMenuComponent implements OnInit {
     }
     /* } */
     if (this.placeSolution.type === 'possibility') {
-      this.infoHeader += 'Choose a solution to repair the transition:';
+      this.infoHeader += `Choose one of ${this.placeSolution.solutions.length} solutions to repair the transition:`;
     } else {
       this.infoHeader += 'Choose a solution to repair the place:';
     }
@@ -184,7 +204,7 @@ function generateTextForAutoRepair(
   }
   if (solution.type === 'add-place') {
     return {
-      label: `${baseText}${getSubLabel2(solution)}${getSubLabel(solution)}`,
+      label: `${baseText}${getSubLabel2(solution)}`,
     };
   }
   if (solution.type === 'add-trace') {
@@ -220,13 +240,17 @@ function generateBaseText(
 ): string {
   let text = solutionTypeToText[solution.repairType];
   if (solution.type === 'add-place') {
-    text = 'Repair ' + solution.relatedWrongContinuation?.wrongContinuation;
+    text = '<div style="font-size: 18px;">🦮</div> Repair ' + /* '<b>' + */ solution.relatedWrongContinuation?.wrongContinuation + ''/* + '</b>' */;
+    return `${text}`;
   }
-  if (solution.type === 'add-trace') {
-    text = 'Add ' + solution.relatedWrongContinuation?.wrongContinuation;
+  if (solution.type === 'add-trace') { //XXX
     if (solution.relatedWrongContinuation?.type == "not repairable") {
-      text = text + ' (Only one solution!)';
+      text = '<div style="color: green; font-size: 25px;">&#129092;&#xfe0e;</div>';
+    } else {
+      text = '<div style="color: rgb(240, 230, 42); font-size: 25px;">&#129092;&#xfe0e;</div>';
     }
+    text +=' Add ' + /* '<b>' + */ solution.relatedWrongContinuation?.wrongContinuation /* + '</b>' */;
+    return `${text}`;
   }
   if (solution.type === 'marking') {
     text = 'Add tokens';
@@ -258,7 +282,7 @@ function getSubLabel(solution: { regionSize: number }): string {
  * @returns solution description of RepairMenu.SolutionList.Record.SecondLine
  */
 function getSubLabel2(solution: { regionSize: number }): string {
-  return `<span>by adding a new place.</span></br>`;
+  return ` by adding a place to the net. Region size: ${solution.regionSize}`;
 }
 
 /**
@@ -267,5 +291,5 @@ function getSubLabel2(solution: { regionSize: number }): string {
  * @returns solution description of RepairMenu.SolutionList.Record.SecondLine
  */
 function getSubLabel3(solution: { regionSize: number }): string {
-  return `<span>to the specification.</span>`;
+  return ` to the specification.`;
 }

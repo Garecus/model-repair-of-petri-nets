@@ -24,7 +24,7 @@ import { DisplayComponent } from './components/display/display.component';
 import { DownloadComponent } from './components/download/download.component';
 import { DownloadPopoverComponent } from './components/download/download-popover/download-popover.component';
 import { FooterComponent } from './components/footer/footer.component';
-import { RepairMenuComponent } from './components/repair-menu/repair-menu.component';
+import { RepairMenuComponent, HTMLPipe } from './components/repair-menu/repair-menu.component';
 import { SourceFileTextareaComponent } from './components/source-file-textarea/source-file-textarea.component';
 import { TemplateButtonComponent } from './components/template-button/template-button.component';
 import { UploadComponent } from './components/upload/upload.component';
@@ -43,6 +43,7 @@ import { DownloadExampleComponent } from './components/download-example/download
     RepairMenuComponent,
     UploadComponent,
     DownloadExampleComponent,
+    HTMLPipe
   ],
   imports: [
     BrowserModule,

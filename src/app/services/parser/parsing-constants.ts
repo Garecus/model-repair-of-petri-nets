@@ -27,3 +27,5 @@ export const conceptNameAttribute = 'concept:name';
 export const eventIdAttribute = 'event-id';
 
 export const followsAttribute = 'follows[]';
+
+// eventsAttribute see above

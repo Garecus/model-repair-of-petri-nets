@@ -13,7 +13,7 @@
       mat-button
       *ngFor="let model of shownTextsForSolutions"
       (click)="useSolution(model.solution)"
-      [innerHTML]="model.text.label"
+      [innerHTML]="model.text.label | pipeHTML"
     ></button>
   </ng-container>
 
