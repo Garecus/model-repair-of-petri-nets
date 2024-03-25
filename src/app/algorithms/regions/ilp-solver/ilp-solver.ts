@@ -14,7 +14,7 @@ import { Constraint, Goal, MessageLevel, Solution } from './solver-constants';
 
 export type SolutionGeneratorType =
   | {
-    type: 'repair' | 'warning' | 'possibility';
+    type: 'repair' | 'warning' | 'possibility' | 'implicit';
     placeId: string;
     newTransition?: string;
   }
@@ -24,6 +24,11 @@ export type SolutionGeneratorType =
   }
   | {
     type: 'possibility';
+    newTransition: string;
+    placeId: string;
+  }
+  | {
+    type: 'implicit';
     newTransition: string;
     placeId: string;
   };
@@ -206,6 +211,7 @@ export class IlpSolver {
           changeMarking: { sum: 0, vars: [] },
           addPlace: { sum: 0, vars: [] }, // [precision model repair]
           addTrace: { sum: 0, vars: [] }, // [precision model repair]
+          removePlace: { sum: 0, vars: [] }, // [precision model repair]
         };
 
         placeSolutions.forEach((placeSolution) => {
@@ -1433,7 +1439,7 @@ export class IlpSolver {
     console.log(unhandledPairs);
     let z = 0;
     if (placeModel.type === 'possibility') {
-      z = wrongContinuations.findIndex((vari: { firstInvalidTransition: string | string[]; }) => vari.firstInvalidTransition.includes(placeModel.placeId));
+      z = wrongContinuations.findIndex((invalidTransition: { firstInvalidTransition: string | string[]; }) => invalidTransition.firstInvalidTransition.includes(placeModel.placeId));
     }
     return combineLatest(
       unhandledPairs.map((pair) =>
@@ -1486,6 +1492,16 @@ export class IlpSolver {
                 this.partialOrders,
                 z
               ),
+            },
+            {
+              type: 'removePlace' as SolutionType,
+              ilp: this.avoidWrongContinuationIlp(
+                this.baseIlp,
+                invalidPlace!,
+                wrongContinuations,
+                this.partialOrders,
+                z
+              ),
             }
           ];
           console.log("ilpsToSolve");
@@ -1512,6 +1528,7 @@ export class IlpSolver {
           changeMarking: { sum: 0, vars: [] },
           addPlace: { sum: 0, vars: [] }, // [precision model repair]
           addTrace: { sum: 0, vars: [] }, // [precision model repair]
+          removePlace: { sum: 0, vars: [] }, // [precision model repair]
         };
 
         console.log("placeSolutions :");

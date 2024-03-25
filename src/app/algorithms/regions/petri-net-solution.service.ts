@@ -10,6 +10,7 @@ import { IlpSolver, SolutionGeneratorType } from './ilp-solver/ilp-solver';
 import { ProblemSolution, VariableName, VariableType } from './ilp-solver/solver-classes';
 import { AddPlaceAutoRepair, AutoRepairForSinglePlace, parseSolution } from './parse-solutions.fn';
 import { removeDuplicatePlaces } from './remove-duplicate-places.fn';
+import { __importDefault } from 'tslib';
 
 const createGlpk: Promise<() => Promise<GLPK>> = import('glpk.js').then(
   (glpk) => (glpk as any).default
@@ -106,7 +107,7 @@ export class PetriNetSolutionService {
             solver.computeSolutions(place).pipe(
               map((solutions) => {
                 const existingPlace =
-                  place.type === 'repair' || place.type === 'warning' || place.type === 'possibility'
+                  place.type === 'repair' || place.type === 'warning'
                     ? petriNet.places.find((p) => p.id === place.placeId)
                     : undefined;
 
@@ -186,6 +187,14 @@ export class PetriNetSolutionService {
                       missingTokens,
                       invalidTraceCount: 0,
                     } as PrecisionSolution;
+                  case 'implicit':
+                    return {
+                      type: 'implicit',
+                      place: place.placeId,
+                      solutions: parsedSolutions,
+                      missingTokens,
+                      invalidTraceCount: 0,
+                    } as PrecisionSolution;
                 }
               })
             )
@@ -217,7 +226,8 @@ export class PetriNetSolutionService {
     petriNet: PetriNet,
     invalidPlaces: { [key: string]: number },
     invalidTransitions: { [key: string]: number },
-    wrongContinuations: wrongContinuation[]
+    wrongContinuations: wrongContinuation[],
+    implicitPlaces: { [key: string]: number },
   ): Observable<PlaceSolution[]> {
     /*     console.log("Compute precision with invalid places and transitions: ");
         console.log(invalidPlaces);
@@ -232,6 +242,10 @@ export class PetriNetSolutionService {
         const invalidTransitionList: SolutionGeneratorType[] = Object.keys(
           invalidTransitions
         ).map((transition) => ({ type: 'possibility', placeId: transition }));
+
+        let implicitPlaceList: SolutionGeneratorType[] = Object.keys(
+          implicitPlaces
+        ).map((place) => ({ type: 'implicit', placeId: place }));
 
         const allNetLabels = new Set<string>(
           petriNet.transitions.map((t) => t.label)
@@ -276,6 +290,13 @@ export class PetriNetSolutionService {
           return of([]);
         } */
 
+        invalidTransitionList.push(
+          ...(Object.keys(implicitPlaces).map((placeId) => ({
+            type: 'implicit',
+            placeId: placeId,
+          })) as SolutionGeneratorType[])
+        );
+
         const idToTransitionLabelMap = petriNet.transitions.reduce(
           (acc, transition) => {
             if (!acc[transition.id]) {
@@ -313,9 +334,9 @@ export class PetriNetSolutionService {
                     : undefined; */
 
                 const existingPlace =
-                  place.type === 'warning' || place.type === 'possibility'
+                  place.type === 'warning' || place.type === 'possibility' || place.type === 'repair' || place.type === 'transition'
                     ? petriNet.places.find((p) => p.id === "p1")//place.placeId)//"p1") //XXX
-                    : undefined;
+                    : petriNet.places.find((p) => p.id === place.placeId);
 
                 if (place.type === 'warning') {
                   const highestMarkingSolution: {
@@ -355,11 +376,19 @@ export class PetriNetSolutionService {
                   return undefined;
                 }
 
+                if (place.type === 'implicit') { //XXX
+                  for (let i = 0; i < solutions.length; i++) {
+                    solutions[i].type = "removePlace";
+                    solutions[i].regionSize = 0;
+                  }
+                }
+
                 //console.log(place);
                 let z = 0;
                 if (place.type == "possibility") {
                   z = wrongContinuations.findIndex(variable => variable.firstInvalidTransition.includes(place.placeId));
                 }
+
                 const parsedSolutions = parseSolution(
                   handleSolutions(solutions, solver),
                   existingPlace,
@@ -421,6 +450,16 @@ export class PetriNetSolutionService {
                       invalidTraceCount: 0,
                       wrongContinuations: wrongContinuations,
                       newTransition: place.placeId //wrongContinuations[z] ? wrongContinuations[z].wrongContinuation.charAt(wrongContinuations[z].wrongContinuation.length - 1) : "" //XXX Possibility to change this to solutions.wrongContinuation within a for loop
+                    } as unknown as PlaceSolution;
+                  case 'implicit':
+                    return {
+                      type: 'implicit',
+                      place: place.placeId,
+                      solutions: parsedSolutions,
+                      missingTokens: missingTokens,
+                      invalidTraceCount: 0,
+                      wrongContinuations: "",
+                      newTransition: place.placeId
                     } as unknown as PlaceSolution;
                 }
               })

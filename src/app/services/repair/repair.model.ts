@@ -77,4 +77,21 @@ export type PrecisionSolution =
     transition?: string;
     missingPlace?: string;
     newTransition?: string;
+  }
+  | {
+    type: 'implicit';
+    place: string;
+    solutions: AutoRepairWithSolutionType[];
+    invalidTraceCount: number;
+    missingTokens: number | undefined;
+    regionSize: number;
+
+    tooManyTokens?: number;
+    reduceTokensTo?: number;
+    missingTransition?: string;
+
+    wrongContinuations?: wrongContinuation[];
+    transition?: string;
+    missingPlace?: string;
+    newTransition?: string;
   };

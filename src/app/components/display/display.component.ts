@@ -38,6 +38,7 @@ export class DisplayComponent implements OnInit {
   wrongContinuationCount$: Subject<{ count: number } | null>;
   wrongContinuations: wrongContinuation[] = [];
   wrongContinuationsString: string[] = [];
+  implicitPlaceCount$: Subject<{ count: number } | null>;
 
   tracesCount$: Observable<number>;
   transitionSolutions$: Observable<NewTransitionSolution[]>;
@@ -76,6 +77,10 @@ export class DisplayComponent implements OnInit {
       null
     );
 
+    this.implicitPlaceCount$ = new BehaviorSubject<{ count: number } | null>(
+      null
+    );
+
     this.transitionSolutions$ = repairService
       .getSolutions$()
       .pipe(
@@ -93,7 +98,7 @@ export class DisplayComponent implements OnInit {
         map(
           (solutions) =>
             solutions.filter(
-              (s) => s.type === 'possibility'
+              (s) => s.type === 'possibility' || s.type === 'implicit'
             ) as PrecisionSolution[]
         )
       );
@@ -138,6 +143,12 @@ export class DisplayComponent implements OnInit {
                     place.issueStatus = undefined;
                   });
                   this.invalidPlaceCount$.next({
+                    count: 0,
+                  });
+                  this.invalidTransitionCount$.next({
+                    count: 0,
+                  });
+                  this.implicitPlaceCount$.next({
                     count: 0,
                   });
                   this.repairService.saveNewSolutions([], 0);
@@ -238,11 +249,50 @@ export class DisplayComponent implements OnInit {
                   invalidTransition.relatedWrongContinuationsCount = relatedWrongContinuationsCount.toString();
                 });
 
+                // Identification of implicitPlaces to know where repairs can be performed
+                let implicitPlaces: {
+                  [key: string]: number;
+                } = {};
+                for (let index = 0; index < partialOrders.length; index++) {
+                  const currentInvalid = this.firePartialOrder(
+                    net,
+                    partialOrders[index]
+                  );
+
+                  implicitPlaces = { //XXX
+                    "p1": 1
+                  };
+                  currentInvalid.forEach((place) => {
+                    if (implicitPlaces[place] === undefined) {
+                      implicitPlaces[place] = 0;
+                    }
+                    implicitPlaces[place]++;
+                  });
+                }
+
+                const placeIds2 = Object.keys(implicitPlaces);
+                this.implicitPlaceCount$.next({
+                  count: placeIds2.length,
+                });
+
+                const places2: Place[] = net.places.filter((place) =>
+                  placeIds.includes(place.id)
+                );
+                net.places.forEach((place) => {
+                  place.issueStatus = undefined;
+                });
+                places2.forEach((implicitPlace) => {
+                  implicitPlace.issueStatus = 'implicit';
+                });
+
                 if (showSuggestions == "fitness") {
                   net.transitions.forEach((transition) => {
                     transition.issueStatus = undefined;
                   });
                   this.wrongContinuationCount$.next({
+                    count: 0,
+                  });
+                  this.implicitPlaceCount$.next({
                     count: 0,
                   });
 
@@ -298,7 +348,7 @@ export class DisplayComponent implements OnInit {
                   //solutions = solutions[0];
                   //return of({ solutions, renderChanges: true });
                   return this.petriNetRegionsService
-                    .computePrecisionSolutions(partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations)
+                    .computePrecisionSolutions(partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations, implicitPlaces)
                     .pipe(
                       tap(() => (this.computingSolutions = false)),
                       map((solutions) => ({
@@ -321,6 +371,9 @@ export class DisplayComponent implements OnInit {
                     place.issueStatus = undefined;
                   });
                   this.invalidPlaceCount$.next({
+                    count: 0,
+                  });
+                  this.implicitPlaceCount$.next({
                     count: 0,
                   });
                   this.repairService.saveNewSolutions([], 0);

@@ -41,9 +41,8 @@ follows[]
       );
 
       const follows = `[${previousTransitionArcs.map((arc) => arc.source)}]`;
-      log += `${netIndex + 1} ${transition.id} ${
-        transition.label
-      } ${follows}\n`;
+      log += `${netIndex + 1} ${transition.id} ${transition.label
+        } ${follows}\n`;
     }
   }
 
@@ -114,7 +113,7 @@ function parsePetriNet(content: string, errors: Set<string>): PetriNet | null {
           trimmedLine !== transitionsAttribute
         ) {
           const place = parsePlace(trimmedLine);
-          addPlace(petriNet, place);
+          addPlace(petriNet, place); //XXX
           break;
         } else if (trimmedLine === arcsAttribute) {
           currentParsingState = 'arcs';

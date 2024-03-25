@@ -263,6 +263,14 @@ export class SvgService {
         titleEl.textContent =
           'Place can be improved. Click to see possibilities to solve the issue!';
         placeEl.appendChild(titleEl);
+      } else if (place.issueStatus === 'implicit') {
+        placeEl.classList.add('place--implicit');
+        placeEl.setAttribute('stroke', 'var(--warn-color)');
+
+        const titleEl = this.createSvgElement('title');
+        titleEl.textContent =
+          'Place can be removed. Click to see possibilities to solve the issue!';
+        placeEl.appendChild(titleEl);
       } else {
         placeEl.classList.add('place--invalid');
         placeEl.setAttribute('stroke', 'var(--error-color)');
@@ -293,6 +301,14 @@ export class SvgService {
           ? 'var(--warn-color)'
           : 'var(--error-color)'
       );
+      if (place.issueStatus === 'implicit') {
+        markingEl.setAttribute(
+          'stroke', 'var(--warn-color)'
+        );
+        markingEl.setAttribute(
+          'fill', 'var(--warn-color)'
+        );
+      }
       markingEl.setAttribute('font-size', '2em');
       result.push(markingEl);
 

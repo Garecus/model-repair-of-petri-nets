@@ -68,7 +68,7 @@ export class NetCommandService {
     }
 
     // Set the invalid place to an existing one to pass the if request 10 lines below
-    if (placeId) { //placeId == "p_new"
+    if (placeId && solution.type !== "remove-place") { //placeId == "p_new"
       placeId = "p1"; //XXX
     }
 
@@ -174,10 +174,10 @@ export class NetCommandService {
       });
   }
 
-    /**
-   * Action that is performed, if the user uses the button "Redo correction"
-   * @returns empty if no log or net available in the redo list
-   */
+  /**
+ * Action that is performed, if the user uses the button "Redo correction"
+ * @returns empty if no log or net available in the redo list
+ */
   redo(): void {
     // Get the current net and store it, then upload the new one
     const net = this.redoQueue.pop();
@@ -322,14 +322,20 @@ function generateTextForNewNet(
 
   newText += `${placesAttribute}\n`;
   petriNet.places.forEach((place, index) => {
-    if (index !== placeIndex) {
-      newText += `${place.id} ${place.marking}\n`;
+    // If there is an remove-place solution, then we remove a place
+    if (solution.type === 'remove-place' && index === placeIndex) {//XXX  && place.id === solution.implicitPlace
+      newText += "";
+      solution.implicitPlace = place;
     } else {
-      newText += `${generatePlaceForSolution(
-        place.id,
-        place.marking,
-        solution
-      )}\n`;
+      if (index !== placeIndex) {
+        newText += `${place.id} ${place.marking}\n`;
+      } else {
+        newText += `${generatePlaceForSolution(
+          place.id,
+          place.marking,
+          solution
+        )}\n`;
+      }
     }
   });
 
@@ -548,6 +554,11 @@ function generateArcsForSolution(
         weight: outgoing.weight,
       }))
     );
+  }
+
+  if (solution.type === 'remove-place') {
+    let arcs = petriNet.arcs.filter((arc) => solution.implicitPlace != undefined && arc.source !== solution.implicitPlace.id && arc.target !== solution.implicitPlace.id);
+    return arcs;
   }
 
   if (solution.places) {

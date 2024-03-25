@@ -79,6 +79,12 @@ circle.place.place--warning {
   stroke: var(--error-color);
 }
 
+circle.place.place--implicit {
+  cursor: pointer;
+  color: var(--warn-color);
+  stroke: var(--warn-color);
+}
+
 .new-svg-element {
   color: var(--success-color);
   stroke: var(--success-color);

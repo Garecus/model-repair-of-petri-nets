@@ -299,7 +299,7 @@ export class ParserService { //XXX
           ) {
             const place = this.parsePlace(trimmedLine);
 
-            if (!addPlace(petriNet, place)) {
+            if (!addPlace(petriNet, place)) { //XXX
               this.toastr.warning(
                 `File contains duplicate places`,
                 `Duplicate places are ignored`

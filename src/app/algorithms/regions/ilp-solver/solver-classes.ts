@@ -39,7 +39,8 @@ export type SolutionType =
   | 'changeMarking'
   | 'multiplePlaces'
   | 'addPlace' // [precision model repair]
-  | 'addTrace'; // [precision model repair]
+  | 'addTrace' // [precision model repair]
+  | 'removePlace'; // [precision model repair]
 
 export interface ProblemSolutionWithoutType {
   ilp: LP;

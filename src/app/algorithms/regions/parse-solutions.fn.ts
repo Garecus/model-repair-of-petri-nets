@@ -41,12 +41,13 @@ type ArcDefinition = { transitionLabel: string; weight: number };
 
 // Type for the repair of [precision model repair]
 export type AddPlaceAutoRepair = {
-  type: 'add-place' | 'add-trace';
+  type: 'add-place' | 'add-trace' | 'remove-place';
   regionSize?: number;
   repairType?: SolutionType;
   places?: SinglePlaceParameter[];
   wrongContinuationNotRepairable?: string;
   relatedWrongContinuation?: wrongContinuation;
+  implicitPlace?: Place;
   //newMarking?: number;
   //incoming?: ArcDefinition[];
   //outgoing?: ArcDefinition[];
@@ -74,7 +75,7 @@ export function parseSolution(
   console.log(existingPlace);
   console.log(placeSolutionList);
   /* if (Object.keys(placeSolutionList).length == 0) { */ //XXX change here and comment the if clause
-  if (wrongContinuations[z] && wrongContinuations[z].type == "not repairable") {
+  if (wrongContinuations[z] && wrongContinuations[z].type == "not repairable" && placeSolutionList.some((solution) => solution.type !== "removePlace")) {
     let returnList2 = [
       {
         "type": "add-trace",
@@ -90,7 +91,7 @@ export function parseSolution(
             "weight": 0
           }
         ],
-        "regionSize": 0, // Not repairable solution sort be sorted to the top
+        "regionSize": 0, // Not repairable solution should be sorted to the top
         "repairType": "addTrace",
         "wrongContinuationNotRepairable": wrongContinuations[z].wrongContinuation,
         "relatedWrongContinuation": wrongContinuations[z]
@@ -125,7 +126,7 @@ export function parseSolution(
         } as AutoRepairWithSolutionType;
       }
 
-      if (singlePlaceSolution.newMarking && parsableSolutionsPerType.type != "addPlace" && parsableSolutionsPerType.type != "addTrace") {
+      if (singlePlaceSolution.newMarking && parsableSolutionsPerType.type != "addPlace" && parsableSolutionsPerType.type != "addTrace" && parsableSolutionsPerType.type != "removePlace") {
         return {
           ...checkPlaceAndReturnMarkingIfEquals(
             mergeAllDuplicatePlaces(singlePlaceSolution),
@@ -202,7 +203,7 @@ export function parseSolution(
         return null;
       }
 
-      if (newPlaces.length === 1 && parsableSolutionsPerType.type != "addPlace" && parsableSolutionsPerType.type != "addTrace") {
+      if (newPlaces.length === 1 && parsableSolutionsPerType.type != "addPlace" && parsableSolutionsPerType.type != "addTrace" && parsableSolutionsPerType.type != "removePlace") {
         const repair: AutoRepairForSinglePlace = {
           ...newPlaces[0],
           type: 'modify-place',
@@ -218,7 +219,7 @@ export function parseSolution(
         };
       }
 
-      if (parsableSolutionsPerType.type != "addPlace" && parsableSolutionsPerType.type != "addTrace") {
+      if (parsableSolutionsPerType.type != "addPlace" && parsableSolutionsPerType.type != "addTrace" && parsableSolutionsPerType.type != "removePlace") {
         const repair: AutoRepairWithSolutionType = {
           type: 'replace-place',
           regionSize: parsableSolutionsPerType.regionSize,
@@ -226,7 +227,7 @@ export function parseSolution(
           places: newPlaces.map((newPlace) => mergeAllDuplicatePlaces(newPlace)),
         };
         return repair;
-      } else if (parsableSolutionsPerType.type != "addPlace" && parsableSolutionsPerType.type == "addTrace") {
+      } else if (parsableSolutionsPerType.type == "addTrace") {
         console.log("Identified add-trace solution. ");
         const repair: AutoRepairForSinglePlace = {
           ...newPlaces[0],
@@ -258,6 +259,21 @@ export function parseSolution(
           places: newPlaces.map((newPlace) => mergeAllDuplicatePlaces(newPlace)),
         };
         return repair; */
+      } else if (parsableSolutionsPerType.type == "removePlace") {
+        console.log("Identified remove place solution.");
+        const repair: AutoRepairForSinglePlace = {
+          ...newPlaces[0],
+          type: 'remove-place'
+        };
+        return {
+          ...checkPlaceAndReturnMarkingIfEquals(
+            mergeAllDuplicatePlaces(repair),
+            existingPlace,
+            idTransitionToLabel
+          ),
+          regionSize: parsableSolutionsPerType.regionSize,
+          repairType: parsableSolutionsPerType.type,
+        };
       } else {
         if (wrongContinuations[z] && wrongContinuations[z].type != "not repairable") {
           console.log(parsableSolutionsPerType.solutionParts);
@@ -312,7 +328,7 @@ export function parseSolution(
       }
     })
     .filter((solution) => !!solution);
-  if (wrongContinuations[z]) {
+  if (wrongContinuations[z] && placeSolutionList.some((solution) => solution.type !== "removePlace")) {
     let currentTransition = wrongContinuations[z].firstInvalidTransition;
     for (let k = 0; k < wrongContinuations.length; k++) {
       if (wrongContinuations[k] && currentTransition.includes(wrongContinuations[k].firstInvalidTransition)) {
@@ -331,7 +347,7 @@ export function parseSolution(
                 "weight": 0
               }
             ],
-            "regionSize": 99999,
+            "regionSize": 0,
             "repairType": "addTrace",
             "wrongContinuationNotRepairable": wrongContinuations[k].wrongContinuation,
             "relatedWrongContinuation": wrongContinuations[k]

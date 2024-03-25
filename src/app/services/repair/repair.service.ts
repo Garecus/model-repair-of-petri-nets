@@ -137,7 +137,7 @@ export class RepairService {
     }
 
     this.currentOpenElement =
-      solution.type === 'possibility'
+      solution.type === 'possibility' //XXX
         ? solution.newTransition
         : solution.place;
     if (this.outsideClickSubscription) {
@@ -194,7 +194,7 @@ export class RepairService {
       return;
     }
 
-    const solutionsForPlace = this.solutions.find(
+    const solutionsForPlace = this.solutions.find( //XXX maybe adjust from transition to place for implicit
       (s) => s.type !== 'newTransition' && s.place === place
     );
     this.showRepairPopoverForSolution(ref, solutionsForPlace);
@@ -216,7 +216,7 @@ export class RepairService {
     }
     console.log(this.solutions);
     const solutionsForTransition = this.solutions.find( // const solutionsForTransition = this.precisionSolutions.find( //XXX
-      (s) => s.type === 'possibility' && s.newTransition === transition // && s.transition === transition
+      (s) => s.type === 'possibility' && s.newTransition === transition// && s.transition === transition
     );
     console.log(solutionsForTransition);
     this.showRepairPopoverForSolutionPrecision(ref, solutionsForTransition);
