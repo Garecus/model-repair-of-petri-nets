@@ -22,6 +22,10 @@ import { VariableBinding } from '@angular/compiler';
 import { PetriNetSolutionService } from '../regions/petri-net-solution.service';
 import { PrecisionSolution } from 'src/app/services/repair/repair.model';
 import { map, startWith, tap } from 'rxjs';
+import { FirePartialOrder } from '../fire-partial-orders/fire-partial-order';
+import { addArc, addEventItem, generateEventItem } from 'src/app/classes/diagram/functions/net-helper.fn';
+import { logTypeKey, netTypeKey, attributesAttribute, eventsAttribute, caseIdAttribute, conceptNameAttribute, eventIdAttribute, followsAttribute } from 'src/app/services/parser/parsing-constants';
+import { ParserService } from 'src/app/services/parser/parser.service';
 
 type InnerFireResult = { branchPlaces: string[] };
 type ValidPlacesType = Array<boolean>;
@@ -50,8 +54,10 @@ export class CheckWrongContinuations {
   invalidTransitions: string[] = [];
   wcObjects: wrongContinuation[] = [];
   computingSolutions = false;
+  removedContinuations: string[] = [];
+  executableContinuations: string[] = [];
 
-  constructor(petriNet: PetriNet, partialOrder: PartialOrder, partialOrders: PartialOrder[], private petriNetRegionsService: PetriNetSolutionService) {
+  constructor(petriNet: PetriNet, partialOrder: PartialOrder, partialOrders: PartialOrder[], private petriNetRegionsService: PetriNetSolutionService, private parserService: ParserService) {
     this.petriNet = { ...petriNet };
     this.partialOrder = clonedeep(partialOrder);
     this.partialOrders = clonedeep(partialOrders);
@@ -129,11 +135,199 @@ export class CheckWrongContinuations {
         this.continuations[i7] = this.allUniquePrefix[i5].concat(this.allUniqueTransitions[i6]);
       }
       this.continuations = this.continuations.concat(this.allUniquePrefix);
+      this.continuations = this.continuations.concat(this.allUniqueTransitions);
       this.continuations = Array.from(new Set(this.continuations));
       /* console.log(this.continuations); */
     }
 
-    this.maxLoopNumber = 0;
+    // Remove the continuations that are equal to the specification traces from the continuations list
+    const sequences = this.caseList.map(obj => obj.sequence);
+    this.continuations = this.continuations.filter(obj => !sequences.includes(obj));
+
+    let remove: string[] = [];
+    for (let index = 0; index < this.continuations.length; index++) {
+      for (let j = 0; j < sequences.length; j++) {
+        if (sequences[j].includes(this.continuations[index])) {
+          remove = remove.concat(this.continuations[index]);
+        }
+      }
+    }
+    this.continuations = this.continuations.filter(n => !remove.includes(n));
+
+    /* let parsedContinuations: PartialOrder[] = [{
+      "arcs": [
+        {
+          "target": "a2",
+          "source": "a1",
+          "weight": 1,
+          "breakpoints": []
+        }
+      ],
+      "events": [
+        {
+          "id": "a1",
+          "label": "a",
+          "type": "event",
+          "incomingArcs": [],
+          "outgoingArcs": [],
+          "nextEvents": [
+            "a2"
+          ],
+          "previousEvents": []
+        },
+        {
+          "id": "a2",
+          "label": "a",
+          "type": "event",
+          "incomingArcs": [],
+          "outgoingArcs": [],
+          "nextEvents": [],
+          "previousEvents": [
+            "a1"
+          ]
+        }
+      ],
+      "initialEvents": [
+        "a1"
+      ],
+      "finalEvents": [
+        "a2"
+      ]
+    },{
+      "arcs": [
+        {
+          "target": "c",
+          "source": "a",
+          "weight": 1,
+          "breakpoints": []
+        }
+      ],
+      "events": [
+        {
+          "id": "a",
+          "label": "a",
+          "type": "event",
+          "incomingArcs": [],
+          "outgoingArcs": [],
+          "nextEvents": [
+            "c"
+          ],
+          "previousEvents": []
+        },
+        {
+          "id": "c",
+          "label": "c",
+          "type": "event",
+          "incomingArcs": [],
+          "outgoingArcs": [],
+          "nextEvents": [],
+          "previousEvents": [
+            "a"
+          ]
+        }
+      ],
+      "initialEvents": [
+        "a"
+      ],
+      "finalEvents": [
+        "c"
+      ]
+    }, {
+      "arcs": [
+        {
+          "target": "b1",
+          "source": "a",
+          "weight": 1,
+          "breakpoints": []
+        },
+        {
+          "target": "b2",
+          "source": "b1",
+          "weight": 1,
+          "breakpoints": []
+        },
+        {
+          "target": "c",
+          "source": "b2",
+          "weight": 1,
+          "breakpoints": []
+        }
+      ],
+      "events": [
+        {
+          "id": "a",
+          "label": "a",
+          "type": "event",
+          "incomingArcs": [],
+          "outgoingArcs": [],
+          "nextEvents": [
+            "c"
+          ],
+          "previousEvents": []
+        },
+        {
+          "id": "b2",
+          "label": "b",
+          "type": "event",
+          "incomingArcs": [],
+          "outgoingArcs": [],
+          "nextEvents": [],
+          "previousEvents": [
+            "b1"
+          ]
+        },
+        {
+          "id": "b1",
+          "label": "b",
+          "type": "event",
+          "incomingArcs": [],
+          "outgoingArcs": [],
+          "nextEvents": [],
+          "previousEvents": [
+            "a"
+          ]
+        },
+        {
+          "id": "c",
+          "label": "c",
+          "type": "event",
+          "incomingArcs": [],
+          "outgoingArcs": [],
+          "nextEvents": [],
+          "previousEvents": [
+            "b2"
+          ]
+        }
+      ],
+      "initialEvents": [
+        "a"
+      ],
+      "finalEvents": [
+        "c"
+      ]
+    }]; */
+
+    // Check whether or not a continuation can be fired. If yes, then it is a wrongContinuation. If not, remove it.
+    let parsedContinuations: PartialOrder[];
+    for (let index = 0; index < this.continuations.length; index++) {
+      parsedContinuations = this.parserService.parseWrongContinuation(this.continuations[index], new Set([""]));
+      //console.log(parsedContinuations[0]);
+      if (parsedContinuations.length > 0) {
+        const currentInvalid = this.fireWrongContinuation(
+          this.petriNet,
+          parsedContinuations[0]
+        );
+        if (currentInvalid.length > 0) {
+          // Remove it
+          this.removedContinuations = this.removedContinuations.concat(this.continuations[index]);
+        }
+      }
+    }
+    //console.log(this.removedContinuations);
+    this.continuations = this.continuations.filter(n => !this.removedContinuations.includes(n));
+    this.wrongContinuations = this.continuations;
+
+    /* this.maxLoopNumber = 0;
     // Identify loop and store highest number
     for (const item of this.caseList) {
       const sequence = item.sequence;
@@ -151,11 +345,11 @@ export class CheckWrongContinuations {
         }
       }
     }
-    /* console.log("Loopanzahl: " + this.maxLoopNumber); */
+    //console.log("Loopanzahl: " + this.maxLoopNumber);
 
     // List of arcs in petri net
-    /* console.log("Start with petri net");
-    console.log(this.petriNet); */
+    //console.log("Start with petri net");
+    //console.log(this.petriNet);
 
     for (let i = 0; i < this.petriNet.arcs.length; i++) {
       const arc = {
@@ -172,19 +366,19 @@ export class CheckWrongContinuations {
       this.ModelListValues.push(newRow);
     }
 
-    /* console.log("Parsed Model: " + this.ModelListValues); */
+    //console.log("Parsed Model: " + this.ModelListValues);
     for (var i2 = 0; i2 < this.ModelListValues.length; i2++) {
       const newEntry = this.arcList.find(item => item.arc === this.ModelListValues[i2].rowContent);
       if (newEntry) {
         newEntry.arc += this.ModelListValues[i2].rowContent;
-        /* console.log(newEntry.arc); */
+        //console.log(newEntry.arc);
       } else {
         this.arcList.push({ arc: this.ModelListValues[i2].rowContent });
       }
     }
-    /*     this.arcList.forEach((object, index) => {
-          console.log(`Object ${index + 1}:`, object);
-        }); */
+    //this.arcList.forEach((object, index) => {
+    //console.log(`Object ${index + 1}:`, object);
+    //});
 
     // convert arcs to same sequences
     this.arcList2 = [];
@@ -192,15 +386,15 @@ export class CheckWrongContinuations {
 
     for (var i3 = 0; i3 < this.arcList.length; i3++) {
       let arcSplitted = this.arcList[i3].arc.split(' ');
-      /* console.log(arcSplitted[0]);
-      console.log(arcSplitted[1]); */
+      //console.log(arcSplitted[0]);
+      //console.log(arcSplitted[1]);
 
       if (arcSplitted[0] == "p0") {
         let newRow: ArcList = {
           arc: arcSplitted[1],
         };
         this.arcList2.push(newRow);
-        /* console.log(newRow); */
+        //console.log(newRow);
         // Identify start variable
         this.startVariable = arcSplitted[1];
       }
@@ -209,7 +403,7 @@ export class CheckWrongContinuations {
       if (arcSplitted[0].includes("p") || arcSplitted[1].includes("p")) {
         let numberString = this.arcList[i3].arc.split("p")[1];
         numberString = numberString.split(" ")[0];
-        /* console.log(numberString); */
+        //console.log(numberString);
         const number = parseInt(numberString, 10);
         if (!isNaN(number) && number > highestNumberWithP) {
           highestNumberWithP = number;
@@ -225,7 +419,7 @@ export class CheckWrongContinuations {
               arc: arcSplitted[0] + arcSearchSplitted[1],
             };
             this.arcList2.push(newRow);
-            /* console.log(newRow); */
+            //console.log(newRow);
             //return false;
             return true;
           } else {
@@ -234,9 +428,9 @@ export class CheckWrongContinuations {
         });
       }
 
-      /* this.arcList2.forEach((object, index) => {
-         console.log(`Object ${index + 1}:`, object);
-       }); */
+      //this.arcList2.forEach((object, index) => {
+      //   console.log(`Object ${index + 1}:`, object);
+      // });
     }
 
     let lineWithHighestNumber: string | null = null;
@@ -253,8 +447,8 @@ export class CheckWrongContinuations {
       }
     }
 
-    /*     console.log("Startvariable: " + this.startVariable);
-        console.log("Endvariable: " + this.endVariable); */
+    //console.log("Startvariable: " + this.startVariable);
+    //console.log("Endvariable: " + this.endVariable);
 
     // Build further strings based on the connected letters
     // a, ab, ac, bb, bc, abc, abbc, abbbc, abbbbc
@@ -263,7 +457,7 @@ export class CheckWrongContinuations {
       const filteredEntries = entries.filter(entry => entry.arc.length > 1);
 
       // Check if any entry contains 'bb'
-      /* const bbInEntries = filteredEntries.some(entry => entry.arc.includes('bb')); */
+      //const bbInEntries = filteredEntries.some(entry => entry.arc.includes('bb'));
       const regex = /(.)\1+/;
       const bbInEntries = filteredEntries.some(entry => regex.test(entry.arc));
 
@@ -300,9 +494,9 @@ export class CheckWrongContinuations {
           const regex2 = new RegExp(`(${repeatingLetters[0]})\\1+`);
           while ((newCombinations[0].match(/b/g) || []).length < maxBb) {
             const newEntries: string[] = [];
-            /* if (stopWhile === true) {
-              break;
-            } */
+            // if (stopWhile === true) {
+            //  break;
+            //}
             for (const newCombination of newCombinations) {
               let bIndex: number = 0;
               if (repeatingLetters[0] !== null) {
@@ -315,17 +509,17 @@ export class CheckWrongContinuations {
               if ((newCombinations[0].match(/b/g) || []).length === maxBb - 1) {
                 newEntries.push(firstPart + repeatingLetters[0] + secondPart);
                 newEntries[newEntries.length - 1] = newEntries[newEntries.length - 1].substring(0, newEntries[newEntries.length - 1].length - 1);
-                /* newCombinations = newEntries;
-                finalCombinations = finalCombinations.concat(newCombinations); */
-                /* stopWhile = true; */
+                //newCombinations = newEntries;
+                //finalCombinations = finalCombinations.concat(newCombinations);
+                //stopWhile = true;
               } else {
                 newEntries.push(firstPart + repeatingLetters[0] + secondPart);
               }
               console.log(newEntries[newEntries.length - 1]);
-              /* const newCombinationCandidate = firstPart + secondPart;
-              if (!newEntries.includes(newCombinationCandidate)) {
-                newEntries.push(newCombinationCandidate);
-              } */
+              //const newCombinationCandidate = firstPart + secondPart;
+              //if (!newEntries.includes(newCombinationCandidate)) {
+              //  newEntries.push(newCombinationCandidate);
+              //}
             }
             newCombinations = newEntries;
             finalCombinations = finalCombinations.concat(newCombinations);
@@ -375,7 +569,6 @@ export class CheckWrongContinuations {
       let firstInvalidTransition = currentWC.charAt(currentWC.length - 1);
       const isMatching = this.petriNet.arcs.some(arc => {
 
-        //XXX
         if (currentWC == "abbbb") {
           let wcSplitted = currentWC.split('');
           for (let i = wcSplitted.length; i >= 0; i--) {
@@ -399,7 +592,8 @@ export class CheckWrongContinuations {
             if (otherArcWithSameTarget) {
               let secondArcSource = otherArcWithSameTarget.source;
               //console.log(secondArcSource);
-              const check = /* (secondArcSource === lastValidTransition || secondArcSource === firstInvalidTransition) && */ this.petriNet.arcs.some((otherArc) => {
+              const check = this.petriNet.arcs.some((otherArc) => {
+              //const check = (secondArcSource === lastValidTransition || secondArcSource === firstInvalidTransition) && this.petriNet.arcs.some((otherArc) => {
                 //console.log("2. Depth Source: " + otherArc.source);
                 //console.log("2. Depth Target2: " + otherArc.target);
                 // If no self loop
@@ -426,7 +620,7 @@ export class CheckWrongContinuations {
         }
       });
       return !isMatching;
-    });
+    }); */
 
     // Sorting the wrong continuations  Z -> A
     this.wrongContinuations.sort((a, b) => b.localeCompare(a));
@@ -504,4 +698,18 @@ export class CheckWrongContinuations {
     // Alternative approach: Show only 1 at a time right now, then: transitions = [transitions[0]];
     return transitions;
   }
+
+  /**
+ * Fire the net with the partial orders to get all invalid places
+ * @param petriNet 
+ * @param continuation
+ * @returns list of invalid places
+ */
+  private fireWrongContinuation(
+    petriNet: PetriNet,
+    continuation: PartialOrder
+  ): string[] {
+    return new FirePartialOrder(petriNet, continuation).getInvalidPlaces();
+  }
+
 }

@@ -210,6 +210,7 @@ export class ParserService { //XXX
         'No traces found'
       );
     }
+
     return returnList;
   }
 
@@ -299,7 +300,7 @@ export class ParserService { //XXX
           ) {
             const place = this.parsePlace(trimmedLine);
 
-            if (!addPlace(petriNet, place)) { //XXX
+            if (!addPlace(petriNet, place)) {
               this.toastr.warning(
                 `File contains duplicate places`,
                 `Duplicate places are ignored`
@@ -953,5 +954,60 @@ export class ParserService { //XXX
     // Dann Anzeigen von Lösungen
 
     return this.wrongContinuations;
+  }
+
+  parseWrongContinuation(content: string, errors: Set<string>): PartialOrder[] {
+    let contentLines = content.split('');
+    let eventIdIndex = -1;
+    const returnList: PartialOrder[] = [];
+    let currentPartialOrder: PartialOrder | undefined;
+    currentPartialOrder = {
+      arcs: [],
+      events: [],
+    };
+
+    for (const line of contentLines) {
+      const trimmedLine = line.trim();
+      if (trimmedLine === '') {
+        continue;
+      }
+      const match = trimmedLine;
+      if (!match) {
+        break;
+      }
+      const conceptName = match;
+      eventIdIndex = eventIdIndex + 1;
+      const eventId = match + eventIdIndex;
+      const id = addEventItem(
+        currentPartialOrder,
+        generateEventItem(eventId ?? conceptName, conceptName)
+      );
+    }
+
+    for (let i = 0; i < currentPartialOrder.events.length; i++) {
+      if (i > 0) {
+        this.addArcToPartialOrder(currentPartialOrder, {
+          target: currentPartialOrder.events[i].id,
+          source: currentPartialOrder.events[i - 1].id,
+          weight: 1,
+          breakpoints: [],
+        });
+      }
+    }
+
+    if (currentPartialOrder) {
+      determineInitialAndFinalEvents(currentPartialOrder);
+      returnList.push(currentPartialOrder);
+    }
+
+    if (returnList.length === 0 && errors.size === 0) {
+      errors.add(`No parsable traces where found`);
+      this.toastr.error(
+        `No parsable traces where found in the log`,
+        'No traces found'
+      );
+    }
+
+    return returnList;
   }
 }

@@ -71,7 +71,7 @@ export class NetCommandService {
     if (placeId && solution.type !== "remove-place") { //placeId == "p_new"
       placeId = "p1"; //XXX
     }
-
+    
     return this.displayService.getPetriNet$().pipe(
       first(),
       map((petriNet) => {

@@ -1601,12 +1601,12 @@ export class IlpSolver {
             },
             {
               type: 'removePlace' as SolutionType,
-              ilp: this.implicitPlacesIlp( //XXX implicitPlacesIlp
+              ilp: this.avoidWrongContinuationIlp( //XXX implicitPlacesIlp
                 this.baseIlp,
-                invalidPlace!,
-                /* wrongContinuations, */
+                /* invalidPlace!, */
+                wrongContinuations,
                 this.partialOrders,
-                /* z */
+                z
               ),
             }
           ];

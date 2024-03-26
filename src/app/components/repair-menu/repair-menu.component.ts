@@ -277,7 +277,7 @@ function generateBaseText(
     return `${text}`;
   }
 
-  if (solution.type === 'add-trace') { //XXX
+  if (solution.type === 'add-trace') {
     if (solution.relatedWrongContinuation?.type == "not repairable") {
       text = '<div style="color: green; font-size: 25px;">&#129092;&#xfe0e;</div>';
     } else {
@@ -328,5 +328,5 @@ function getSubLabel3(solution: { regionSize: number }): string {
  * @returns solution description of RepairMenu.SolutionList.Record.SecondLine
  */
 function getSubLabel4(solution: { regionSize: number }): string {
-  return ` from the net. Region size: ${solution.regionSize}`;
+  return ` from the net.`;
 }

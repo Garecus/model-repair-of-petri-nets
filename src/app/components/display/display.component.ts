@@ -316,7 +316,7 @@ export class DisplayComponent implements OnInit {
                   this.invalidPlaceCount$.next({
                     count: 0,
                   });
-
+                  
                   let invalidPlaces = { //XXX
                     "p_new": 1,
                   }
@@ -458,7 +458,7 @@ export class DisplayComponent implements OnInit {
     partialOrder: PartialOrder,
     partialOrders: PartialOrder[]
   ): wrongContinuation[] {
-    return new CheckWrongContinuations(petriNet, partialOrder, partialOrders, this.petriNetRegionsService).getWrongContinuations();
+    return new CheckWrongContinuations(petriNet, partialOrder, partialOrders, this.petriNetRegionsService, this.parserService).getWrongContinuations();
   }
 
   /**
@@ -475,6 +475,6 @@ export class DisplayComponent implements OnInit {
     partialOrders: PartialOrder[],
     wrongContinuations: wrongContinuation[]
   ): string[] {
-    return new CheckWrongContinuations(petriNet, partialOrder, partialOrders, this.petriNetRegionsService).getInvalidTransitions(wrongContinuations);
+    return new CheckWrongContinuations(petriNet, partialOrder, partialOrders, this.petriNetRegionsService, this.parserService).getInvalidTransitions(wrongContinuations);
   }
 }

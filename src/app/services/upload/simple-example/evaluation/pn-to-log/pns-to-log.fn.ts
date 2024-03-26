@@ -113,7 +113,7 @@ function parsePetriNet(content: string, errors: Set<string>): PetriNet | null {
           trimmedLine !== transitionsAttribute
         ) {
           const place = parsePlace(trimmedLine);
-          addPlace(petriNet, place); //XXX
+          addPlace(petriNet, place);
           break;
         } else if (trimmedLine === arcsAttribute) {
           currentParsingState = 'arcs';
