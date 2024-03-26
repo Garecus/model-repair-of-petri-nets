@@ -32,7 +32,7 @@ export class PetriNetSolutionService {
    * @returns solutions per invalidPlace
    */
   computeSolutions(
-    partialOrders: any[], /* PartialOrder[] */ //XXX
+    partialOrders: PartialOrder[],
     petriNet: PetriNet,
     invalidPlaces: { [key: string]: number }
   ): Observable<PlaceSolution[]> {
@@ -222,7 +222,7 @@ export class PetriNetSolutionService {
    * @returns solutions per invalidTransition
    */
   computePrecisionSolutions(
-    partialOrders: any[], /* PartialOrder[] */ //XXX
+    partialOrders: PartialOrder[],
     petriNet: PetriNet,
     invalidPlaces: { [key: string]: number },
     invalidTransitions: { [key: string]: number },
@@ -326,7 +326,7 @@ export class PetriNetSolutionService {
 
         return combineLatest(
           invalidTransitionList.map((place) =>
-            solver.computePrecisionSolutions(place, wrongContinuations).pipe( //XXX Rename the function with the same name
+            solver.calculatePrecisionSolutions(place, wrongContinuations).pipe(
               map((solutions) => {
                 /* const existingPlace =
                   place.type === 'warning' || place.type === 'possibility'
@@ -359,9 +359,7 @@ export class PetriNetSolutionService {
                     },
                     null as any
                   );
-                  /* if (highestMarkingSolution && highestMarkingSolution.marking !== null) { //XXX
-
-
+                  if (highestMarkingSolution && highestMarkingSolution.marking !== null) {
                     if (highestMarkingSolution.marking < existingPlace!.marking) {
                       return {
                         type: 'warning',
@@ -372,7 +370,7 @@ export class PetriNetSolutionService {
                         regionSize: highestMarkingSolution.regionSize,
                       };
                     }
-                  } */
+                  }
                   return undefined;
                 }
 
@@ -449,7 +447,7 @@ export class PetriNetSolutionService {
                       missingTokens: missingTokens,
                       invalidTraceCount: 0,
                       wrongContinuations: wrongContinuations,
-                      newTransition: place.placeId //wrongContinuations[z] ? wrongContinuations[z].wrongContinuation.charAt(wrongContinuations[z].wrongContinuation.length - 1) : "" //XXX Possibility to change this to solutions.wrongContinuation within a for loop
+                      newTransition: place.placeId
                     } as unknown as PlaceSolution;
                   case 'implicit':
                     return {

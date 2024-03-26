@@ -653,9 +653,9 @@ export class ParserService { //XXX
   allUniqueTransitions: string[] = [];
   allUniquePrefix: string[] = [];
   continuations: string[] = [];
-  startVariable: any;
-  endVariable: any;
-  maxLoopNumber: any;
+  startVariable: string = "";
+  endVariable: string = "";
+  maxLoopNumber: number = 0;
   public wrongContinuations: string[] = [];
   listWrongContinuations() {
     console.log("Start");

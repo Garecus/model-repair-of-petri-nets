@@ -46,9 +46,9 @@ export class CheckWrongContinuations {
   allUniqueTransitions: string[] = [];
   allUniquePrefix: string[] = [];
   continuations: string[] = [];
-  startVariable: any;
-  endVariable: any;
-  maxLoopNumber: any;
+  startVariable: string = "";
+  endVariable: string = "";
+  maxLoopNumber: number = 0;
   wrongContinuations: string[] = [];
   generatedCombinations: string[] = [];
   invalidTransitions: string[] = [];
@@ -545,7 +545,7 @@ export class CheckWrongContinuations {
     for (let i10 = 0; i10 < this.partialOrders.length; i10++) {
       // Remove duplicates
       let allStartsOfSinglePartialOrder = this.partialOrders[0].initialEvents;
-      allStartsOfSinglePartialOrder = allStartsOfSinglePartialOrder?.filter((startEvent: any, index: any, self: string | any[]) => self.indexOf(startEvent) === index);
+      allStartsOfSinglePartialOrder = allStartsOfSinglePartialOrder?.filter((startEvent: string, index: number, self: string | string[]) => self.indexOf(startEvent) === index);
       let allEndsOfSinglePartialOrder = this.partialOrders[0].finalEvents;
       allEndsOfSinglePartialOrder = allEndsOfSinglePartialOrder?.filter((endEvent, index, self) => self.indexOf(endEvent) === index);
       for (let i11 = 0; i11 < (allStartsOfSinglePartialOrder ?? []).length; i11++) {

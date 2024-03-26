@@ -137,7 +137,7 @@ export class RepairService {
     }
 
     this.currentOpenElement =
-      solution.type === 'possibility' //XXX
+      solution.type === 'possibility'
         ? solution.newTransition
         : solution.place;
     if (this.outsideClickSubscription) {

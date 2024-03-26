@@ -187,8 +187,41 @@ p1 b
 p1 c
 `;
 
-// Repair example
+// And/XOR
 export const secondLog =
+`
+.type log
+.attributes
+case-id
+concept:name
+.events
+1 a
+1 b
+2 a
+2 c
+`;
+
+export const secondPetriNet =
+`
+.type pn
+.transitions
+a a
+b b
+c c
+.places
+p0 1
+p1 0
+p2 0
+.arcs
+p0 a
+a p1
+p1 b
+a p2
+p2 c
+`;
+
+// Repair example
+export const thirdLog =
 `
 .type log
 .attributes
@@ -7932,7 +7965,7 @@ follows[]
 999 Repair_(Simple) 8
 `;
 
-export const secondPetriNet =
+export const thirdPetriNet =
 `
 .type pn
 .transitions

@@ -46,7 +46,7 @@ export function addEventItem(
   return element.id;
 }
 
-export function addPlace(petriNet: PetriNet, place: Place): boolean { //XXX
+export function addPlace(petriNet: PetriNet, place: Place): boolean {
   const contained = petriNet.places.some((item) => item.id == place.id);
   if (contained) {
     return false;

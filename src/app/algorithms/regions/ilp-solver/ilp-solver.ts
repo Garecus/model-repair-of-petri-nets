@@ -56,8 +56,6 @@ export class IlpSolver {
     [transition: string]: Array<SubjectTo>;
   } = {};
 
-  solutionToSkip: any;
-
   constructor(
     private glpk: GLPK,
     private partialOrders: Array<PartialOrder>,
@@ -776,14 +774,14 @@ export class IlpSolver {
         type: VariableType.INITIAL_MARKING,
       };
     } else if (variable.startsWith(VariableName.OUTGOING_ARC_WEIGHT_PREFIX)) {
-      /* const label = this.inverseLabelVariableMapIngoing.get(variable); */
-      let label: any;
+      const label = this.inverseLabelVariableMapIngoing.get(variable);
+      /* let label: any;
       console.log(variable);
-      if (variable == "out_b_9") { //XXX
+      if (variable == "out_b_9") {
         label = "b";
       } else {
         label = this.inverseLabelVariableMapIngoing.get(variable);
-      }
+      } */
       if (label === undefined) {
         throw new Error(
           `ILP variable '${variable}' could not be resolved to an outgoing transition label!`
@@ -1000,7 +998,7 @@ export class IlpSolver {
         console.log(existingPlace);
         console.log(wrongContinuations); */
     if (wrongContinuations.length > 0) {
-      let splitWC = wrongContinuations[z].wrongContinuation.split(''); //XXX
+      let splitWC = wrongContinuations[z].wrongContinuation.split('');
       /* console.log(arcSplitted[0]);
       console.log(arcSplitted[1]); */
 
@@ -1412,8 +1410,8 @@ export class IlpSolver {
   * Generates a place for every invalid transition in the net.
   * @param placeModel the id of the place to generate a new for
   */
-  computePrecisionSolutions(
-    placeModel: SolutionGeneratorType, wrongContinuations: any
+  calculatePrecisionSolutions(
+    placeModel: SolutionGeneratorType, wrongContinuations: wrongContinuation[]
   ): Observable<ProblemSolution[]> {
     // Generate place for missing transition
     /* if (placeModel.type === 'transition') {
