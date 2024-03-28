@@ -1163,7 +1163,7 @@ export class IlpSolver {
       // Search in the partialOrders[i].events for the source and get the label and use it
       let lastValidTransitionObject = partialOrders[i].events.find(event => event.label === searchLabel);
       if (lastValidTransitionObject) {
-        lastValidTransition = lastValidTransitionObject.label; //XXX
+        lastValidTransition = lastValidTransitionObject.label;
         lastValidWithLoop = lastValidTransition;
         while (lastValidTransition === searchLabel && whileLoop == true) {
           whileLoop = true;
@@ -1445,9 +1445,9 @@ export class IlpSolver {
       );
     } */
     // Calculate how many tokens are required for current place
-    const invalidPlace = this.petriNet.places.find(
-      (p) => p.id === "p1"//placeModel.placeId //XXX
-    );
+    /* const invalidPlace = this.petriNet.places.find(
+      (p) => p.id === "p1"//placeModel.placeId //invalidPlaces
+    ); */
     /*  if (placeModel.type === 'warning') {
           console.log("Model Type warning and execute again populateIlpBySameWeights"); */
     /*       const changeMarkingSolution = this.populateIlpBySameWeights(

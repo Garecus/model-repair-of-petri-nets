@@ -74,8 +74,7 @@ export function parseSolution(
   console.log("existingPlace");
   console.log(existingPlace);
   console.log(placeSolutionList);
-  /* if (Object.keys(placeSolutionList).length == 0) { */ //XXX change here and comment the if clause
-  if (wrongContinuations[z] && wrongContinuations[z].type == "not repairable" && placeSolutionList.some((solution) => solution.type !== "removePlace")) {
+  if (wrongContinuations[z] && (wrongContinuations[z].type == "not repairable" || Object.keys(placeSolutionList).length == 0) && placeSolutionList.some((solution) => solution.type !== "removePlace")) {
     let returnList2 = [
       {
         "type": "add-trace",
@@ -99,7 +98,6 @@ export function parseSolution(
     ]
     return returnList2 as AutoRepairWithSolutionType[];
   }
-  /*  } */
 
   const returnList: (AutoRepairWithSolutionType | null)[] = placeSolutionList
     .map((parsableSolutionsPerType) => {

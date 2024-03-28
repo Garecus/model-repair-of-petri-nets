@@ -317,7 +317,7 @@ export class DisplayComponent implements OnInit {
                     count: 0,
                   });
                   
-                  let invalidPlaces = { //XXX
+                  let invalidPlaces = { //invalidPlaces
                     "p_new": 1,
                   }
 

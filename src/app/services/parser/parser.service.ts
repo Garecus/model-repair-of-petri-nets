@@ -44,7 +44,7 @@ type LogParsingStates = 'initial' | 'type' | 'attributes' | 'events';
 @Injectable({
   providedIn: 'root',
 })
-export class ParserService { //XXX
+export class ParserService {
   constructor(private toastr: ToastrService) { }
 
   private readonly transitionRegex = /^(\S*)\s*(.*)$/;
@@ -53,6 +53,12 @@ export class ParserService { //XXX
 
   private readonly logEventRegex = /^(\S+)\s*(\S+)\s*(\S+)?\s*(.*)$/;
 
+  /**
+   * Parse the log file
+   * @param content 
+   * @param errors 
+   * @returns a Partial Order format log file including the places
+   */
   parsePartialOrders(content: string, errors: Set<string>): PartialOrder[] {
     const contentLines = content.split('\n');
 
@@ -216,6 +222,12 @@ export class ParserService { //XXX
 
   ModelListValues: ModelList[] = [];
   j = 0;
+  /**
+   * Parse a string into a petri net format process model
+   * @param content 
+   * @param errors 
+   * @returns a Petri Net format process model
+   */
   parsePetriNet(content: string, errors: Set<string>): PetriNet | null {
     const contentLines = content.split('\n');
     const petriNet: PetriNet = {
@@ -465,10 +477,14 @@ export class ParserService { //XXX
     }
   }
 
-
   LogListValues: LogList[] = [];
   i = 0;
-  // Get the log file
+  /**
+   * Parse the log file
+   * @param content 
+   * @param errors 
+   * @returns a Partial Order format log file including the places
+   */
   parseEventLog(content: string, errors: Set<string>): PartialOrder[] {
     // Split the file on each row
     const contentLines = content.split('\n');
@@ -568,7 +584,7 @@ export class ParserService { //XXX
               name: conceptName,
             };
             this.LogListValues.push(newRow);
-            console.log(this.LogListValues);
+            //console.log(this.LogListValues);
 
             const isPartialOrder =
               followsIndex !== -1 &&
@@ -646,316 +662,12 @@ export class ParserService { //XXX
     return returnList;
   }
 
-
-  caseList: CaseList[] = [];
-  arcList: ArcList[] = [];
-  arcList2: ArcList[] = [];
-  allUniqueTransitions: string[] = [];
-  allUniquePrefix: string[] = [];
-  continuations: string[] = [];
-  startVariable: string = "";
-  endVariable: string = "";
-  maxLoopNumber: number = 0;
-  public wrongContinuations: string[] = [];
-  listWrongContinuations() {
-    console.log("Start");
-    console.log("Parsed Log: " + this.LogListValues);
-    for (var i2 = 0; i2 < this.LogListValues.length; i2++) {
-      const newEntry = this.caseList.find(item => item.caseId === this.LogListValues[i2].caseId);
-      if (newEntry) {
-        newEntry.sequence += this.LogListValues[i2].name;
-        console.log(newEntry.sequence);
-      } else {
-        this.caseList.push({ caseId: this.LogListValues[i2].caseId, sequence: this.LogListValues[i2].name });
-      }
-    }
-    console.log("List with Cases: " + this.caseList);
-    this.caseList.forEach((object, index) => {
-      console.log(`Object ${index + 1}:`, object);
-    });
-
-    for (var i3 = 0; i3 < this.caseList.length; i3++) {
-      let caseSplitted = this.caseList[i3].sequence.split('');
-      console.log("Transitions of Case " + (i3 + 1) + ": " + caseSplitted);
-      let caseUniqueTransitions = Array.from(new Set(caseSplitted));
-      console.log("Unique transitions of Case " + (i3 + 1) + ": " + caseUniqueTransitions);
-      this.allUniqueTransitions = this.allUniqueTransitions.concat(caseUniqueTransitions);
-      this.allUniqueTransitions = Array.from(new Set(this.allUniqueTransitions));
-      console.log("Overall unique transitions: " + this.allUniqueTransitions);
-
-      let lastValue = "";
-      let prefix = "";
-      for (var i4 = 0; i4 < caseSplitted.length; i4++) {
-        if (i4 == 0) {
-          prefix = caseSplitted[i4];
-        } else {
-          prefix = lastValue + caseSplitted[i4];
-        }
-        lastValue = prefix;
-        console.log(prefix);
-        this.allUniquePrefix.push(prefix);
-      }
-      this.allUniquePrefix = Array.from(new Set(this.allUniquePrefix));
-      console.log("Eindeutige Prefixliste: " + this.allUniquePrefix);
-
-      for (var i7 = 0; i7 < (this.allUniquePrefix.length * this.allUniqueTransitions.length); i7++) {
-        /*         for (var i5 = 0; i5 < this.allUniquePrefix.length; i5++) {
-                  for (var i6 = 0; i6 < this.allUniqueTransitions.length; i6++) { */
-        const i5 = Math.floor(i7 / this.allUniqueTransitions.length);
-        const i6 = i7 % this.allUniqueTransitions.length;
-        this.continuations[i7] = this.allUniquePrefix[i5].concat(this.allUniqueTransitions[i6]);
-        /*           }
-                } */
-      }
-      this.continuations = this.continuations.concat(this.allUniquePrefix);
-      this.continuations = Array.from(new Set(this.continuations));
-      console.log(this.continuations);
-    }
-
-    this.maxLoopNumber = 0;
-    // Identify loop and store highest number
-    for (const item of this.caseList) {
-      const sequence = item.sequence;
-      let consecutiveCount = 1;
-      let prevChar = sequence.charAt(0);
-
-      for (let i = 1; i < sequence.length; i++) {
-        const currChar = sequence.charAt(i);
-        if (currChar === prevChar) {
-          consecutiveCount++;
-        } else {
-          this.maxLoopNumber = Math.max(this.maxLoopNumber, consecutiveCount);
-          consecutiveCount = 1;
-          prevChar = currChar;
-        }
-      }
-    }
-    console.log("Loopanzahl: " + this.maxLoopNumber);
-
-
-    // Example petri net
-    /*     .type pn
-        .transitions
-        a a
-        b b
-        c c
-        .places
-        p0 1
-        p1 0
-        .arcs
-        p0 a
-        a p1
-        b p1
-        p1 b
-        p1 c */
-
-    // List of arcs in petri net
-    console.log("Start with petri net");
-    console.log("Parsed Model: " + this.ModelListValues);
-    for (var i2 = 0; i2 < this.ModelListValues.length; i2++) {
-      const newEntry = this.arcList.find(item => item.arc === this.ModelListValues[i2].rowContent);
-      if (newEntry) {
-        newEntry.arc += this.ModelListValues[i2].rowContent;
-        console.log(newEntry.arc);
-      } else {
-        this.arcList.push({ arc: this.ModelListValues[i2].rowContent });
-      }
-    }
-    console.log("List with arcs: " + this.arcList);
-    this.arcList.forEach((object, index) => {
-      console.log(`Object ${index + 1}:`, object);
-    });
-
-    // convert arcs to same sequences
-    //p0 a -> a
-    //p1 b -> b
-    //p1 c -> c
-    //=> a,b,c
-
-    this.arcList2 = [];
-    let highestNumberWithP = 0;
-
-    for (var i3 = 0; i3 < this.arcList.length; i3++) {
-      let arcSplitted = this.arcList[i3].arc.split(' ');
-      console.log(arcSplitted[0]);
-      console.log(arcSplitted[1]);
-
-      // if the arc contains p0 then remove the arc
-      /* if (arcSplitted[0] == "p0") {
-        this.arcList2.splice(i3);
-      } */
-
-      if (arcSplitted[0] == "p0") {
-        let newRow: ArcList = {
-          arc: arcSplitted[1],
-        };
-        this.arcList2.push(newRow);
-        console.log(newRow);
-        // Identify start variable
-        this.startVariable = arcSplitted[1];
-      }
-
-      // Identify end variable
-      if (arcSplitted[0].includes("p") || arcSplitted[1].includes("p")) {
-        let numberString = this.arcList[i3].arc.split("p")[1];
-        numberString = numberString.split(" ")[0];
-        console.log(numberString);
-        const number = parseInt(numberString, 10);
-        if (!isNaN(number) && number > highestNumberWithP) {
-          highestNumberWithP = number;
-        }
-      }
-
-      // if the arc contains a starting p then check whether there is an ending arc with the same p, then remove the found arc and replace the p with the transitions of the found arc
-      /* if (arcSplitted[0].includes("p")) {
-        this.arcList = this.arcList.filter(element => {
-          const arcSearchSplitted = element.arc.split(' ');
-          if (arcSearchSplitted[1].includes(arcSplitted[0])) {
-            let newRow: ArcList = {
-              arc: arcSplitted[1] + arcSearchSplitted[0],
-            };
-            this.arcList2.push(newRow);
-            console.log(newRow);
-            // return false;
-            return true;
-          } else {
-            return true;
-          }
-        });
-      } else */ if (arcSplitted[1].includes("p")) {
-        this.arcList = this.arcList.filter(element => {
-          const arcSearchSplitted = element.arc.split(' ');
-          if (arcSearchSplitted[0].includes(arcSplitted[1])) {
-            let newRow: ArcList = {
-              arc: arcSplitted[0] + arcSearchSplitted[1],
-            };
-            this.arcList2.push(newRow);
-            console.log(newRow);
-            //return false;
-            return true;
-          } else {
-            return true;
-          }
-        });
-      }
-
-      this.arcList2.forEach((object, index) => {
-        console.log(`Object ${index + 1}:`, object);
-      });
-
-    }
-
-    let lineWithHighestNumber: string | null = null;
-    // End variable
-    for (let i3 = this.arcList.length - 1; i3 >= 0; i3--) {
-      const arc = this.arcList[i3].arc;
-      if (arc.includes('p' + highestNumberWithP)) {
-        lineWithHighestNumber = arc;
-        if (lineWithHighestNumber) {
-          const parts = lineWithHighestNumber.split(' ');
-          this.endVariable = parts[1];
-        }
-        break;
-      }
-    }
-
-    console.log("Startvariable: " + this.startVariable);
-    console.log("Endvariable: " + this.endVariable);
-
-    // Build further strings based on the connected letters
-    // Example: a, ab, ac, bb, bc, abc, abbc, abbbc, abbbbc
-    function generateCombinations(entries: ArcList[], startVariable: string, endVariable: string, maxBb: number = 10): string[] {
-      // Filter out entries consisting of a single letter
-      const filteredEntries = entries.filter(entry => entry.arc.length > 1);
-
-      // Check if any entry contains 'bb'
-      /* const bbInEntries = filteredEntries.some(entry => entry.arc.includes('bb')); */
-      const regex = /(.)\1+/;
-      const bbInEntries = filteredEntries.some(entry => regex.test(entry.arc));
-
-      // Generate combinations without additional 'b's first
-      const combinationsWithoutBs: string[] = [];
-      for (let i = 0; i < filteredEntries.length; i++) {
-        const firstEntry = filteredEntries[i].arc;
-
-        for (let j = 0; j < filteredEntries.length; j++) {
-          const secondEntry = filteredEntries[j].arc;
-
-          // Check if the combination starts with the start variable and ends with the end variable
-          if (firstEntry[0] === startVariable && secondEntry[secondEntry.length - 1] === endVariable && firstEntry[firstEntry.length - 1] === secondEntry[0]) {
-            // Allow combining an entry with itself to create repeated sequences
-            let newEntry = firstEntry + secondEntry.slice(1);
-            combinationsWithoutBs.push(newEntry);
-          }
-        }
-      }
-
-      // Add additional 'b's to combinations containing 'bb' until the maxBb limit is reached
-      let finalCombinations: string[] = [];
-      if (bbInEntries) {
-        for (const combination of combinationsWithoutBs) {
-          let newCombinations: string[] = [combination];
-          while ((newCombinations[0].match(/b/g) || []).length < maxBb) {
-            const newEntries: string[] = [];
-            for (const newCombination of newCombinations) {
-              const bIndex = newCombination.indexOf('b');
-              const firstPart = newCombination.slice(0, bIndex + 1);
-              const secondPart = newCombination.slice(bIndex + 1);
-              newEntries.push(firstPart + 'b' + secondPart);
-              const newCombinationCandidate = firstPart + secondPart;
-              if (!newEntries.includes(newCombinationCandidate)) {
-                newEntries.push(newCombinationCandidate);
-              }
-            }
-            newCombinations = newEntries;
-            finalCombinations = finalCombinations.concat(newCombinations);
-          }
-        }
-      } else {
-        finalCombinations = combinationsWithoutBs;
-      }
-
-      // Add the base combination "abc" constructed using the same logic as other combinations
-      const baseCombination = startVariable + endVariable;
-      if (!finalCombinations.includes(baseCombination)) {
-        finalCombinations.push(baseCombination);
-      }
-
-      // Remove duplicates from the final combinations
-      const uniqueCombinations = Array.from(new Set(finalCombinations));
-
-      return uniqueCombinations;
-    }
-
-
-    // Generate combinations with a default maximum of 3 'bb's
-    const generatedCombinations = generateCombinations(this.arcList2, this.startVariable, this.endVariable, this.maxLoopNumber);
-
-    // Output the generated combinations
-    console.log("Generated Combinations:", generatedCombinations);
-
-    //Identify loop
-    //b p1 -> b
-
-    // Compare the lists
-    // generatedCombinations minus event log this.caseList.sequence = wrong continuations
-    const sequences = this.caseList.map(obj => obj.sequence);
-    this.wrongContinuations = generatedCombinations.filter(obj => !sequences.includes(obj));
-    console.log("Wrong continuations: " + this.wrongContinuations);
-    console.log("Possible continuations based on the log: " + this.continuations);
-
-    // Dann reparierbar und nicht reparierbar bestimmen. via if b < b-eventlog, dann nicht reparierbar und wenn b > min und max aus event log, dann auch nicht, aber über max schon
-    const repairableContinuations: string[] = [];
-    const notRepairableContinuations: string[] = [];
-
-    console.log("Wrong continuations (repairable): " + repairableContinuations);
-    console.log("Wrong continuations (not repairable): " + notRepairableContinuations);
-
-    // Dann Anzeigen von Lösungen
-
-    return this.wrongContinuations;
-  }
-
+  /**
+   * Convert the wrong continuation string (like "a,b,b,c") to the Partial Order format
+   * @param content the string containing a single wrong continuation
+   * @param errors 
+   * @returns Partial Order object with the "trace" of the wrong continuation
+   */
   parseWrongContinuation(content: string, errors: Set<string>): PartialOrder[] {
     let contentLines = content.split('');
     let eventIdIndex = -1;

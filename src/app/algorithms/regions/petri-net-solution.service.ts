@@ -334,8 +334,8 @@ export class PetriNetSolutionService {
                     : undefined; */
 
                 const existingPlace =
-                  place.type === 'warning' || place.type === 'possibility' || place.type === 'repair' || place.type === 'transition'
-                    ? petriNet.places.find((p) => p.id === "p1")//place.placeId)//"p1") //XXX
+                place.type === 'warning' || place.type === 'possibility' || place.type === 'repair' || place.type === 'transition'
+                    ? petriNet.places.find((p) => p.id === place.newTransition)//place.placeId //petriNet.places.find((p) => p.id === "p1" //invalidPlaces
                     : petriNet.places.find((p) => p.id === place.placeId);
 
                 if (place.type === 'warning') {
@@ -374,7 +374,7 @@ export class PetriNetSolutionService {
                   return undefined;
                 }
 
-                if (place.type === 'implicit') { //XXX
+                if (place.type === 'implicit') {
                   for (let i = 0; i < solutions.length; i++) {
                     solutions[i].type = "removePlace";
                     solutions[i].regionSize = 0;

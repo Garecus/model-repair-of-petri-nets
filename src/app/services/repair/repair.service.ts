@@ -126,7 +126,7 @@ export class RepairService {
    * @param solution 
    * @returns the popover itself incl. settings, location
    */
-  showRepairPopoverForSolutionPrecision(ref: DOMRect, solution?: any): void { //  solution?: PrecisionSolution //XXX
+  showRepairPopoverForSolutionPrecision(ref: DOMRect, solution?: PlaceSolution): void {
     if (!solution) {
       this.toastr.warning(`No solutions found`);
       return;
@@ -136,10 +136,13 @@ export class RepairService {
       this.overlayRef.dispose();
     }
 
+    console.log(solution);
+    if (solution.type != "newTransition") {
     this.currentOpenElement =
       solution.type === 'possibility'
         ? solution.newTransition
         : solution.place;
+      }
     if (this.outsideClickSubscription) {
       this.outsideClickSubscription.unsubscribe();
     }
@@ -194,7 +197,7 @@ export class RepairService {
       return;
     }
 
-    const solutionsForPlace = this.solutions.find( //XXX maybe adjust from transition to place for implicit
+    const solutionsForPlace = this.solutions.find(
       (s) => s.type !== 'newTransition' && s.place === place
     );
     this.showRepairPopoverForSolution(ref, solutionsForPlace);
@@ -215,8 +218,8 @@ export class RepairService {
       return;
     }
     console.log(this.solutions);
-    const solutionsForTransition = this.solutions.find( // const solutionsForTransition = this.precisionSolutions.find( //XXX
-      (s) => s.type === 'possibility' && s.newTransition === transition// && s.transition === transition
+    const solutionsForTransition = this.solutions.find(
+      (s) => s.type === 'possibility' && s.newTransition === transition
     );
     console.log(solutionsForTransition);
     this.showRepairPopoverForSolutionPrecision(ref, solutionsForTransition);

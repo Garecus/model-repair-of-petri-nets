@@ -68,17 +68,17 @@ export class NetCommandService {
     }
 
     // Set the invalid place to an existing one to pass the if request 10 lines below
-    if (placeId && solution.type !== "remove-place") { //placeId == "p_new"
-      placeId = "p1"; //XXX
-    }
+    /* if (placeId && solution.type !== "remove-place") { //placeId == "p_new"
+      placeId = "p1"; //invalidPlaces
+    } */
     
     return this.displayService.getPetriNet$().pipe(
       first(),
       map((petriNet) => {
         const placeIndex = petriNet.places.findIndex((p) => p.id === placeId);
-        if (placeIndex === -1) {
+        /* if (placeIndex === -1) {
           return null;
-        }
+        } */
 
         // Store the current net in the undo list
         this.undoQueue.push(generateTextFromNet(petriNet));
@@ -112,9 +112,9 @@ export class NetCommandService {
       return of(null);
     }
 
-    if (placeId == "p_new") {
-      placeId = "p1"; //XXX
-    }
+    /* if (placeId == "p_new") {
+      placeId = "p1"; //invalidPlaces
+    } */
 
     return this.displayService.getPartialOrders$().pipe(
       first(),
@@ -323,7 +323,7 @@ function generateTextForNewNet(
   newText += `${placesAttribute}\n`;
   petriNet.places.forEach((place, index) => {
     // If there is an remove-place solution, then we remove a place
-    if (solution.type === 'remove-place' && index === placeIndex) {//XXX  && place.id === solution.implicitPlace
+    if (solution.type === 'remove-place' && index === placeIndex) {
       newText += "";
       solution.implicitPlace = place;
     } else {
