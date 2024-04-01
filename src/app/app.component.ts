@@ -23,6 +23,7 @@ export class AppComponent implements OnInit {
   solutionType = "unknown";
   isToggled = false;
   isToggledPrecision = false;
+  shouldShowPrecisionSuggestions$: Observable<string>;
 
   constructor(
     private displayService: DisplayService,
@@ -36,6 +37,7 @@ export class AppComponent implements OnInit {
     this.isCurrentNetEmpty$ = displayService.isCurrentNetEmpty$();
 
     this.shouldShowSuggestions$ = displayService.getShouldShowSuggestions();
+    this.shouldShowPrecisionSuggestions$ = displayService.getShouldShowPrecisionSuggestions();
 
     window.onresize = () => this.resetSvgPositioning();
   }

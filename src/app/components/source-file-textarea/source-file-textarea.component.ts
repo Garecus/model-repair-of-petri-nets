@@ -42,6 +42,7 @@ export class SourceFileTextareaComponent implements OnDestroy {
   logHint = '';
 
   shouldShowSuggestions$: Observable<string>;
+  shouldShowPrecisionSuggestions$: Observable<string>;
 
   constructor(
     private parserService: ParserService,
@@ -50,6 +51,9 @@ export class SourceFileTextareaComponent implements OnDestroy {
   ) {
     this.shouldShowSuggestions$ =
       this.displayService.getShouldShowSuggestions();
+
+      this.shouldShowPrecisionSuggestions$ =
+      this.displayService.getShouldShowPrecisionSuggestions();
 
     this.logTextarea = new FormControl<string | null>(null);
     this.petriNetTextarea = new FormControl<string>(emptyContent);

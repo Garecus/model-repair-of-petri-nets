@@ -47,4 +47,14 @@
     
     margin: 0 var(--spaces-x2);
   }
+
+  .solution {
+    font-family: Roboto, serif;
+    font-size: 14px;
+    /* display: flex; */
+    align-items: center;
+    margin: 0 var(--spaces-x2) 0;
+    font-weight: 400;
+
+  }
 }

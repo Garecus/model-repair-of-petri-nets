@@ -14,6 +14,7 @@
       *ngFor="let model of shownTextsForSolutions"
       (click)="useSolution(model.solution)"
       [innerHTML]="model.text.label | pipeHTML"
+      class="solution"
     ></button>
   </ng-container>
 

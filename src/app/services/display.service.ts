@@ -14,7 +14,7 @@ export class DisplayService {
   private partialOrders$: Subject<PartialOrder[] | null>;
 
   private showSuggestions$ = new BehaviorSubject("false");
-  private showPrecisionSuggestions$ = new BehaviorSubject(false);
+  private showPrecisionSuggestions$ = new BehaviorSubject("false");
   private reset$: BehaviorSubject<Coordinates>;
 
   private sequences$: Subject<ArcList[] | null>;
@@ -67,7 +67,7 @@ export class DisplayService {
   }
 
   // Get the information to know which method should be used [precision model repair]
-  getShouldShowPrecisionSuggestions(): Observable<boolean> {
+  getShouldShowPrecisionSuggestions(): Observable<string> {
     return this.showPrecisionSuggestions$.asObservable();
   }
 

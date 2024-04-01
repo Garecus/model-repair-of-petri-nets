@@ -45,7 +45,7 @@ export class DisplayComponent implements OnInit {
   precisionSolutions$: Observable<PrecisionSolution[]>;
 
   shouldShowSuggestions$: Observable<string>;
-  shouldShowPrecisionSuggestions$: Observable<boolean>;
+  shouldShowPrecisionSuggestions$: Observable<string>;
   solutionType = "";
   precisionActive: boolean = false;
 
@@ -142,6 +142,9 @@ export class DisplayComponent implements OnInit {
                   net.places.forEach((place) => {
                     place.issueStatus = undefined;
                   });
+                  net.transitions.forEach((transition) => {
+                    transition.issueStatus = undefined;
+                  });
                   this.invalidPlaceCount$.next({
                     count: 0,
                   });
@@ -203,6 +206,22 @@ export class DisplayComponent implements OnInit {
                 */
                 this.wrongContinuations = this.checkWrongContinuations(net, partialOrders[0], partialOrders);
                 this.wrongContinuationsString = this.wrongContinuations.map(a => a.wrongContinuation);
+                for (let i = 0; i < this.wrongContinuationsString.length; i++) {
+                  let splitted = this.wrongContinuationsString[i].split("");
+                  this.wrongContinuationsString[i] = "";
+                  for (let j = 0; j < splitted.length; j++) {
+                    if (j < splitted.length - 1) {
+                      splitted[j] = splitted[j] + ",";
+                    } 
+                    
+                    if (j == splitted.length - 1) {
+                      splitted[j] = splitted[j] + "]";
+                    } else if (j == 0) {
+                      splitted[j] = "[" + splitted[j];
+                    }
+                    this.wrongContinuationsString[i] = this.wrongContinuationsString[i].concat(splitted[j].toString());
+                  }
+                }
 
                 this.wrongContinuationCount$.next({
                   count: this.wrongContinuations.length,
@@ -316,7 +335,7 @@ export class DisplayComponent implements OnInit {
                   this.invalidPlaceCount$.next({
                     count: 0,
                   });
-                  
+
                   let invalidPlaces = { //invalidPlaces
                     "p_new": 1,
                   }

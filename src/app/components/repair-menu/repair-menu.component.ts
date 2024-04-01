@@ -273,22 +273,22 @@ function generateBaseText(
   }
 
   if (solution.type === 'add-place') {
-    text = '<div style="font-size: 18px;">🦮</div> Repair ' + /* '<b>' + */ solution.relatedWrongContinuation?.wrongContinuation + ''/* + '</b>' */;
+    text = '🦮 Repair ' + '<b> [' + solution.relatedWrongContinuation?.wrongContinuation + '] </b>'; // <div style="font-size: 18px;">🦮</div>
     return `${text}`;
   }
 
   if (solution.type === 'add-trace') {
     if (solution.relatedWrongContinuation?.type == "not repairable") {
-      text = '<div style="color: green; font-size: 25px;">&#129092;&#xfe0e;</div>';
+      text = '<span style="color: #006633; font-size: 20px;">🡄</span>'; // <div style="color: green; font-size: 25px;">&#129092;&#xfe0e;</div>
     } else {
-      text = '<div style="color: rgb(240, 230, 42); font-size: 25px;">&#129092;&#xfe0e;</div>';
+      text = '<span style="color: #FFCC00; font-size: 20px;">🡄</span>'; // <div style="color: rgb(240, 230, 42); font-size: 25px;">&#129092;&#xfe0e;</div>
     }
-    text += ' Add ' + /* '<b>' + */ solution.relatedWrongContinuation?.wrongContinuation /* + '</b>' */;
+    text += ' Add ' + '<b> [' + solution.relatedWrongContinuation?.wrongContinuation + '] </b>';
     return `${text}`;
   }
 
   if (solution.type === 'remove-place') {
-    text = '<div style="font-size: 20px;">&#9747;&#xfe0e;</div> Remove implicit place';
+    text = '🧽 Remove implicit place'; // <div style="font-size: 20px;">&#9747;&#xfe0e;</div>🧺
     return `${text}`;
   }
 
