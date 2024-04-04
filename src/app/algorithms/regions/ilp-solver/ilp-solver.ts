@@ -1447,37 +1447,39 @@ export class IlpSolver {
             })
           ); */
     /* } */
-
-    let implicitPlace: Place = {
-      "id": "p1",
-      "type": "place",
-      "marking": 0,
-      "incomingArcs": [
-        {
-          "weight": 1,
-          "source": "a",
-          "target": "p1",
-          "breakpoints": []
-        }
-      ],
-      "outgoingArcs": [
-        {
-          "weight": 1,
-          "source": "p1",
-          "target": "b",
-          "breakpoints": []
-        },
-        {
-          "weight": 1,
-          "source": "p1",
-          "target": "c",
-          "breakpoints": []
-        }
-      ],
-      "issueStatus": "implicit"
-    };
     //
     if (placeModel.type === 'implicit') {
+      const implicitPlace = this.petriNet.places.find(
+        (p) => p.id === placeModel.placeId
+      );
+      /* let implicitPlace: Place = {
+        "id": "",
+        "type": "place",
+        "marking": 0,
+        "incomingArcs": [
+          {
+            "weight": 1,
+            "source": "a",
+            "target": "p1",
+            "breakpoints": []
+          }
+        ],
+        "outgoingArcs": [
+          {
+            "weight": 1,
+            "source": "p1",
+            "target": "b",
+            "breakpoints": []
+          },
+          {
+            "weight": 1,
+            "source": "p1",
+            "target": "c",
+            "breakpoints": []
+          }
+        ],
+        "issueStatus": "implicit"
+      }; */
       console.log("Implicit solution");
       //const addPlaceSolution = this.populateIlpBySameWeights( // Adding this will show a valid fitness repair solution
       const removePlaceSolution = this.implicitPlacesIlp(

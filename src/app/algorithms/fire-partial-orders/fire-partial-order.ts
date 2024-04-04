@@ -336,116 +336,35 @@ export class FirePartialOrder {
 * @returns The ids of invalid places.
 */
   getImplicitPlaces(): string[] {
-    this.buildExtensionForPartialOrder();
-
-    const totalOrder = this.buildTotalOrder(this.partialOrder);
-
-    // Adds the initial marking to the first event.
-    const initialEvent = totalOrder[0];
-    for (let i = 0; i < this.petriNet.places.length; i++) {
-      initialEvent.localMarking![i] = this.petriNet.places[i].marking;
+    for (let index = 0; index < this.partialOrders.length; index++) {
+      this.extractImplicitPlaces(index);
     }
 
-    const validPlaces: ValidPlacesType = new Array(
-      this.petriNet.places.length
-    ).fill(true);
-    const notValidPlaces = new Array(this.petriNet.places.length).fill(false);
-    const { branchPlaces } = this.fireForwards([...totalOrder], validPlaces);
-
-    // not valid places
-    const finalEvent = this.idToEventMap.get(
-      [...this.partialOrder.finalEvents!][0]
-    );
-    if (!finalEvent) {
-      throw new Error('Final event not found');
-    }
-
-    for (let i = 0; i < this.petriNet.places.length; i++) {
-      notValidPlaces[i] = finalEvent.localMarking![i] < 0;
-    }
-
-    // Don't fire all backwards!
-    const backwardsFireQueue = [finalEvent];
-    for (let i = totalOrder.length - 2; i >= 0; i--) {
-      totalOrder[i].localMarking = new Array<number>(
-        this.petriNet.places.length
-      ).fill(0);
-      backwardsFireQueue.push(totalOrder[i]);
-      /* console.log(totalOrder[i])
-      console.log(totalOrder[i].localMarking); */
-    }
-
-    const backwardsValidPlaces: ValidPlacesType = new Array(
-      this.petriNet.places.length
-    ).fill(true);
-
-    // Is the final marking > 0 ?
-    for (let i = 0; i < this.petriNet.places.length; i++) {
-      if (finalEvent.localMarking![i] < 0) {
-        backwardsValidPlaces[i] = false;
-      }
-    }
-
-    this.fireBackwards(backwardsFireQueue, backwardsValidPlaces);
-
-    // Rest with flow
-    const flow = new Array(this.petriNet.places.length).fill(false);
-    for (let i = 0; i < this.petriNet.places.length; i++) {
-      if (
-        !validPlaces[i] &&
-        branchPlaces.includes(this.petriNet.places[i].id) &&
-        !notValidPlaces[i] &&
-        !backwardsValidPlaces[i]
-      ) {
-        flow[i] = this.checkFlowForPlace(
-          this.petriNet.places[i],
-          this.partialOrder.events
-        );
-      }
-    }
-
-    /*     return this.petriNet.places
-          .filter((p, i) => {
-            if (validPlaces[i]) {
-              return false;
-            } else if (backwardsValidPlaces[i]) {
-              return false;
-            } else return !flow[i];
-          })
-          .map((p) => p.id); */
-
+    console.log(this.partialOrders);
     const implicitPlaces: string[] = [];
-    console.log(this.partialOrder);
+
+    // Build a list of all places including the corresponding local markings
     let placesAndMarkings = [];
     for (let i = 0; i < this.petriNet.places.length; i++) {
       placesAndMarkings.push({
-        "place": this.petriNet.places[i].id, "localMarkings": [{
-          "label": "",
-          "localMarking": initialEvent.localMarking![i]
-        }], "implicit": false
+        "place": this.petriNet.places[i].id, "localMarkings": [] as any[], "implicit": false
       });
-      /* for (let k = 0; k < this.petriNet.transitions.length - 1; k++) {
-         for (let l = totalOrder.length -1; l >=0 ; l--) {
-        let localMarking = {
-          "label": this.petriNet.transitions[k].label,
-          "localMarking": totalOrder[l].localMarking![i]  //XXX other markings must be added here too
-        };
-        placesAndMarkings[i].localMarkings.push(localMarking);
-      } 
-     } */
-      for (let l = 2; l < this.partialOrder.events.length; l++) {
-        let localMarking = {
-          "label": this.partialOrder.events[l].previousEvents[0],
-          "localMarking": this.partialOrder.events[l].localMarking![i]
-        };
-        placesAndMarkings[i].localMarkings.push(localMarking);
+
+      for (let index = 0; index < this.partialOrders.length; index++) {
+        for (let j = 1; j < this.partialOrders[index].events.length; j++) {
+          let localMarking = {
+            "label": this.partialOrders[index].events[j].previousEvents[0],
+            "localMarking": this.partialOrders[index].events[j].localMarking![i]
+          };
+          // Only add, if label does not already exist
+          let k = placesAndMarkings[i].localMarkings.findIndex((item) => item.label === localMarking.label);
+          if (k === -1) {
+            placesAndMarkings[i].localMarkings.push(localMarking);
+          }
+        }
       }
-      /* let localMarking = {
-        "label": this.petriNet.transitions[this.petriNet.transitions.length - 1].label,
-        "localMarking": finalEvent.localMarking![i]
-      };
-      placesAndMarkings[i].localMarkings.push(localMarking); */
     }
+
     console.log("placesAndMarkings");
     console.log(placesAndMarkings);
     // For loop to pair all places, but not a place with itself
@@ -453,63 +372,20 @@ export class FirePartialOrder {
       for (let j = i + 1; j < this.petriNet.places.length; j++) {
         console.log("Compare " + placesAndMarkings[i].place + " with " + placesAndMarkings[j].place);
 
-        /* loop1: */ for (let k = 0; k < placesAndMarkings[i].localMarkings.length; k++) {
-          /* console.log(placesAndMarkings[i].localMarkings[k].localMarking + " <=> " + placesAndMarkings[j].localMarkings[k].localMarking); */
-          if (placesAndMarkings[i].localMarkings[k].localMarking > placesAndMarkings[j].localMarkings[k].localMarking) { //XXX One marking must be greater. All other must be greater or equal
+       // For loop to go then trough each local Marking to compare these values
+        for (let k = 0; k < placesAndMarkings[i].localMarkings.length; k++) {
+          // If we found a marking that is greater than another one, then mark it as possibly implicit
+          if (placesAndMarkings[i].localMarkings[k].localMarking > placesAndMarkings[j].localMarkings[k].localMarking) {
             placesAndMarkings[i].implicit = true;
-            let intermediatePlace = ({
-              "place": "p_search", "localMarkings": [] as any[]
-            });
-            /* loop2: */ for (let l = 0; l < placesAndMarkings[i].localMarkings.length; l++) {
-              console.log(placesAndMarkings[i].localMarkings[l].localMarking + " ?<? " + placesAndMarkings[j].localMarkings[l].localMarking);
+
+            // and start a for loop to check now all markings of it in detail
+            for (let l = 0; l < placesAndMarkings[i].localMarkings.length; l++) {
+              console.log(placesAndMarkings[i].localMarkings[l].localMarking + " ? " + placesAndMarkings[j].localMarkings[l].localMarking);
               if (placesAndMarkings[i].localMarkings[l].localMarking < placesAndMarkings[j].localMarkings[l].localMarking) {
                 placesAndMarkings[i].implicit = false;
-                /* break loop1; */
-              } /* else if (placesAndMarkings[i].localMarkings[l].localMarking > placesAndMarkings[j].localMarkings[l].localMarking){
-                placesAndMarkings[i].implicit = true;
-              } */
+              }
             }
             console.log(placesAndMarkings[i].implicit);
-            // Try to find another place that has the difference of p_i and p_j as markings. If so, then p_i is an implicit place
-            if (placesAndMarkings[i].implicit == true) {
-              for (let l = 0; l < placesAndMarkings[i].localMarkings.length; l++) {
-                let localMarking = {
-                  "label": placesAndMarkings[i].localMarkings[l].label,
-                  "localMarking": placesAndMarkings[i].localMarkings[l].localMarking - placesAndMarkings[j].localMarkings[l].localMarking
-                };
-                intermediatePlace.localMarkings.push(localMarking);
-              }
-              // Search for it
-              const objSmallOrEqual = (o1: any, o2: any) => Object.keys(o1).length === Object.keys(o2).length && Object.keys(o1).every(p => o1[p] <= o2[p]);
-              //const objSmallOrEqual = (o1: any, o2: any) => o1.length === o2.length && o1.every((p: number) => o1[p] <= o2[p]);
-              let searchResult = true;
-              for (let z = 0; z < this.petriNet.places.length; z++) {
-                /* searchResult = objSmallOrEqual(placesAndMarkings[z].localMarkings, intermediatePlace.localMarkings); */
-                for (let y = 0; y < placesAndMarkings[z].localMarkings.length; y++) {
-                  if (placesAndMarkings[z].localMarkings[y].localMarking > intermediatePlace.localMarkings[y].localMarking) {
-                    searchResult = false;
-                  }/*  else {
-                  searchResult = true;
-                } */
-                }
-                if (searchResult == true) {
-                  if (placesAndMarkings[i].place == placesAndMarkings[z].place) {
-                    searchResult = false;
-                  }
-                } else if (searchResult == false) {
-                  console.log(placesAndMarkings)
-                  if (placesAndMarkings[j].localMarkings == placesAndMarkings[z].localMarkings && placesAndMarkings[j].place != placesAndMarkings[z].place) {
-                    console.log(placesAndMarkings[z].place);
-                    searchResult = true;
-                  }
-                }
-              }
-              if (searchResult == true) {
-                placesAndMarkings[i].implicit = true;
-              } else {
-                placesAndMarkings[i].implicit = false;
-              }
-            }
           }
 
           /* if (placesAndMarkings[i].localMarkings[k].localMarking < placesAndMarkings[j].localMarkings[k].localMarking) {
@@ -580,98 +456,93 @@ export class FirePartialOrder {
     console.log("implicit places");
     console.log(implicitPlacesWithoutDuplicates);
     return implicitPlacesWithoutDuplicates;
+  }
 
-    /*     let finalEvent: any;
-        let identifiedPlaces = [];
-        let implicitPlaces = [];
-        for (let index = 0; index < this.partialOrders.length; index++) {
-          this.buildExtensionForPartialOrder2(this.partialOrders[index]);
-    
-          const totalOrder = this.buildTotalOrder(this.partialOrders[index]);
-    
-          // Adds the initial marking to the first event.
-          const initialEvent = totalOrder[0];
-          for (let i = 0; i < this.petriNet.places.length; i++) {
-            initialEvent.localMarking![i] = this.petriNet.places[i].marking;
-          }
-    
-          const validPlaces: ValidPlacesType = new Array(
-            this.petriNet.places.length
-          ).fill(true);
-          const notValidPlaces = new Array(this.petriNet.places.length).fill(false);
-          const { branchPlaces } = this.fireForwards([...totalOrder], validPlaces);
-    
-          // not valid places
-          finalEvent = this.idToEventMap.get(
-            [...this.partialOrders[index].finalEvents!][0]
-          );
-          if (!finalEvent) {
-            throw new Error('Final event not found');
-          }
-    
-          // Iterate trough all places and compare them with each other
-          for (let i = 0; i < this.petriNet.places.length - 1; i++) {
-            for (let j = i + 1; j < this.petriNet.places.length; j++) {
-              // Avoid to mark invalid places
-              if (finalEvent.localMarking![i] >= 0 && finalEvent.localMarking![j] >= 0) {
-                console.log("Place " + this.petriNet.places[i].id + " with " + finalEvent.localMarking![i] + " | Place " + this.petriNet.places[j].id + " with " + finalEvent.localMarking![j])
-                if (finalEvent.localMarking![i] > finalEvent.localMarking![j]) {
-                  let index2 = identifiedPlaces.findIndex((item) => item.place == this.petriNet.places[i].id);
-                  if (index2 === -1) {
-                    identifiedPlaces.push({ "place": this.petriNet.places[i].id, "probablyImplicit": true, "greaterThan": [this.petriNet.places[j].id] });
-                  } else {
-                    identifiedPlaces[index2].greaterThan.push(this.petriNet.places[j].id);
-                  }
-                }
-    
-                if (finalEvent.localMarking![i] < finalEvent.localMarking![j]) {
-                  let index2 = identifiedPlaces.findIndex((item) => item.place == this.petriNet.places[j].id);
-                  if (index2 === -1) {
-                    identifiedPlaces.push({ "place": this.petriNet.places[j].id, "probablyImplicit": true, "greaterThan": [this.petriNet.places[i].id] });
-                  } else {
-                    identifiedPlaces[index2].greaterThan.push(this.petriNet.places[i].id);
-                  }
-                }
-              }
-            }
-          }
-        }
-    
-        for (let i = 0; i < identifiedPlaces.length; i++) {
-          if (identifiedPlaces[i].probablyImplicit == true && identifiedPlaces[i].greaterThan?.length == this.petriNet.places.length - 1) {
-            //for (let j = i + 1; i < identifiedPlaces.length; j++) {
-              console.log(identifiedPlaces[i]);
-              //if (identifiedPlaces[i].greaterThan.includes(identifiedPlaces[j].place) && identifiedPlaces[j].greaterThan.includes(identifiedPlaces[i].place)) {
-    
-              //} else {
-                implicitPlaces.push(identifiedPlaces[i].place);
-           //   }
-           // }
-          }
-        }
-        let implicitPlaces2 = Array.from(new Set(implicitPlaces));
-        console.log("implicit places");
-        console.log(implicitPlaces2);
-        return implicitPlaces2; */
+  extractImplicitPlaces(index: number) {
 
+    this.buildExtensionForPartialOrder2(index);
+
+    const totalOrder = this.buildTotalOrder(this.partialOrders[index]);
+
+    // Adds the initial marking to the first event.
+    const initialEvent = totalOrder[0];
+    for (let i = 0; i < this.petriNet.places.length; i++) {
+      initialEvent.localMarking![i] = this.petriNet.places[i].marking;
+    }
+
+    const validPlaces: ValidPlacesType = new Array(
+      this.petriNet.places.length
+    ).fill(true);
+    const notValidPlaces = new Array(this.petriNet.places.length).fill(false);
+    const { branchPlaces } = this.fireForwards([...totalOrder], validPlaces);
+
+    // not valid places
+    const finalEvent = this.idToEventMap.get(
+      [...this.partialOrders[index].finalEvents!][0]
+    );
+    if (!finalEvent) {
+      throw new Error('Final event not found');
+    }
+
+    for (let i = 0; i < this.petriNet.places.length; i++) {
+      notValidPlaces[i] = finalEvent.localMarking![i] < 0;
+    }
+
+    // Don't fire all backwards!
+    const backwardsFireQueue = [finalEvent];
+    for (let i = totalOrder.length - 2; i >= 0; i--) {
+      totalOrder[i].localMarking = new Array<number>(
+        this.petriNet.places.length
+      ).fill(0);
+      backwardsFireQueue.push(totalOrder[i]);
+    }
+
+    const backwardsValidPlaces: ValidPlacesType = new Array(
+      this.petriNet.places.length
+    ).fill(true);
+
+    // Is the final marking > 0 ?
+    for (let i = 0; i < this.petriNet.places.length; i++) {
+      if (finalEvent.localMarking![i] < 0) {
+        backwardsValidPlaces[i] = false;
+      }
+    }
+
+    this.fireBackwards(backwardsFireQueue, backwardsValidPlaces);
+
+    // Rest with flow
+    const flow = new Array(this.petriNet.places.length).fill(false);
+    for (let i = 0; i < this.petriNet.places.length; i++) {
+      if (
+        !validPlaces[i] &&
+        branchPlaces.includes(this.petriNet.places[i].id) &&
+        !notValidPlaces[i] &&
+        !backwardsValidPlaces[i]
+      ) {
+        flow[i] = this.checkFlowForPlace(
+          this.petriNet.places[i],
+          this.partialOrders[index].events
+        );
+      }
+    }
   }
 
   /**
  * Builds the extension for a partial order with an initial and final event.
  * @private
  */
-  private buildExtensionForPartialOrder2(partialOrder: PartialOrder): void {
+  private buildExtensionForPartialOrder2(index: number): void {
     const initial: EventItem = createEventItem('initial_marking');
     const finalEvent: EventItem = createEventItem('final_marking');
 
-    partialOrder.events = [
+    this.partialOrders[index].events = [
       initial,
-      ...partialOrder.events,
+      ...this.partialOrders[index].events,
       finalEvent,
     ];
-    partialOrder.events.forEach((e) => this.idToEventMap.set(e.id, e));
+    this.partialOrders[index].events.forEach((e) => this.idToEventMap.set(e.id, e));
 
-    partialOrder.initialEvents?.forEach((eventId) => {
+    this.partialOrders[index].initialEvents?.forEach((eventId) => {
       const foundEventItem = this.idToEventMap.get(eventId);
       if (foundEventItem) {
         concatEvents(initial, foundEventItem);
@@ -680,7 +551,7 @@ export class FirePartialOrder {
       }
     });
 
-    partialOrder.finalEvents?.forEach((eventId) => {
+    this.partialOrders[index].finalEvents?.forEach((eventId) => {
       const foundEventItem = this.idToEventMap.get(eventId);
       if (foundEventItem) {
         concatEvents(foundEventItem, finalEvent);
@@ -688,7 +559,7 @@ export class FirePartialOrder {
         console.error(`Event with id ${eventId} not found`);
       }
     });
-    determineInitialAndFinalEvents(partialOrder);
+    determineInitialAndFinalEvents(this.partialOrders[index]);
   }
 }
 
@@ -699,3 +570,4 @@ function eventStart(eventIndex: number): number {
 function eventEnd(eventIndex: number): number {
   return eventIndex * 2 + 2;
 }
+
