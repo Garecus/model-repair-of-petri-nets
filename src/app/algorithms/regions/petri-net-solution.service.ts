@@ -332,7 +332,7 @@ export class PetriNetSolutionService {
                   place.type === 'warning' || place.type === 'possibility'
                     ? petriNet.places.find((p) => p.id === place.placeId)
                     : undefined; */
-
+                console.log(solutions);
                 const existingPlace =
                 place.type === 'warning' || place.type === 'possibility' || place.type === 'repair' || place.type === 'transition'
                     ? petriNet.places.find((p) => p.id === place.newTransition)//place.placeId //petriNet.places.find((p) => p.id === "p1" //invalidPlaces
@@ -374,7 +374,7 @@ export class PetriNetSolutionService {
                   return undefined;
                 }
 
-                if (place.type === 'implicit') {
+                if (place.type === 'implicit') { //XXX
                   for (let i = 0; i < solutions.length; i++) {
                     solutions[i].type = "removePlace";
                     solutions[i].regionSize = 0;
@@ -386,7 +386,7 @@ export class PetriNetSolutionService {
                 if (place.type == "possibility") {
                   z = wrongContinuations.findIndex(variable => variable.firstInvalidTransition.includes(place.placeId));
                 }
-
+                console.log(solutions);
                 const parsedSolutions = parseSolution(
                   handleSolutions(solutions, solver),
                   existingPlace,
@@ -586,15 +586,15 @@ export function handleSolutions(
       solutionParts: solution.solutions
         .map((singleSolution) =>
           Object.entries(singleSolution)
-            .filter(
+            .filter( 
               ([variable, value]) =>
-                value != 0 &&
+                value >= 0 && // !=
                 solver.getInverseVariableMapping(variable) !== null
             )
             .map(([variable, value]) => {
               const decoded = solver.getInverseVariableMapping(variable)!;
-
               let parsableSolution: ParsableSolution;
+              if (value != 0) {
               switch (decoded.type) {
                 case VariableType.INITIAL_MARKING:
                   parsableSolution = {
@@ -616,7 +616,12 @@ export function handleSolutions(
                     marking: value,
                   };
               }
-
+            } else {
+                parsableSolution = {
+                  type: 'remove-place',
+                  newMarking: 0,
+                };
+              }
               return parsableSolution;
             })
         )

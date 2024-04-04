@@ -75,7 +75,7 @@ export function parseSolution(
   console.log(existingPlace);
   console.log(placeSolutionList);
   if (wrongContinuations[z] && (wrongContinuations[z].type == "not repairable" || Object.keys(placeSolutionList).length == 0) && placeSolutionList.some((solution) => solution.type !== "removePlace")) {
-    let returnList2 = [
+    let returnList = [
       {
         "type": "add-trace",
         "incoming": [
@@ -96,7 +96,30 @@ export function parseSolution(
         "relatedWrongContinuation": wrongContinuations[z]
       }
     ]
-    return returnList2 as AutoRepairWithSolutionType[];
+    return returnList as AutoRepairWithSolutionType[];
+  } else if (placeSolutionList.some((solution) => solution.type == "removePlace")) { // Added here, because all variables are 0. Else no arcs available
+    let returnList = [
+      {
+        "type": "remove-place",
+        "incoming": [
+          {
+            "transitionLabel": "",
+            "weight": 0
+          }
+        ],
+        "outgoing": [
+          {
+            "transitionLabel": "",
+            "weight": 0
+          }
+        ],
+        "regionSize": 0,
+        "repairType": "removePlace",
+        "wrongContinuationNotRepairable": "",
+        "relatedWrongContinuation": ""
+      }
+    ]
+    return returnList as AutoRepairWithSolutionType[];
   }
 
   const returnList: (AutoRepairWithSolutionType | null)[] = placeSolutionList

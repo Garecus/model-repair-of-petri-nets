@@ -12,7 +12,8 @@ export type ParsableSolution =
     newMarking: number;
   }
   | IncomingArcSolution
-  | OutgoingArcSolution;
+  | OutgoingArcSolution
+  | RemovePlaceSolution;
 
 export type IncomingArcSolution = {
   type: 'incoming-arc';
@@ -24,6 +25,11 @@ export type OutgoingArcSolution = {
   type: 'outgoing-arc';
   outgoing: string;
   marking: number;
+};
+
+export type RemovePlaceSolution = {
+  type: 'remove-place';
+  newMarking: number;
 };
 
 export type ParsableSolutionsPerType = {

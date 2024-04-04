@@ -272,22 +272,25 @@ export class DisplayComponent implements OnInit {
                 let implicitPlaces: {
                   [key: string]: number;
                 } = {};
+                /* if ( this.wrongContinuations.length === 0) { */
                 for (let index = 0; index < partialOrders.length; index++) {
-                  const currentInvalid = this.firePartialOrder(
+                  const currentImplicit = this.identifyImplicitPlaces(
                     net,
-                    partialOrders[index]
+                    partialOrders[index],
+                    partialOrders
                   );
 
-                  implicitPlaces = { //XXX
-                    "p1": 1
-                  };
-                  currentInvalid.forEach((place) => {
+                  currentImplicit.forEach((place) => {
                     if (implicitPlaces[place] === undefined) {
                       implicitPlaces[place] = 0;
                     }
                     implicitPlaces[place]++;
                   });
                 }
+              /* } */
+
+                console.log("implicitPlaces");
+                console.log(implicitPlaces);
 
                 const placeIds2 = Object.keys(implicitPlaces);
                 this.implicitPlaceCount$.next({
@@ -442,7 +445,7 @@ export class DisplayComponent implements OnInit {
     partialOrder: PartialOrder
   ): string[] {
     //console.log("Fire Partial order");
-    return new FirePartialOrder(petriNet, partialOrder).getInvalidPlaces();
+    return new FirePartialOrder(petriNet, partialOrder, []).getInvalidPlaces();
   }
 
   /**
@@ -496,4 +499,18 @@ export class DisplayComponent implements OnInit {
   ): string[] {
     return new CheckWrongContinuations(petriNet, partialOrder, partialOrders, this.petriNetRegionsService, this.parserService).getInvalidTransitions(wrongContinuations);
   }
+
+    /**
+   * Fire the net with the partial orders to get all implicit places
+   * @param petriNet 
+   * @param partialOrder 
+   * @returns list of implicit places
+   */
+    private identifyImplicitPlaces(
+      petriNet: PetriNet,
+      partialOrder: PartialOrder,
+      partialOrders: PartialOrder[]
+    ): string[] {
+      return new FirePartialOrder(petriNet, partialOrder, partialOrders).getImplicitPlaces();
+    }
 }

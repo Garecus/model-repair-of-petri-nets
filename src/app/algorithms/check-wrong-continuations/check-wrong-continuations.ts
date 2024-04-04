@@ -709,7 +709,7 @@ export class CheckWrongContinuations {
     petriNet: PetriNet,
     continuation: PartialOrder
   ): string[] {
-    return new FirePartialOrder(petriNet, continuation).getInvalidPlaces();
+    return new FirePartialOrder(petriNet, continuation, []).getInvalidPlaces();
   }
 
 }

@@ -263,6 +263,7 @@ export class IlpSolver {
      * @returns foundSolutions in different order (by index)
      */
   private filterSolutionsInSpecificOrder(foundSolutions: ProblemSolution[]) {
+    console.log(foundSolutions);
     return foundSolutions.filter((value, index) => {
       const _value = JSON.stringify(value.solutions);
       return (
@@ -1335,73 +1336,47 @@ export class IlpSolver {
     console.log("implicit place");
     console.log(existingPlace);
 
-    /*     existingPlace.incomingArcs.forEach((arc) => {
+    const handledTransitions: string[] = [];
+
+    for (let i = 0; i < partialOrders.length; i++) {
+      const events = partialOrders[i].events;
+      for (const e of events) {
+        let transitionLabelIn = "in_" + e.label;
+        let transitionLabelOut = "out_" + e.label;
+
+        // "in_" + e.label not in handledTransitions
+        if (!handledTransitions.includes(transitionLabelIn)) {
           result.subjectTo = result.subjectTo.concat(
-            this.equal(
+            this.greaterEqualThan(
               this.variable(
                 this.transitionVariableName(
-                  arc.source,
+                  e.label,
                   VariableName.INGOING_ARC_WEIGHT_PREFIX
                 )
               ),
               0
             ).constraints
           );
-        });
-    
-        existingPlace.outgoingArcs.forEach((arc) => {
+
+          handledTransitions.push(transitionLabelIn);
+        }
+        // "out_" + e.label not in handledTransitions 
+        else if (!handledTransitions.includes(transitionLabelOut)) {
           result.subjectTo = result.subjectTo.concat(
-            this.equal(
+            this.greaterEqualThan(
               this.variable(
                 this.transitionVariableName(
-                  arc.target,
+                  e.label,
                   VariableName.OUTGOING_ARC_WEIGHT_PREFIX
                 )
               ),
               0
             ).constraints
           );
-        }); */
-
-    /*     for (let i = 0; i < partialOrders.length; i++) {
-          const events = partialOrders[i].events;
-          for (const e of events) {
-            let transitionLabelIn = "in_" + e.label;
-            let transitionLabelOut = "out_" + e.label;
-    
-            // "in_" + e.label not in handledTransitions
-            if (!handledTransitions.includes(transitionLabelIn)) {
-              result.subjectTo = result.subjectTo.concat(
-                this.equal(
-                  this.variable(
-                    this.transitionVariableName(
-                      e.label,
-                      VariableName.INGOING_ARC_WEIGHT_PREFIX
-                    )
-                  ),
-                  0
-                ).constraints
-              );
-    
-              handledTransitions.push(transitionLabelIn);
-            }
-            // "out_" + e.label not in handledTransitions 
-            else if (!handledTransitions.includes(transitionLabelOut)) {
-              result.subjectTo = result.subjectTo.concat(
-                this.equal(
-                  this.variable(
-                    this.transitionVariableName(
-                      e.label,
-                      VariableName.OUTGOING_ARC_WEIGHT_PREFIX
-                    )
-                  ),
-                  0
-                ).constraints
-              );
-              handledTransitions.push(transitionLabelOut);
-            }
-          }
-        } */
+          handledTransitions.push(transitionLabelOut);
+        }
+      }
+    }
 
     return result;
   }
@@ -1473,6 +1448,76 @@ export class IlpSolver {
           ); */
     /* } */
 
+    let implicitPlace: Place = {
+      "id": "p1",
+      "type": "place",
+      "marking": 0,
+      "incomingArcs": [
+        {
+          "weight": 1,
+          "source": "a",
+          "target": "p1",
+          "breakpoints": []
+        }
+      ],
+      "outgoingArcs": [
+        {
+          "weight": 1,
+          "source": "p1",
+          "target": "b",
+          "breakpoints": []
+        },
+        {
+          "weight": 1,
+          "source": "p1",
+          "target": "c",
+          "breakpoints": []
+        }
+      ],
+      "issueStatus": "implicit"
+    };
+    //
+    if (placeModel.type === 'implicit') {
+      console.log("Implicit solution");
+      //const addPlaceSolution = this.populateIlpBySameWeights( // Adding this will show a valid fitness repair solution
+      const removePlaceSolution = this.implicitPlacesIlp(
+        this.baseIlp,
+        implicitPlace!,
+        this.partialOrders,
+      );
+      //if (!invalidPlace) {
+      //  return of([]);
+      //}
+      console.log("addPlaceSolution:");
+      console.log(removePlaceSolution );
+      return this.solveILP(removePlaceSolution ).pipe(
+        map((solution) => {
+          if (solution.solution.result.status === Solution.NO_SOLUTION) {
+            console.log("Empty solution");
+            return [];
+          }
+          let problemSolution: ProblemSolution = {
+            type: 'removePlace',
+            solutions: [solution.solution.result.vars],
+            regionSize: this.generateSumForVars(solution.solution.result.vars),
+          };
+  
+          if (problemSolution.regionSize == 0) {
+            console.log("removePlace");
+            problemSolution = {
+              type: 'removePlace',
+              solutions: [solution.solution.result.vars],
+              regionSize: 0,
+            };
+          }
+          console.log("problemSolution: ");
+          console.log(problemSolution);
+          //this.solutionToSkip = problemSolution;
+          return [problemSolution];
+        })
+      );
+    }
+
     // Comment on this part, because then the multi solutions are generated
     /* if (placeModel.type === 'possibility') {
       console.log("Possibility solution");
@@ -1516,7 +1561,7 @@ export class IlpSolver {
       );
     } */
     //const unhandledPairs = this.getUnhandledPairs(invalidPlace!);
-    /*    const unhandledPairs = this.getUnhandledPairs({
+        /* const unhandledPairs = this.getUnhandledPairs({
          "id": "p",
          "type": "place",
          "marking": 0,
@@ -1539,35 +1584,36 @@ export class IlpSolver {
      }); */
     /*     console.log("unhandledPairs");
         console.log(unhandledPairs); */
+
     let z = 0;
     if (placeModel.type === 'possibility') {
       z = wrongContinuations.findIndex((invalidTransition: { firstInvalidTransition: string | string[]; }) => invalidTransition.firstInvalidTransition.includes(placeModel.placeId));
     }
     return combineLatest(
-            /* unhandledPairs.map((pair) => */
-             //this.solveILP(this.avoidWrongContinuationIlp(this.baseIlp/* , invalidPlace! */, wrongContinuations, this.partialOrders, z)).pipe( // populateIlpByCausalPairs(this.baseIlp, pair)
-              this.solveILP(this.baseIlp).pipe( // populateIlpByCausalPairs(this.baseIlp, pair)
-                switchMap((solution) => {
-                  if (solution.solution.result.status !== Solution.NO_SOLUTION) {
-                    return of(solution);
-                  }
-                  /* return this.solveILP(
-                    this.populateIlpByCausalPairs(
-                      this.baseIlp,
-                      pair,
-                      undefined,
-                      false
-                    )
-                  ); */
-                  return [];
-                }),
-                map((solution) => ({
-                  ilp: solution.ilp,
-                  solution: solution.solution,
-                  type: 'multiplePlaces' as SolutionType,
-                }))
-              )
-            /* ) */
+      /* unhandledPairs.map((pair) => */
+      //this.solveILP(this.avoidWrongContinuationIlp(this.baseIlp/* , invalidPlace! */, wrongContinuations, this.partialOrders, z)).pipe( // populateIlpByCausalPairs(this.baseIlp, pair)
+      this.solveILP(this.baseIlp).pipe( // populateIlpByCausalPairs(this.baseIlp, pair)
+        switchMap((solution) => {
+          if (solution.solution.result.status !== Solution.NO_SOLUTION) {
+            return of(solution);
+          }
+          /* return this.solveILP(
+            this.populateIlpByCausalPairs(
+              this.baseIlp,
+              pair,
+              undefined,
+              false
+            )
+          ); */
+          return [];
+        }),
+        map((solution) => ({
+          ilp: solution.ilp,
+          solution: solution.solution,
+          type: 'multiplePlaces' as SolutionType,
+        }))
+      )
+      /* ) */
     ).pipe(
       concatMap(
         (
@@ -1597,16 +1643,20 @@ export class IlpSolver {
                 z
               ),
             },
-            {
-              type: 'removePlace' as SolutionType,
-              ilp: this.avoidWrongContinuationIlp( //XXX implicitPlacesIlp
+            /* {
+              type: 'removePlace' as SolutionType, */
+              /* ilp: this.avoidWrongContinuationIlp(
                 this.baseIlp,
-                /* invalidPlace!, */
+                //invalidPlace!,
                 wrongContinuations,
                 this.partialOrders,
-                z
+                z */
+                /* ilp: this.implicitPlacesIlp( //XXX 
+                this.baseIlp,
+                implicitPlace!,
+                this.partialOrders,
               ),
-            }
+            } */
           ];
           console.log("ilpsToSolve");
           console.log(ilpsToSolve);
