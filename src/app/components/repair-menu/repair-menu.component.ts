@@ -113,6 +113,27 @@ export class RepairMenuComponent implements OnInit {
           if (this.placeSolution.wrongContinuations[i].firstInvalidTransition == this.placeSolution.newTransition) {
             relatedWrongContinuationsCount = relatedWrongContinuationsCount + 1;
           }
+
+          // Identify no add-place solution for a wrong continuation and then mark this solution as not repairable in the ui
+          let countSolutions = 0;
+          let lastSolution = 0;
+          for (let j = 0; j < this.placeSolution.solutions.length; j++) {
+            if (this.placeSolution.solutions[j].relatedWrongContinuation?.wrongContinuation == this.placeSolution.wrongContinuations[i].wrongContinuation) {
+              countSolutions++;
+              console.log(countSolutions)
+            }
+            lastSolution = j;
+          }
+          if (countSolutions < 2 && countSolutions > 0) {
+            this.placeSolution.solutions[lastSolution].relatedWrongContinuation!.type = "not repairable";
+          }
+        }
+
+        for (let j = 0; j < this.placeSolution.solutions.length; j++) {
+          if (this.placeSolution.solutions[j].relatedWrongContinuation!.type == "not repairable") {
+            this.placeSolution.solutions.unshift(this.placeSolution.solutions[j]);
+            this.placeSolution.solutions.splice(j + 1, 1);
+          }
         }
       }
       this.infoHeader = `The transition has ${relatedWrongContinuationsCount} possible wrong ${relatedWrongContinuationsCount === 1 ? 'continuation' : 'continuations'}. </br> `;
@@ -273,22 +294,22 @@ function generateBaseText(
   }
 
   if (solution.type === 'add-place') {
-    text = '🦮 Repair ' + '<b> [' + solution.relatedWrongContinuation?.wrongContinuation + '] </b>'; // <div style="font-size: 18px;">🦮</div>
+    text = '<span style="font-size: 18px;">🦮</span> Repair ' + '<b> [' + solution.relatedWrongContinuation?.wrongContinuation + '] </b>'; // <div style="font-size: 18px;">🦮</div>
     return `${text}`;
   }
 
   if (solution.type === 'add-trace') {
     if (solution.relatedWrongContinuation?.type == "not repairable") {
-      text = '<span style="color: #006633; font-size: 20px;">🡄</span>'; // <div style="color: green; font-size: 25px;">&#129092;&#xfe0e;</div>
+      text = '<span style="color: #006633; font-size: 22px;">🡄</span>'; // <div style="color: green; font-size: 25px;">&#129092;&#xfe0e;</div>
     } else {
-      text = '<span style="color: #FFCC00; font-size: 20px;">🡄</span>'; // <div style="color: rgb(240, 230, 42); font-size: 25px;">&#129092;&#xfe0e;</div>
+      text = '<span style="color: #FFCC00; font-size: 22px;">🡄</span>'; // <div style="color: rgb(240, 230, 42); font-size: 25px;">&#129092;&#xfe0e;</div>
     }
     text += ' Add ' + '<b> [' + solution.relatedWrongContinuation?.wrongContinuation + '] </b>';
     return `${text}`;
   }
 
   if (solution.type === 'remove-place') {
-    text = '🧽 Remove implicit place'; // <div style="font-size: 20px;">&#9747;&#xfe0e;</div>🧺
+    text = '<span style="font-size: 20px;">🧽</span> Remove implicit place'; // <div style="font-size: 20px;">&#9747;&#xfe0e;</div>🧺
     return `${text}`;
   }
 

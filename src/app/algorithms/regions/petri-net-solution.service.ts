@@ -374,7 +374,7 @@ export class PetriNetSolutionService {
                   return undefined;
                 }
 
-                if (place.type === 'implicit') { //XXX
+                if (place.type === 'implicit') {
                   for (let i = 0; i < solutions.length; i++) {
                     solutions[i].type = "removePlace";
                     solutions[i].regionSize = 0;

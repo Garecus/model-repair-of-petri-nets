@@ -629,11 +629,11 @@ export class CheckWrongContinuations {
     // Check which wrong continuation can be repaired and which not
     let wcType = "repairable"
     for (let i = 0; i < this.wrongContinuations.length; i++) {
-      if (this.wrongContinuations[i] == "abbc") { //XXX
+      /* if (this.wrongContinuations[i] == "abbc") {
         wcType = "not repairable";
       } else {
         wcType = "repairable";
-      }
+      } */
       let wcObject =
       {
         "id": i,

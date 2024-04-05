@@ -8,12 +8,14 @@ export type AutoRepairForSinglePlace =
     type: 'marking';
     newMarking: number;
     wrongContinuationNotRepairable?: string;
+    relatedWrongContinuation?: wrongContinuation;
   }
   | ModifyPlaceType | AddPlaceAutoRepair;
 
 type ModifyPlaceType = {
   type: 'modify-place';
   wrongContinuationNotRepairable?: string;
+  relatedWrongContinuation?: wrongContinuation;
 } & SinglePlaceParameter;
 
 export type AutoRepair = AutoRepairForSinglePlace | ReplacePlaceAutoRepair | AddPlaceAutoRepair;
@@ -24,6 +26,7 @@ export type ReplacePlaceAutoRepair = {
   repairType: SolutionType;
   places: SinglePlaceParameter[];
   wrongContinuationNotRepairable?: string;
+  relatedWrongContinuation?: wrongContinuation;
 };
 
 export type AutoRepairWithSolutionType = AutoRepair & {
@@ -74,7 +77,7 @@ export function parseSolution(
   console.log("existingPlace");
   console.log(existingPlace);
   console.log(placeSolutionList);
-  if (wrongContinuations[z] && (wrongContinuations[z].type == "not repairable" || Object.keys(placeSolutionList).length == 0) && placeSolutionList.some((solution) => solution.type !== "removePlace")) {
+  /* if (wrongContinuations[z] && (wrongContinuations[z].type == "not repairable" || Object.keys(placeSolutionList).length == 0) && placeSolutionList.some((solution) => solution.type !== "removePlace")) {
     let returnList = [
       {
         "type": "add-trace",
@@ -90,14 +93,14 @@ export function parseSolution(
             "weight": 0
           }
         ],
-        "regionSize": 0, // Not repairable solution should be sorted to the top
+        "regionSize": 99999, // Not repairable solution should be sorted to the top
         "repairType": "addTrace",
         "wrongContinuationNotRepairable": wrongContinuations[z].wrongContinuation,
         "relatedWrongContinuation": wrongContinuations[z]
       }
     ]
     return returnList as AutoRepairWithSolutionType[];
-  } else if (placeSolutionList.some((solution) => solution.type == "removePlace")) { // Added here, because all variables are 0. Else no arcs available
+  } else */ if (placeSolutionList.some((solution) => solution.type == "removePlace")) { // Added here, because all variables are 0. Else no arcs available
     let returnList = [
       {
         "type": "remove-place",
@@ -115,8 +118,6 @@ export function parseSolution(
         ],
         "regionSize": 0,
         "repairType": "removePlace",
-        "wrongContinuationNotRepairable": "",
-        "relatedWrongContinuation": ""
       }
     ]
     return returnList as AutoRepairWithSolutionType[];
@@ -349,10 +350,13 @@ export function parseSolution(
       }
     })
     .filter((solution) => !!solution);
-  if (wrongContinuations[z] && placeSolutionList.some((solution) => solution.type !== "removePlace")) {
+
+  // Add to the solution of a wrong continuation always the add-trace solution
+  if (wrongContinuations[z] && placeSolutionList.some((solution) => solution.type !== "removePlace")) { //XXX Check all solutions that fit to a wrong continuation. if there is no addplace for this wrong continuation, then mark it as not repairable
     let currentTransition = wrongContinuations[z].firstInvalidTransition;
     for (let k = 0; k < wrongContinuations.length; k++) {
-      if (wrongContinuations[k] && currentTransition.includes(wrongContinuations[k].firstInvalidTransition)) {
+      /* console.log(placeSolutionList); */
+      if (wrongContinuations[k] && currentTransition.includes(wrongContinuations[k].firstInvalidTransition)/*  && placeSolutionList.length > 1 */) {
         returnList.push(
           {
             "type": "add-trace",
@@ -374,7 +378,30 @@ export function parseSolution(
             "relatedWrongContinuation": wrongContinuations[k]
           }
         )
-      }
+      } /* else if (wrongContinuations[k] && currentTransition.includes(wrongContinuations[k].firstInvalidTransition) && placeSolutionList.length < 2) {
+        wrongContinuations[k].type = "not repairable";
+        returnList.push(
+          {
+            "type": "add-trace",
+            "incoming": [
+              {
+                "transitionLabel": "",
+                "weight": 0
+              }
+            ],
+            "outgoing": [
+              {
+                "transitionLabel": "",
+                "weight": 0
+              }
+            ],
+            "regionSize": 999999,
+            "repairType": "addTrace",
+            "wrongContinuationNotRepairable": wrongContinuations[k].wrongContinuation,
+            "relatedWrongContinuation": wrongContinuations[k]
+          }
+        )
+      } */
     }
   }
   return returnList as AutoRepairWithSolutionType[];
