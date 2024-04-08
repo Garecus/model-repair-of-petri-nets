@@ -207,9 +207,9 @@ export class DisplayComponent implements OnInit {
                 this.wrongContinuations = this.checkWrongContinuations(net, partialOrders[0], partialOrders);
                 this.wrongContinuationsString = this.wrongContinuations.map(a => a.wrongContinuation);
                 for (let i = 0; i < this.wrongContinuationsString.length; i++) {
-                  let splitted = this.wrongContinuationsString[i].split("");
-                  this.wrongContinuationsString[i] = "";
-                  for (let j = 0; j < splitted.length; j++) {
+                  /* let splitted = this.wrongContinuationsString[i].split("");
+                  this.wrongContinuationsString[i] = ""; */
+                  /* for (let j = 0; j < splitted.length; j++) {
                     if (j < splitted.length - 1) {
                       splitted[j] = splitted[j] + ",";
                     }
@@ -220,7 +220,8 @@ export class DisplayComponent implements OnInit {
                       splitted[j] = "[" + splitted[j];
                     }
                     this.wrongContinuationsString[i] = this.wrongContinuationsString[i].concat(splitted[j].toString());
-                  }
+                  } */
+                  this.wrongContinuationsString[i] = this.wrongContinuationsString[i]= '[' + this.wrongContinuationsString[i] +']';
                 }
 
                 this.wrongContinuationCount$.next({

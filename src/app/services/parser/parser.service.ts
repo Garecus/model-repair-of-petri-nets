@@ -669,7 +669,7 @@ export class ParserService {
    * @returns Partial Order object with the "trace" of the wrong continuation
    */
   parseWrongContinuation(content: string, errors: Set<string>): PartialOrder[] {
-    let contentLines = content.split('');
+    let contentLines = content.split(',');
     let eventIdIndex = -1;
     const returnList: PartialOrder[] = [];
     let currentPartialOrder: PartialOrder | undefined;

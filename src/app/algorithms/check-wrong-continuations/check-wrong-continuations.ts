@@ -77,9 +77,9 @@ export class CheckWrongContinuations {
       for (let j = 0; j < this.partialOrders[i].arcs.length; j++) {
         let z = j - 1;
         if (z >= 0 && this.partialOrders[i].arcs[z].target.replace(/\d+/g, '') == this.partialOrders[i].arcs[j].source.replace(/\d+/g, '')) {
-          rowContent += this.partialOrders[i].arcs[j].target.replace(/\d+/g, '');
+          rowContent += ',' + this.partialOrders[i].arcs[j].target.replace(/\d+/g, '');
         } else {
-          rowContent += this.partialOrders[i].arcs[j].source.replace(/\d+/g, '') + this.partialOrders[i].arcs[j].target.replace(/\d+/g, '');
+          rowContent += this.partialOrders[i].arcs[j].source.replace(/\d+/g, '') + ',' + this.partialOrders[i].arcs[j].target.replace(/\d+/g, '');
         }
       }
 
@@ -92,7 +92,7 @@ export class CheckWrongContinuations {
       this.LogListValues.push(newRow);
 
     }
-    /* console.log(this.LogListValues); */
+    console.log(this.LogListValues);
     for (var i2 = 0; i2 < this.LogListValues.length; i2++) {
       const newEntry = this.caseList.find(item => item.caseId === this.LogListValues[i2].caseId);
       if (newEntry) {
@@ -107,7 +107,7 @@ export class CheckWrongContinuations {
 
     for (var i3 = 0; i3 < this.caseList.length; i3++) {
       console.log(this.caseList[i3].sequence)
-      let caseSplitted = this.caseList[i3].sequence.split('');
+      let caseSplitted = this.caseList[i3].sequence.split(',');
       /* console.log("Transitions of Case " + (i3 + 1) + ": " + caseSplitted); */
       let caseUniqueTransitions = Array.from(new Set(caseSplitted));
       /* console.log("Unique transitions of Case " + (i3 + 1) + ": " + caseUniqueTransitions); */
@@ -123,8 +123,8 @@ export class CheckWrongContinuations {
         } else {
           prefix = lastValue + caseSplitted[i4];
         }
-        lastValue = prefix;
-        /* console.log(prefix); */
+        lastValue = prefix  + ',';
+        console.log(prefix);
         this.allUniquePrefix.push(prefix);
       }
       this.allUniquePrefix = Array.from(new Set(this.allUniquePrefix));
@@ -133,7 +133,7 @@ export class CheckWrongContinuations {
       for (var i7 = 0; i7 < (this.allUniquePrefix.length * this.allUniqueTransitions.length); i7++) {
         const i5 = Math.floor(i7 / this.allUniqueTransitions.length);
         const i6 = i7 % this.allUniqueTransitions.length;
-        this.continuations[i7] = this.allUniquePrefix[i5].concat(this.allUniqueTransitions[i6]);
+        this.continuations[i7] = this.allUniquePrefix[i5].concat(',' + this.allUniqueTransitions[i6]);
       }
       this.continuations = this.continuations.concat(this.allUniquePrefix);
       this.continuations = this.continuations.concat(this.allUniqueTransitions);

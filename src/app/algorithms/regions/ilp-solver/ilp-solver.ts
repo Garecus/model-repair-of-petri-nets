@@ -999,7 +999,7 @@ export class IlpSolver {
         console.log(existingPlace);
         console.log(wrongContinuations); */
     if (wrongContinuations.length > 0) {
-      let splitWC = wrongContinuations[z].wrongContinuation.split('');
+      let splitWC = wrongContinuations[z].wrongContinuation.split(',');
       /* console.log(arcSplitted[0]);
       console.log(arcSplitted[1]); */
 

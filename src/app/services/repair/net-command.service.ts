@@ -395,7 +395,7 @@ function generateTraceForLog(
   });
   let wrongContinuationSplitted = [""];
   if (solution.wrongContinuationNotRepairable != undefined) {
-    wrongContinuationSplitted = solution.wrongContinuationNotRepairable.split('');
+    wrongContinuationSplitted = solution.wrongContinuationNotRepairable.split(',');
     for (let i = 0; i < wrongContinuationSplitted.length; i++) {
       newText += `${specification.length + 1} ${wrongContinuationSplitted[i]} \n`;
     }
