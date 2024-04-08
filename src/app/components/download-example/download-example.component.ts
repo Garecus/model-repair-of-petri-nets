@@ -92,10 +92,6 @@ export class DownloadExampleComponent implements OnInit {
     secondFolder?.file('2-evaluation.log', secondLog);
     secondFolder?.file('2-evaluation.pn', secondPetriNet);
 
-    const thirdFolder = zip.folder('3 - evaluation');
-    thirdFolder?.file('3-evaluation.log', thirdLog);
-    thirdFolder?.file('3-evaluation.pn', thirdPetriNet);
-
     zip.generateAsync({ type: 'blob' }).then((content) => {
       saveAs(content, 'evaluation_examples_precision.zip');
     });

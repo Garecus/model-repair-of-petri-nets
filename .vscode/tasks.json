@@ -3,24 +3,6 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "running: XAMPP (Apache, MySQL, PHP)",
-      "type": "shell",
-      "command": "cd /d C:/xampp/ && xampp_start && xampp-control",
-      "group": "none",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "new",
-        "showReuseMessage": true,
-        "clear": false
-      },
-      "runOptions": {
-        "runOn": "folderOpen"
-      },
-      "problemMatcher": []
-    },
-    {
       "label": "running: angular",
       "type": "shell",
       "command": "cd /d C:/xampp/htdocs/model-repair-of-petri-nets && ng serve --open",

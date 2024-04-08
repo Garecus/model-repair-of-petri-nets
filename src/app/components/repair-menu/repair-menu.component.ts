@@ -113,19 +113,31 @@ export class RepairMenuComponent implements OnInit {
           if (this.placeSolution.wrongContinuations[i].firstInvalidTransition == this.placeSolution.newTransition) {
             relatedWrongContinuationsCount = relatedWrongContinuationsCount + 1;
           }
-
-          // Identify no add-place solution for a wrong continuation and then mark this solution as not repairable in the ui
+        }
+        // Identify no add-place solution for a wrong continuation and then mark this solution as not repairable in the ui
+        for (let i = 0; i < this.placeSolution.wrongContinuations.length; i++) {
           let countSolutions = 0;
-          let lastSolution = 0;
+          for (let j = 0; j < this.placeSolution.solutions.length; j++) {
+            /* console.log("i: " + this.placeSolution.wrongContinuations[i].wrongContinuation)
+            console.log("j: " + this.placeSolution.solutions[j].relatedWrongContinuation?.wrongContinuation); */
+            if (this.placeSolution.wrongContinuations[i].wrongContinuation == this.placeSolution.solutions[j].relatedWrongContinuation?.wrongContinuation) {
+              countSolutions++;
+            }
+          }
+         /*  console.log(countSolutions); */
+
           for (let j = 0; j < this.placeSolution.solutions.length; j++) {
             if (this.placeSolution.solutions[j].relatedWrongContinuation?.wrongContinuation == this.placeSolution.wrongContinuations[i].wrongContinuation) {
-              countSolutions++;
-              console.log(countSolutions)
+              /* console.log(this.placeSolution.solutions[j].relatedWrongContinuation?.wrongContinuation);
+              console.log(countSolutions); */
+              if (countSolutions > 1) {
+                this.placeSolution.solutions[j].relatedWrongContinuation!.type = "repairable";
+              }
+              if (countSolutions == 1 && (this.placeSolution.solutions[j].relatedWrongContinuation!.type == "unknown" || this.placeSolution.solutions[j].relatedWrongContinuation!.type == "not repairable")) {
+                this.placeSolution.solutions[j].relatedWrongContinuation!.type = "not repairable";
+              }
+              /* console.log(this.placeSolution.solutions[j].relatedWrongContinuation!.type); */
             }
-            lastSolution = j;
-          }
-          if (countSolutions < 2 && countSolutions > 0) {
-            this.placeSolution.solutions[lastSolution].relatedWrongContinuation!.type = "not repairable";
           }
         }
 
@@ -133,6 +145,8 @@ export class RepairMenuComponent implements OnInit {
           if (this.placeSolution.solutions[j].relatedWrongContinuation!.type == "not repairable") {
             this.placeSolution.solutions.unshift(this.placeSolution.solutions[j]);
             this.placeSolution.solutions.splice(j + 1, 1);
+            this.placeSolution.wrongContinuations.unshift(this.placeSolution.wrongContinuations[j]);
+            this.placeSolution.wrongContinuations.splice(j + 1, 1);
           }
         }
       }

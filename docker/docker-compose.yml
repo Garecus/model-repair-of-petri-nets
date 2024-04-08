@@ -1,0 +1,8 @@
+version: "3.6"
+
+services:
+    inlog-software:
+        image: inlogit/software:guidedog:latest
+        restart: unless-stopped
+        ports:
+            - 4209:4200

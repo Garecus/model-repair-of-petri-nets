@@ -106,6 +106,7 @@ export class CheckWrongContinuations {
         }); */
 
     for (var i3 = 0; i3 < this.caseList.length; i3++) {
+      console.log(this.caseList[i3].sequence)
       let caseSplitted = this.caseList[i3].sequence.split('');
       /* console.log("Transitions of Case " + (i3 + 1) + ": " + caseSplitted); */
       let caseUniqueTransitions = Array.from(new Set(caseSplitted));
@@ -627,7 +628,7 @@ export class CheckWrongContinuations {
     console.log(this.wrongContinuations);
 
     // Check which wrong continuation can be repaired and which not
-    let wcType = "repairable"
+    let wcType = "unknown"
     for (let i = 0; i < this.wrongContinuations.length; i++) {
       /* if (this.wrongContinuations[i] == "abbc") {
         wcType = "not repairable";

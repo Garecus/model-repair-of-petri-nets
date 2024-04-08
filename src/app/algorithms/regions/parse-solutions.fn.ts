@@ -297,7 +297,7 @@ export function parseSolution(
           repairType: parsableSolutionsPerType.type,
         };
       } else {
-        if (wrongContinuations[z] && wrongContinuations[z].type != "not repairable") {
+        if (wrongContinuations[z]/* && wrongContinuations[z].type != "not repairable" */) {
           console.log(parsableSolutionsPerType.solutionParts);
           console.log("Identified add-place solution.");
           console.log(newPlaces[0]);
@@ -613,8 +613,8 @@ function getSinglePlaceSolution(
           }
           break;
       }
-      console.log("acc: ");
-      console.log(acc);
+      /* console.log("acc: ");
+      console.log(acc); */
       return acc;
     },
     null

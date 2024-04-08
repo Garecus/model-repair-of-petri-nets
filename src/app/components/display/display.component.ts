@@ -344,7 +344,7 @@ export class DisplayComponent implements OnInit {
 
                   //let solutions: any = [];
                   //let newSolution: any;
-                  /*  for (let z = 0; z < this.wrongContinuations.length; z++) {
+                   /* for (let z = 0; z < this.wrongContinuations.length; z++) {
                      return this.petriNetRegionsService
                      //newSolution = this.petriNetRegionsService
                        .computePrecisionSolutions(partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations, z)
@@ -368,6 +368,8 @@ export class DisplayComponent implements OnInit {
                   //console.log(solutions);
                   //solutions = solutions[0];
                   //return of({ solutions, renderChanges: true });
+
+                  this.computingSolutions = false;
                   return this.petriNetRegionsService
                     .computePrecisionSolutions(partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations, implicitPlaces)
                     .pipe(
@@ -397,6 +399,7 @@ export class DisplayComponent implements OnInit {
                   this.implicitPlaceCount$.next({
                     count: 0,
                   });
+                  this.computingSolutions = false;
                   this.repairService.saveNewSolutions([], 0);
                   return of({ solutions: [], renderChanges: true });
                 }
