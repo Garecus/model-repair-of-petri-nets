@@ -124,7 +124,7 @@ export class RepairMenuComponent implements OnInit {
               countSolutions++;
             }
           }
-         /*  console.log(countSolutions); */
+          /*  console.log(countSolutions); */
 
           for (let j = 0; j < this.placeSolution.solutions.length; j++) {
             if (this.placeSolution.solutions[j].relatedWrongContinuation?.wrongContinuation == this.placeSolution.wrongContinuations[i].wrongContinuation) {
@@ -314,11 +314,15 @@ function generateBaseText(
 
   if (solution.type === 'add-trace') {
     if (solution.relatedWrongContinuation?.type == "not repairable") {
-      text = '<span style="color: #006633; font-size: 22px;">🡄</span>'; // <div style="color: green; font-size: 25px;">&#129092;&#xfe0e;</div>
+      //text = '<span style="color: #006633; font-size: 22px;">🡄</span>'; // <div style="color: green; font-size: 25px;">&#129092;&#xfe0e;</div>
+      text = '<span style="width: 0px; height: 0px; border-top: 8px solid transparent; border-right: 16px solid #006633; border-bottom: 8px solid transparent; float: left;"></span>';
+      text += '<span style="color: #006633;">---</span> Add ' + '<b> [' + solution.relatedWrongContinuation?.wrongContinuation + '] </b>';
     } else {
-      text = '<span style="color: #FFCC00; font-size: 22px;">🡄</span>'; // <div style="color: rgb(240, 230, 42); font-size: 25px;">&#129092;&#xfe0e;</div>
+      //text = '<span style="color: #FFCC00; font-size: 22px;">🡄</span>'; // <div style="color: rgb(240, 230, 42); font-size: 25px;">&#129092;&#xfe0e;</div>
+      text = '<span style="width: 0px; height: 0px; border-top: 8px solid transparent; border-right: 16px solid #FFCC00; border-bottom: 8px solid transparent; float: left;"></span>';
+      text += '<span style="color: #FFCC00;">---</span> Add ' + '<b> [' + solution.relatedWrongContinuation?.wrongContinuation + '] </b>';
     }
-    text += ' Add ' + '<b> [' + solution.relatedWrongContinuation?.wrongContinuation + '] </b>';
+
     return `${text}`;
   }
 
