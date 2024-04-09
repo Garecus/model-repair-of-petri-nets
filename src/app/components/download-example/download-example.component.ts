@@ -84,13 +84,15 @@ export class DownloadExampleComponent implements OnInit {
   downloadEvaluationFilesPrecision(): void {
     const zip = new JSZip();
 
-    const firstFolder = zip.folder('1 - evaluation');
-    firstFolder?.file('1-evaluation.log', firstLog);
-    firstFolder?.file('1-evaluation.pn', firstPetriNet);
+    const firstFolder = zip.folder('1-example');
+    firstFolder?.file('1-example.log', firstLog);
+    firstFolder?.file('1-example.pn', firstPetriNet);
 
-    const secondFolder = zip.folder('2 - evaluation');
-    secondFolder?.file('2-evaluation.log', secondLog);
-    secondFolder?.file('2-evaluation.pn', secondPetriNet);
+    const secondFolder = zip.folder('2-example');
+    secondFolder?.file('2-example.log', secondLog);
+    secondFolder?.file('2-example.pn', secondPetriNet);
+
+
 
     zip.generateAsync({ type: 'blob' }).then((content) => {
       saveAs(content, 'evaluation_examples_precision.zip');

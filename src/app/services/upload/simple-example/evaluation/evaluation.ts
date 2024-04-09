@@ -182,7 +182,6 @@ p1 0
 .arcs
 p0 a
 a p1
-b p1
 p1 b
 p1 c
 `;
