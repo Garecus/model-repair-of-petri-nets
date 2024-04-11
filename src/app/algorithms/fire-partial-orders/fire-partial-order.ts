@@ -343,6 +343,17 @@ export class FirePartialOrder {
     console.log(this.partialOrders);
     const implicitPlaces: string[] = [];
 
+    // Small adjustment that is needed, if there are any invalid places within the proces model
+    for (let index = 0; index < this.partialOrders.length; index++) {
+      if (this.partialOrders[index].events[this.partialOrders[index].events.length - 1].localMarking!.find((element) => element < 0)) {
+        let a = this.partialOrders[index].events[this.partialOrders[index].events.length - 2].localMarking;
+        let b = this.partialOrders[index].events[this.partialOrders[index].events.length - 1].localMarking;
+        this.partialOrders[index].events[this.partialOrders[index].events.length - 2].localMarking = a!.map(function (item: number, index2: number) { return item - b![index2] });
+        this.partialOrders[index].events[this.partialOrders[index].events.length - 1].localMarking = b!.map(function (item: number, index2: number) { return item - b![index2] });
+      }
+    }
+    console.log(this.partialOrders);
+
     // Build a list of all places including the corresponding local markings
     let placesAndMarkings = [];
     for (let i = 0; i < this.petriNet.places.length; i++) {
@@ -354,13 +365,21 @@ export class FirePartialOrder {
         for (let j = 1; j < this.partialOrders[index].events.length; j++) {
           let localMarking = {
             "label": this.partialOrders[index].events[j].previousEvents[0],
-            "localMarking": this.partialOrders[index].events[j].localMarking![i]
+            //"localMarking": this.partialOrders[index].events[j].localMarking![i]
+            // Math.abs()
+            "localMarking": this.partialOrders[index].events[j].localMarking![i] >= 0 ? this.partialOrders[index].events[j].localMarking![i] : 0
           };
           // Only add, if label does not already exist
           let k = placesAndMarkings[i].localMarkings.findIndex((item) => item.label === localMarking.label);
           if (k === -1) {
             placesAndMarkings[i].localMarkings.push(localMarking);
           }
+          /* if (k > 0) {
+            let z = placesAndMarkings[i].localMarkings.findIndex((item) => item.label !== this.partialOrders[index].events[j].label);
+            if (z != -1 && placesAndMarkings[i].localMarkings[k].localMarking == 0) {
+              placesAndMarkings[i].localMarkings[k].localMarking = localMarking.localMarking;// placesAndMarkings[i].localMarkings[k].localMarking - localMarking.localMarking;
+            }
+          } */
         }
       }
     }
@@ -372,7 +391,7 @@ export class FirePartialOrder {
       for (let j = i + 1; j < this.petriNet.places.length; j++) {
         console.log("Compare " + placesAndMarkings[i].place + " with " + placesAndMarkings[j].place);
 
-       // For loop to go then trough each local Marking to compare these values
+        // For loop to go then trough each local Marking to compare these values
         for (let k = 0; k < placesAndMarkings[i].localMarkings.length; k++) {
           // If we found a marking that is greater than another one, then mark it as possibly implicit
           if (placesAndMarkings[i].localMarkings[k].localMarking > placesAndMarkings[j].localMarkings[k].localMarking) {
@@ -387,6 +406,19 @@ export class FirePartialOrder {
             }
             console.log(placesAndMarkings[i].implicit);
           }
+
+          /* if (placesAndMarkings[i].localMarkings[k].localMarking < placesAndMarkings[j].localMarkings[k].localMarking) {
+            placesAndMarkings[j].implicit = true;
+
+            // and start a for loop to check now all markings of it in detail
+            for (let l = 0; l < placesAndMarkings[i].localMarkings.length; l++) {
+              console.log(placesAndMarkings[i].localMarkings[l].localMarking + " ? " + placesAndMarkings[j].localMarkings[l].localMarking);
+              if (placesAndMarkings[i].localMarkings[l].localMarking > placesAndMarkings[j].localMarkings[l].localMarking) {
+                placesAndMarkings[j].implicit = false;
+              }
+            }
+            console.log(placesAndMarkings[j].implicit);
+          } */
 
           /* if (placesAndMarkings[i].localMarkings[k].localMarking < placesAndMarkings[j].localMarkings[k].localMarking) {
             placesAndMarkings[j].implicit = true;
