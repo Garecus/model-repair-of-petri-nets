@@ -394,19 +394,62 @@ export class IlpSolver {
   private solveILP(ilp: LP): Observable<ProblemSolutionWithoutType> {
     const result$ = new ReplaySubject<ProblemSolutionWithoutType>(1);
 
+    console.log(ilp);
+
     const result = this.glpk.solve(ilp, {
       msglev: MessageLevel.ERROR,
     });
+
+    console.log(result);
+    console.log(Promise.resolve(result));
 
     // Hack for testing :/
     const res = result instanceof Promise ? result : Promise.resolve(result);
     res
       .then((solution: Result) => {
+        console.log(solution.result.z);
+        console.log(solution);
+        if (solution.result.z < 1) {
+          console.log("Smaller");
+        }
         result$.next({ ilp, solution });
         result$.complete();
       })
-      .catch((error) => console.error(error));
+      .catch((error) => {
+        //result$.next(<ProblemSolutionWithoutType>{ilp,});
+        let solution: Result = {
+          "name": "ilp",
+          "time": 0.000,
+          "result": {
+            "vars": {
+/*               "0_m0_a": 0,
+              "0_Arc_a_to_b": 0,
+              "0_Arc_b_to_b1": 0,
+              "0_Arc_b1_to_b2": 0,
+              "0_Arc_b2_to_c": 0,
+              "0_Arc_c_to_mf": 0,
+              "1_m0_a": 0,
+              "1_Arc_a_to_b": 0,
+              "1_Arc_b_to_c": 0,
+              "1_Arc_c_to_mf": 0,
+              "out_a_0": 0,
+              "in_a_1": 0,
+              "out_b_2": 0,
+              "in_b_3": 0,
+              "out_c_4": 0,
+              "in_c_5": 0, */
+              "m0": 0
+            },
+            "z": 0,
+            "status": 5
+          }
+        };
+        result$.next(<ProblemSolutionWithoutType>{ ilp, solution });
+        result$.complete();
+        console.error(error);
+      });
 
+    console.log(result$);
     return result$.asObservable();
   }
 
@@ -419,9 +462,9 @@ export class IlpSolver {
     partialOrders: Array<PartialOrder>
   ): Array<SubjectTo> {
     const baseIlpConstraints: Array<SubjectTo> = [];
-    console.log("buildBasicIlpForPartialOrders");
+    //console.log("buildBasicIlpForPartialOrders");
     for (let i = 0; i < partialOrders.length; i++) {
-      console.log("Partial Order: " + i);
+      //console.log("Partial Order: " + i);
       const events = partialOrders[i].events;
       for (const e of events) {
         if (!this.petriNet.transitions.find((t) => e.label === t.label)) {
@@ -1490,9 +1533,9 @@ export class IlpSolver {
       //if (!invalidPlace) {
       //  return of([]);
       //}
-      console.log("addPlaceSolution:");
-      console.log(removePlaceSolution );
-      return this.solveILP(removePlaceSolution ).pipe(
+      console.log("removePlaceSolution:");
+      console.log(removePlaceSolution);
+      return this.solveILP(removePlaceSolution).pipe(
         map((solution) => {
           if (solution.solution.result.status === Solution.NO_SOLUTION) {
             console.log("Empty solution");
@@ -1503,7 +1546,7 @@ export class IlpSolver {
             solutions: [solution.solution.result.vars],
             regionSize: this.generateSumForVars(solution.solution.result.vars),
           };
-  
+
           if (problemSolution.regionSize == 0) {
             console.log("removePlace");
             problemSolution = {
@@ -1563,27 +1606,27 @@ export class IlpSolver {
       );
     } */
     //const unhandledPairs = this.getUnhandledPairs(invalidPlace!);
-        /* const unhandledPairs = this.getUnhandledPairs({
-         "id": "p",
-         "type": "place",
-         "marking": 0,
-         "incomingArcs": [
-             {
-                 "weight": 1,
-                 "source": "a",
-                 "target": "p1",
-                 "breakpoints": []
-             }
-         ],
-         "outgoingArcs": [
-             {
-                 "weight": 1,
-                 "source": "p1",
-                 "target": "b",
-                 "breakpoints": []
-             }
-         ]
-     }); */
+    /* const unhandledPairs = this.getUnhandledPairs({
+     "id": "p",
+     "type": "place",
+     "marking": 0,
+     "incomingArcs": [
+         {
+             "weight": 1,
+             "source": "a",
+             "target": "p1",
+             "breakpoints": []
+         }
+     ],
+     "outgoingArcs": [
+         {
+             "weight": 1,
+             "source": "p1",
+             "target": "b",
+             "breakpoints": []
+         }
+     ]
+ }); */
     /*     console.log("unhandledPairs");
         console.log(unhandledPairs); */
 
@@ -1591,140 +1634,207 @@ export class IlpSolver {
     if (placeModel.type === 'possibility') {
       z = wrongContinuations.findIndex((invalidTransition: { firstInvalidTransition: string | string[]; }) => invalidTransition.firstInvalidTransition.includes(placeModel.placeId));
     }
-    return combineLatest(
-      /* unhandledPairs.map((pair) => */
-      //this.solveILP(this.avoidWrongContinuationIlp(this.baseIlp/* , invalidPlace! */, wrongContinuations, this.partialOrders, z)).pipe( // populateIlpByCausalPairs(this.baseIlp, pair)
-      this.solveILP(this.baseIlp).pipe( // populateIlpByCausalPairs(this.baseIlp, pair)
-        switchMap((solution) => {
-          if (solution.solution.result.status !== Solution.NO_SOLUTION) {
-            return of(solution);
+    let addPlaceSolution: any;
+    if (placeModel.type === 'possibility') {
+      if (wrongContinuations[z].wrongContinuation) {
+        addPlaceSolution = this.avoidWrongContinuationIlp(
+          this.baseIlp,
+          wrongContinuations,
+          this.partialOrders,
+          z
+        );
+      } else {
+        let implicitPlace: Place = {
+          "id": "",
+          "type": "place",
+          "marking": 0,
+          "incomingArcs": [
+            {
+              "weight": 1,
+              "source": "a",
+              "target": "p1",
+              "breakpoints": []
+            }
+          ],
+          "outgoingArcs": [
+            {
+              "weight": 1,
+              "source": "p1",
+              "target": "b",
+              "breakpoints": []
+            },
+            {
+              "weight": 1,
+              "source": "p1",
+              "target": "c",
+              "breakpoints": []
+            }
+          ],
+          "issueStatus": "possibility"
+        };
+
+        addPlaceSolution = this.implicitPlacesIlp(
+          this.baseIlp,
+          implicitPlace!,
+          this.partialOrders,
+        );
+      }
+
+      return this.solveILP(addPlaceSolution).pipe(
+        map((solution) => {
+          console.log("SOLUTION");
+          console.log(solution);
+          if (solution.solution.result.status === Solution.NO_SOLUTION) {
+            console.log("Empty solution");
+            return [];
           }
-          /* return this.solveILP(
-            this.populateIlpByCausalPairs(
-              this.baseIlp,
-              pair,
-              undefined,
-              false
-            )
-          ); */
-          return [];
-        }),
-        map((solution) => ({
-          ilp: solution.ilp,
-          solution: solution.solution,
-          type: 'multiplePlaces' as SolutionType,
-        }))
-      )
-      /* ) */
-    ).pipe(
-      concatMap(
-        (
-          multiplePlaces: (ProblemSolutionWithoutType & {
-            type: SolutionType;
-          })[]
-        ) => {
-          // If we handle the iteration here, then the solutions will be combined into one solution per type. If we handle the iteration higher, then it will not work, because the response is different and cant be handled in parse-solutionfile line 302
-          let ilpsToSolve: { type: SolutionType; ilp: LP }[] = [
-            {
-              type: 'addPlace' as SolutionType,
-              ilp: this.avoidWrongContinuationIlp(
+          let problemSolution: ProblemSolution = {
+            type: 'addPlace',
+            solutions: [solution.solution.result.vars],
+            regionSize: this.generateSumForVars(solution.solution.result.vars),
+          };
+
+          return [problemSolution];
+        })
+      );
+    } else {
+
+
+      return combineLatest(
+        /* unhandledPairs.map((pair) => */
+        //this.solveILP(this.avoidWrongContinuationIlp(this.baseIlp/* , invalidPlace! */, wrongContinuations, this.partialOrders, z)).pipe( // populateIlpByCausalPairs(this.baseIlp, pair)
+        this.solveILP(this.baseIlp).pipe( // populateIlpByCausalPairs(this.baseIlp, pair)
+          switchMap((solution) => {
+            if (solution.solution.result.status !== Solution.NO_SOLUTION) {
+              return of(solution);
+            }
+            /* return this.solveILP(
+              this.populateIlpByCausalPairs(
                 this.baseIlp,
-                /* invalidPlace!, */
-                wrongContinuations,
-                this.partialOrders,
-                z
-              ),
-            },
-            {
-              type: 'addTrace' as SolutionType,
-              ilp: this.avoidWrongContinuationIlp(
-                this.baseIlp,
-                /* invalidPlace!, */
-                wrongContinuations,
-                this.partialOrders,
-                z
-              ),
-            },
-            /* {
-              type: 'removePlace' as SolutionType, */
+                pair,
+                undefined,
+                false
+              )
+            ); */
+            return [];
+          }),
+          map((solution) => ({
+            ilp: solution.ilp,
+            solution: solution.solution,
+            type: 'multiplePlaces' as SolutionType,
+          }))
+        )
+        /* ) */
+      ).pipe(
+        concatMap(
+          (
+            multiplePlaces: (ProblemSolutionWithoutType & {
+              type: SolutionType;
+            })[]
+          ) => {
+            // If we handle the iteration here, then the solutions will be combined into one solution per type. If we handle the iteration higher, then it will not work, because the response is different and cant be handled in parse-solutionfile line 302
+            let ilpsToSolve: { type: SolutionType; ilp: LP }[] = [
+              {
+                type: 'addPlace' as SolutionType,
+                ilp: this.avoidWrongContinuationIlp(
+                  this.baseIlp,
+                  /* invalidPlace!, */
+                  wrongContinuations,
+                  this.partialOrders,
+                  z
+                ),
+              },
+              /* {
+                type: 'addTrace' as SolutionType,
+                ilp: this.avoidWrongContinuationIlp(
+                  this.baseIlp,
+                  //invalidPlace!,
+                  wrongContinuations,
+                  this.partialOrders,
+                  z
+                ),
+              }, */
+              /* {
+                type: 'removePlace' as SolutionType, */
               /* ilp: this.avoidWrongContinuationIlp(
                 this.baseIlp,
                 //invalidPlace!,
                 wrongContinuations,
                 this.partialOrders,
                 z */
-                /* ilp: this.implicitPlacesIlp(
-                this.baseIlp,
-                implicitPlace!,
-                this.partialOrders,
-              ),
-            } */
-          ];
-          console.log("ilpsToSolve");
-          console.log(ilpsToSolve);
-          return combineLatest(
-            ilpsToSolve.map((ilp) =>
-              this.solveILP(ilp.ilp).pipe(
-                map((solution) => ({
-                  ...solution,
-                  type: ilp.type,
-                }))
+              /* ilp: this.implicitPlacesIlp(
+              this.baseIlp,
+              implicitPlace!,
+              this.partialOrders,
+            ),
+          } */
+            ];
+            console.log("ilpsToSolve");
+            console.log(ilpsToSolve);
+            return combineLatest(
+              ilpsToSolve.map((ilp) =>
+                this.solveILP(ilp.ilp).pipe(
+                  map((solution) => ({
+                    ...solution,
+                    type: ilp.type,
+                  }))
+                )
               )
-            )
-          ).pipe(map((solutions) => [...solutions,])); //...multiplePlaces
-        }
-      ),
-      toArray(),
-      map((placeSolutions) => {
-        const typeToSolution: {
-          [key in SolutionType]: { sum: number; vars: Vars[] };
-        } = {
-          changeIncoming: { sum: 0, vars: [] },
-          multiplePlaces: { sum: 0, vars: [] },
-          changeMarking: { sum: 0, vars: [] },
-          addPlace: { sum: 0, vars: [] }, // [precision model repair]
-          addTrace: { sum: 0, vars: [] }, // [precision model repair]
-          removePlace: { sum: 0, vars: [] }, // [precision model repair]
-        };
+            ).pipe(map((solutions) => [...solutions,])); //...multiplePlaces
+          }
+        ),
+        toArray(),
+        map((placeSolutions) => {
+          const typeToSolution: {
+            [key in SolutionType]: { sum: number; vars: Vars[] };
+          } = {
+            changeIncoming: { sum: 0, vars: [] },
+            multiplePlaces: { sum: 0, vars: [] },
+            changeMarking: { sum: 0, vars: [] },
+            addPlace: { sum: 0, vars: [] }, // [precision model repair]
+            addTrace: { sum: 0, vars: [] }, // [precision model repair]
+            removePlace: { sum: 0, vars: [] }, // [precision model repair]
+          };
 
-        console.log("placeSolutions :");
-        console.log(placeSolutions);
-        placeSolutions.forEach((placeSolution) => {
-          placeSolution
-            .filter(
-              (solution) =>
-                solution.solution.result.status !== Solution.NO_SOLUTION
-            )
-            .forEach((solution) => {
-              typeToSolution[solution.type].sum = Math.max(
-                typeToSolution[solution.type].sum,
-                this.generateSumForVars(solution.solution.result.vars)
-              );
+          console.log("placeSolutions :");
+          console.log(placeSolutions);
+          placeSolutions.forEach((placeSolution) => {
+            placeSolution
+              .filter(
+                (solution) =>
+                  solution.solution.result.status !== Solution.NO_SOLUTION
+              )
+              .forEach((solution) => {
+                typeToSolution[solution.type].sum = Math.max(
+                  typeToSolution[solution.type].sum,
+                  this.generateSumForVars(solution.solution.result.vars)
+                );
 
-              if (solution.type === "addTrace") {
-                typeToSolution[solution.type].sum = 99999;
-              }
+                if (solution.type === "addTrace") {
+                  typeToSolution[solution.type].sum = 0;
+                }
 
-              typeToSolution[solution.type].vars.push(
-                solution.solution.result.vars
-              );
-            });
-        });
+                typeToSolution[solution.type].vars.push(
+                  solution.solution.result.vars
+                );
+              });
+          });
 
-        console.log('Generated solutions', typeToSolution);
+          console.log('Generated solutions', typeToSolution);
 
-        return Object.entries(typeToSolution)
-          .filter(([_, solutions]) => solutions.vars.length > 0)
-          .sort(([_, first], [__, second]) => first.sum - second.sum)
-          .map(([type, solutions]) => ({
-            type: type as SolutionType,
-            solutions: solutions.vars,
-            regionSize: solutions.sum,
-          }));
-      }),
-      map((foundSolutions) =>
-        this.filterSolutionsInSpecificOrder(foundSolutions)
-      )
-    );
+          return Object.entries(typeToSolution)
+            .filter(([_, solutions]) => solutions.vars.length > 0)
+            .sort(([_, first], [__, second]) => first.sum - second.sum)
+            .map(([type, solutions]) => ({
+              type: type as SolutionType,
+              solutions: solutions.vars,
+              regionSize: solutions.sum,
+            }));
+        }),
+        map((foundSolutions) =>
+          this.filterSolutionsInSpecificOrder(foundSolutions)
+        )
+      );
+    }
   }
 }

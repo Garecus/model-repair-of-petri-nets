@@ -332,7 +332,7 @@ export class PetriNetSolutionService {
                   place.type === 'warning' || place.type === 'possibility'
                     ? petriNet.places.find((p) => p.id === place.placeId)
                     : undefined; */
-                console.log(solutions);
+                //console.log(solutions);
                 const existingPlace =
                 place.type === 'warning' || place.type === 'possibility' || place.type === 'repair' || place.type === 'transition'
                     ? petriNet.places.find((p) => p.id === place.newTransition)//place.placeId //petriNet.places.find((p) => p.id === "p1" //invalidPlaces

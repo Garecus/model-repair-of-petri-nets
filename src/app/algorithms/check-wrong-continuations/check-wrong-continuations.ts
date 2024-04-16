@@ -92,7 +92,7 @@ export class CheckWrongContinuations {
       this.LogListValues.push(newRow);
 
     }
-    console.log(this.LogListValues);
+    /* console.log(this.LogListValues); */
     for (var i2 = 0; i2 < this.LogListValues.length; i2++) {
       const newEntry = this.caseList.find(item => item.caseId === this.LogListValues[i2].caseId);
       if (newEntry) {
@@ -106,7 +106,7 @@ export class CheckWrongContinuations {
         }); */
 
     for (var i3 = 0; i3 < this.caseList.length; i3++) {
-      console.log(this.caseList[i3].sequence)
+      /* console.log(this.caseList[i3].sequence) */
       let caseSplitted = this.caseList[i3].sequence.split(',');
       /* console.log("Transitions of Case " + (i3 + 1) + ": " + caseSplitted); */
       let caseUniqueTransitions = Array.from(new Set(caseSplitted));
@@ -124,7 +124,7 @@ export class CheckWrongContinuations {
           prefix = lastValue + caseSplitted[i4];
         }
         lastValue = prefix  + ',';
-        console.log(prefix);
+        /* console.log(prefix); */
         this.allUniquePrefix.push(prefix);
       }
       this.allUniquePrefix = Array.from(new Set(this.allUniquePrefix));

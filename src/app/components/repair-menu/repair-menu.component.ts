@@ -116,6 +116,10 @@ export class RepairMenuComponent implements OnInit {
         }
         // Identify no add-place solution for a wrong continuation and then mark this solution as not repairable in the ui
         for (let i = 0; i < this.placeSolution.wrongContinuations.length; i++) {
+          for (let j = 0; j < this.placeSolution.solutions.length; j++) {
+            // if there ia another one that start and ends with the same, but has something inbetween then do not propose the addplace solution //XXX
+
+          }
           let countSolutions = 0;
           for (let j = 0; j < this.placeSolution.solutions.length; j++) {
             /* console.log("i: " + this.placeSolution.wrongContinuations[i].wrongContinuation)
@@ -142,11 +146,15 @@ export class RepairMenuComponent implements OnInit {
         }
 
         for (let j = 0; j < this.placeSolution.solutions.length; j++) {
-          if (this.placeSolution.solutions[j].relatedWrongContinuation!.type == "not repairable") {
+          if (this.placeSolution.solutions[j].relatedWrongContinuation && this.placeSolution.solutions[j].relatedWrongContinuation!.type == "not repairable") {
             this.placeSolution.solutions.unshift(this.placeSolution.solutions[j]);
             this.placeSolution.solutions.splice(j + 1, 1);
             this.placeSolution.wrongContinuations.unshift(this.placeSolution.wrongContinuations[j]);
             this.placeSolution.wrongContinuations.splice(j + 1, 1);
+          }
+          if (this.placeSolution.solutions[j].repairType == "addPlace" && (this.placeSolution.solutions[j].regionSize == 0 || Number.isNaN(this.placeSolution.solutions[j].regionSize))) {
+            this.placeSolution.solutions.splice(j, 1);
+            this.placeSolution.wrongContinuations.splice(j, 1);
           }
         }
       }
