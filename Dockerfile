@@ -18,7 +18,7 @@ RUN npm install
 COPY . ./
 
 # Build it
-RUN npm run ng build --tag inlogit/software:guidedog -- --configuration=production
+RUN npm run ng build --tag guidedog -- --configuration=production
 
 ###################################
 # NGINX

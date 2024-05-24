@@ -66,19 +66,11 @@ export class NetCommandService {
     if (!placeId) {
       return of(null);
     }
-
-    // Set the invalid place to an existing one to pass the if request 10 lines below
-    /* if (placeId && solution.type !== "remove-place") { //placeId == "p_new"
-      placeId = "p1"; //invalidPlaces
-    } */
     
     return this.displayService.getPetriNet$().pipe(
       first(),
       map((petriNet) => {
         const placeIndex = petriNet.places.findIndex((p) => p.id === placeId);
-        /* if (placeIndex === -1) {
-          return null;
-        } */
 
         // Store the current net in the undo list
         this.undoQueue.push(generateTextFromNet(petriNet));
@@ -111,10 +103,6 @@ export class NetCommandService {
     if (!placeId) {
       return of(null);
     }
-
-    /* if (placeId == "p_new") {
-      placeId = "p1"; //invalidPlaces
-    } */
 
     return this.displayService.getPartialOrders$().pipe(
       first(),
@@ -371,8 +359,6 @@ function generateTextForNewNet(
       newText += '\n';
     }
   });
-  console.log("New net: ");
-  console.log(newText);
   return newText;
 }
 
@@ -400,8 +386,6 @@ function generateTraceForLog(
       newText += `${specification.length + 1} ${wrongContinuationSplitted[i]} \n`;
     }
   }
-  //console.log(specification);
-  //console.log(newText);
   return newText;
 }
 
@@ -581,7 +565,6 @@ function generateArcsForSolution(
       ])
     );
   } else {
-    console.log("missing places");
     return [];
   }
 }

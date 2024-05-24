@@ -15,8 +15,6 @@ import {
   determineInitialAndFinalEvents,
   PartialOrder,
   LogList,
-  CaseList,
-  ArcList,
   ModelList,
 } from '../../classes/diagram/partial-order';
 import { PetriNet } from '../../classes/diagram/petri-net';
@@ -35,7 +33,6 @@ import {
   placesAttribute,
   transitionsAttribute,
 } from './parsing-constants';
-import { sequence } from '@angular/animations';
 
 type ParsingStates = 'initial' | 'type' | 'transitions' | 'places' | 'arcs';
 
@@ -381,8 +378,8 @@ export class ParserService {
                 rowId: this.j,
                 rowContent: trimmedLine
               };
+
               this.ModelListValues.push(newRow);
-              /* console.log(petriNet); */
 
               if (!addArc(petriNet, arc)) {
                 this.toastr.warning(
@@ -423,7 +420,7 @@ export class ParserService {
         `Invalid arcs are ignored`
       );
     }
-    /* this.listWrongContinuations(); */
+
     return petriNet;
   }
 
@@ -584,7 +581,6 @@ export class ParserService {
               name: conceptName,
             };
             this.LogListValues.push(newRow);
-            //console.log(this.LogListValues);
 
             const isPartialOrder =
               followsIndex !== -1 &&
@@ -658,7 +654,6 @@ export class ParserService {
         'No traces found'
       );
     }
-    /* this.listWrongContinuations(); */
     return returnList;
   }
 

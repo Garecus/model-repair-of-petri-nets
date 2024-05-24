@@ -40,11 +40,12 @@ svg foreignObject {
 
 
 :root {
-    --success-color: rgba(42, 100, 42, 1);
-    --warn-color: #FFCC00;//rgb(235, 231, 0);
-    --error-color: rgba(255, 60, 60, 1);
+    --success-color: #45ce49;
+    --warn-color: #ffbb00;
+    --error-color: #ff483b;
     --fancy-grey: #f5f5f5;
     --dark-grey: #d3d3d3;
+    --highlight-color: #489dff;
 
     --border-radius: 5px;
     --spaces: 8px;
@@ -81,15 +82,14 @@ circle.place.place--warning {
 
 circle.place.place--implicit {
   cursor: pointer;
-  color: var(--warn-color);
-  stroke: var(--warn-color);
+  color: var(--highlight-color);
+  stroke: var(--highlight-color);
 }
 
 .new-svg-element {
   color: var(--success-color);
   stroke: var(--success-color);
 }
-
 
 .current-overlay {
   background: var(--fancy-grey);

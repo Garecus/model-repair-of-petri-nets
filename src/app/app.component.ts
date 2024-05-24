@@ -103,7 +103,6 @@ export class AppComponent implements OnInit {
     } else {
       this.displayService.setShouldShowSuggestions("");
     }
-    /* this.displayService.setShouldShowSuggestions(event.checked); */
 
     // Set the other toggle button to false, if it was true ToDo
     if (this.isToggled == true && this.isToggledPrecision == true) {
@@ -128,7 +127,6 @@ export class AppComponent implements OnInit {
     } else {
       this.displayService.setShouldShowSuggestions("");
     }
-    /* this.displayService.setShouldShowPrecisionSuggestions(event.checked); */
 
     // Set the other toggle button to false, if it was true ToDo
     if (this.isToggled == true && this.isToggledPrecision == true) {

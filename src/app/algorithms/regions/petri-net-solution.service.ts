@@ -8,7 +8,7 @@ import { ParsableSolution, ParsableSolutionsPerType, PlaceSolution, PrecisionSol
 import { RepairService } from '../../services/repair/repair.service';
 import { IlpSolver, SolutionGeneratorType } from './ilp-solver/ilp-solver';
 import { ProblemSolution, VariableName, VariableType } from './ilp-solver/solver-classes';
-import { AddPlaceAutoRepair, AutoRepairForSinglePlace, parseSolution } from './parse-solutions.fn';
+import { AutoRepairForSinglePlace, parseSolution } from './parse-solutions.fn';
 import { removeDuplicatePlaces } from './remove-duplicate-places.fn';
 import { __importDefault } from 'tslib';
 
@@ -229,9 +229,6 @@ export class PetriNetSolutionService {
     wrongContinuations: wrongContinuation[],
     implicitPlaces: { [key: string]: number },
   ): Observable<PlaceSolution[]> {
-    /*     console.log("Compute precision with invalid places and transitions: ");
-        console.log(invalidPlaces);
-        console.log(invalidTransitions); */
 
     return this.glpk$.pipe(
       switchMap((glpk) => {
@@ -264,32 +261,6 @@ export class PetriNetSolutionService {
           missingTransitions[event.label]++;
         }
 
-        /* const potentialValidPlaces = petriNet.places.filter(
-          (place) =>
-            place.marking > 0 &&
-            !invalidPlaceList.find(
-              (repairType) =>
-                repairType.type === 'possibility' && repairType.placeId === place.id
-            )
-        );
-        for (const potentialValidPlace of potentialValidPlaces) {
-          invalidPlaceList.push({
-            type: 'warning',
-            placeId: potentialValidPlace.id,
-          });
-        }
-
-        invalidPlaceList.push(
-          ...(Object.keys(missingTransitions).map((label) => ({
-            type: 'transition',
-            newTransition: label,
-          })) as SolutionGeneratorType[])
-        );
-        
-        if (invalidPlaceList.length === 0) {
-          return of([]);
-        } */
-
         invalidTransitionList.push(
           ...(Object.keys(implicitPlaces).map((placeId) => ({
             type: 'implicit',
@@ -314,28 +285,13 @@ export class PetriNetSolutionService {
           idToTransitionLabelMap
         );
 
-        /*         invalidPlaceList.forEach((object, index) => {
-                  console.log(`Invalid place ${index + 1}:`, object);
-                });
-        
-                invalidTransitionList.forEach((object, index) => {
-                  console.log(`Invalid transition ${index + 1}:`, object);
-                }); */
-
-        /* invalidPlaceList[0].type="possibility"; */
-
         return combineLatest(
           invalidTransitionList.map((place) =>
             solver.calculatePrecisionSolutions(place, wrongContinuations).pipe(
               map((solutions) => {
-                /* const existingPlace =
-                  place.type === 'warning' || place.type === 'possibility'
-                    ? petriNet.places.find((p) => p.id === place.placeId)
-                    : undefined; */
-                //console.log(solutions);
                 const existingPlace =
-                place.type === 'warning' || place.type === 'possibility' || place.type === 'repair' || place.type === 'transition'
-                    ? petriNet.places.find((p) => p.id === place.newTransition)//place.placeId //petriNet.places.find((p) => p.id === "p1" //invalidPlaces
+                  place.type === 'warning' || place.type === 'possibility' || place.type === 'repair' || place.type === 'transition'
+                    ? petriNet.places.find((p) => p.id === place.newTransition)
                     : petriNet.places.find((p) => p.id === place.placeId);
 
                 if (place.type === 'warning') {
@@ -381,12 +337,11 @@ export class PetriNetSolutionService {
                   }
                 }
 
-                //console.log(place);
                 let z = 0;
                 if (place.type == "possibility") {
                   z = wrongContinuations.findIndex(variable => variable.firstInvalidTransition.includes(place.placeId));
                 }
-                console.log(solutions);
+
                 const parsedSolutions = parseSolution(
                   handleSolutions(solutions, solver),
                   existingPlace,
@@ -395,8 +350,6 @@ export class PetriNetSolutionService {
                   invalidTransitions,
                   z
                 );
-                console.log("Parsed solutions: ");
-                console.log(parsedSolutions);
 
                 const newTokens = parsedSolutions.find(
                   (solution) => solution.type === 'marking'
@@ -408,14 +361,6 @@ export class PetriNetSolutionService {
 
                 switch (place.type) {
                   case 'repair':
-                    /* let testvalue =  {
-                      type: 'error',
-                      place: place.placeId,
-                      solutions: parsedSolutions,
-                      missingTokens,
-                      invalidTraceCount: invalidPlaces[place.placeId],
-                    } as PlaceSolution;
-                    console.log(testvalue); */
                     return {
                       type: 'error',
                       place: place.placeId,
@@ -432,14 +377,6 @@ export class PetriNetSolutionService {
                         missingTransitions[place.newTransition],
                     } as PlaceSolution;
                   case 'possibility':
-                    /* let testvalue = {
-                      type: 'possibility',
-                      place: place.placeId,
-                      solutions: parsedSolutions,
-                      missingTokens,
-                      invalidTraceCount: invalidPlaces[place.placeId],
-                    } as PlaceSolution;
-                    console.log(testvalue); */
                     return {
                       type: 'possibility',
                       place: place.placeId,
@@ -473,100 +410,6 @@ export class PetriNetSolutionService {
         this.repairService.saveNewSolutions(solutions, partialOrders.length)
       )
     );
-
-    /* petriNet.transitions[1].issueStatus = 'possibility'; */
-    /* let array = [{
-      type: 'possibility',
-      solutions: [
-        {
-            "type": "modify-place",
-            "incoming": [
-                {
-                    "transitionLabel": "a",
-                    "weight": 1
-                },
-                {
-                    "transitionLabel": "b",
-                    "weight": 1
-                }
-            ],
-            "outgoing": [
-                {
-                    "transitionLabel": "b",
-                    "weight": 1
-                },
-                {
-                    "transitionLabel": "c",
-                    "weight": 1
-                }
-            ],
-            "regionSize": 6,
-            "repairType": "changeIncoming"
-        },
-        {
-            "type": "replace-place",
-            "repairType": "multiplePlaces",
-            "regionSize": 6,
-            "places": [
-                {
-                    "incoming": [
-                        {
-                            "transitionLabel": "a",
-                            "weight": 1
-                        },
-                        {
-                            "transitionLabel": "b",
-                            "weight": 1
-                        }
-                    ],
-                    "outgoing": [
-                        {
-                            "transitionLabel": "b",
-                            "weight": 1
-                        },
-                        {
-                            "transitionLabel": "c",
-                            "weight": 1
-                        }
-                    ]
-                },
-                {
-                    "incoming": [
-                        {
-                            "transitionLabel": "a",
-                            "weight": 1
-                        }
-                    ],
-                    "outgoing": [
-                        {
-                            "transitionLabel": "c",
-                            "weight": 1
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "type": "marking",
-            "newMarking": 3,
-            "regionSize": 25,
-            "repairType": "changeMarking"
-        }
-    ],
-      wrongContinuations: "string",
-      transition: "string",
-      missingPlace: "string",
-
-      place: "p1",
-      invalidTraceCount: 2,
-      missingTokens: 3,
-      regionSize: 1,
-      tooManyTokens: 1,
-      reduceTokensTo: 1,
-      missingTransition: "string",
-    }] as PrecisionSolution[];
-    return of(array); */
-
   }
 }
 
@@ -586,7 +429,7 @@ export function handleSolutions(
       solutionParts: solution.solutions
         .map((singleSolution) =>
           Object.entries(singleSolution)
-            .filter( 
+            .filter(
               ([variable, value]) =>
                 value >= 0 && // !=
                 solver.getInverseVariableMapping(variable) !== null
@@ -595,28 +438,28 @@ export function handleSolutions(
               const decoded = solver.getInverseVariableMapping(variable)!;
               let parsableSolution: ParsableSolution;
               if (value != 0) {
-              switch (decoded.type) {
-                case VariableType.INITIAL_MARKING:
-                  parsableSolution = {
-                    type: 'increase-marking',
-                    newMarking: value,
-                  };
-                  break;
-                case VariableType.INCOMING_TRANSITION_WEIGHT:
-                  parsableSolution = {
-                    type: 'incoming-arc',
-                    incoming: decoded.label,
-                    marking: value,
-                  };
-                  break;
-                case VariableType.OUTGOING_TRANSITION_WEIGHT:
-                  parsableSolution = {
-                    type: 'outgoing-arc',
-                    outgoing: decoded.label,
-                    marking: value,
-                  };
-              }
-            } else {
+                switch (decoded.type) {
+                  case VariableType.INITIAL_MARKING:
+                    parsableSolution = {
+                      type: 'increase-marking',
+                      newMarking: value,
+                    };
+                    break;
+                  case VariableType.INCOMING_TRANSITION_WEIGHT:
+                    parsableSolution = {
+                      type: 'incoming-arc',
+                      incoming: decoded.label,
+                      marking: value,
+                    };
+                    break;
+                  case VariableType.OUTGOING_TRANSITION_WEIGHT:
+                    parsableSolution = {
+                      type: 'outgoing-arc',
+                      outgoing: decoded.label,
+                      marking: value,
+                    };
+                }
+              } else {
                 parsableSolution = {
                   type: 'remove-place',
                   newMarking: 0,

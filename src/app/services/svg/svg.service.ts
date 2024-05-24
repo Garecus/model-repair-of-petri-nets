@@ -265,7 +265,7 @@ export class SvgService {
         placeEl.appendChild(titleEl);
       } else if (place.issueStatus === 'implicit') {
         placeEl.classList.add('place--implicit');
-        placeEl.setAttribute('stroke', 'var(--warn-color)');
+        placeEl.setAttribute('stroke', 'var(--highlight-color)');
 
         const titleEl = this.createSvgElement('title');
         titleEl.textContent =
@@ -303,10 +303,10 @@ export class SvgService {
       );
       if (place.issueStatus === 'implicit') {
         markingEl.setAttribute(
-          'stroke', 'var(--warn-color)'
+          'stroke', 'var(--highlight-color)'
         );
         markingEl.setAttribute(
-          'fill', 'var(--warn-color)'
+          'fill', 'var(--highlight-color)'
         );
       }
       markingEl.setAttribute('font-size', '2em');

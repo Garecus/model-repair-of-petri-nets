@@ -74,9 +74,7 @@ export function parseSolution(
   invalidTransitions: { [key: string]: number },
   z: number
 ): AutoRepairWithSolutionType[] {
-  console.log("existingPlace");
-  console.log(existingPlace);
-  console.log(placeSolutionList);
+
   /* if (wrongContinuations[z] && (wrongContinuations[z].type == "not repairable" || Object.keys(placeSolutionList).length == 0) && placeSolutionList.some((solution) => solution.type !== "removePlace")) {
     let returnList = [
       {
@@ -250,7 +248,6 @@ export function parseSolution(
         };
         return repair;
       } else if (parsableSolutionsPerType.type == "addTrace") {
-        console.log("Identified add-trace solution. ");
         const repair: AutoRepairForSinglePlace = {
           ...newPlaces[0],
           type: 'add-trace',
@@ -282,7 +279,6 @@ export function parseSolution(
         };
         return repair; */
       } else if (parsableSolutionsPerType.type == "removePlace") {
-        console.log("Identified remove place solution.");
         const repair: AutoRepairForSinglePlace = {
           ...newPlaces[0],
           type: 'remove-place'
@@ -298,9 +294,6 @@ export function parseSolution(
         };
       } else {
         if (wrongContinuations[z]/* && wrongContinuations[z].type != "not repairable" */) {
-          console.log(parsableSolutionsPerType.solutionParts);
-          console.log("Identified add-place solution.");
-          console.log(newPlaces[0]);
           const repair: AutoRepairForSinglePlace = {
             ...newPlaces[0],
             type: 'add-place',
@@ -352,10 +345,9 @@ export function parseSolution(
     .filter((solution) => !!solution);
 
   // Add to the solution of a wrong continuation always the add-trace solution
-  if (wrongContinuations[z] && placeSolutionList.some((solution) => solution.type !== "removePlace")) { //XXX Check all solutions that fit to a wrong continuation. if there is no addplace for this wrong continuation, then mark it as not repairable
+  if (wrongContinuations[z] && placeSolutionList.some((solution) => solution.type !== "removePlace")) { // Check all solutions that fit to a wrong continuation. if there is no addplace for this wrong continuation, then mark it as not repairable
     let currentTransition = wrongContinuations[z].firstInvalidTransition;
     for (let k = 0; k < wrongContinuations.length; k++) {
-      /* console.log(placeSolutionList); */
       if (wrongContinuations[k] && currentTransition.includes(wrongContinuations[k].firstInvalidTransition)/*  && placeSolutionList.length > 1 */) {
         returnList.push(
           {
@@ -613,8 +605,6 @@ function getSinglePlaceSolution(
           }
           break;
       }
-      /* console.log("acc: ");
-      console.log(acc); */
       return acc;
     },
     null

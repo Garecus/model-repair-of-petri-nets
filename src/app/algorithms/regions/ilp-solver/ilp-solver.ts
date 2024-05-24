@@ -263,7 +263,6 @@ export class IlpSolver {
      * @returns foundSolutions in different order (by index)
      */
   private filterSolutionsInSpecificOrder(foundSolutions: ProblemSolution[]) {
-    console.log(foundSolutions);
     return foundSolutions.filter((value, index) => {
       const _value = JSON.stringify(value.solutions);
       return (
@@ -340,7 +339,6 @@ export class IlpSolver {
     // We try to find a place without initial marking and with the pair
     // If we don't found a solution we try to find one with marking and different incoming arcs
     if (firstTry && causalPair[0]) {
-      console.log("populateIlpByCausalPairs");
       result.subjectTo = result.subjectTo.concat(
         this.equal(this.variable(VariableName.INITIAL_MARKING), 0).constraints
       );
@@ -369,20 +367,6 @@ export class IlpSolver {
         1
       ).constraints
     );
-
-    // This removes split place as repair option:
-    /*     result.subjectTo = result.subjectTo.concat(
-          this.smallerThan(
-            this.variable(
-              this.transitionVariableName(
-                causalPair[1],
-                VariableName.OUTGOING_ARC_WEIGHT_PREFIX
-              )
-            ),
-            0
-          ).constraints
-        ); */
-
     return result;
   }
 
@@ -394,50 +378,23 @@ export class IlpSolver {
   private solveILP(ilp: LP): Observable<ProblemSolutionWithoutType> {
     const result$ = new ReplaySubject<ProblemSolutionWithoutType>(1);
 
-    console.log(ilp);
-
     const result = this.glpk.solve(ilp, {
       msglev: MessageLevel.ERROR,
     });
-
-    console.log(result);
-    console.log(Promise.resolve(result));
 
     // Hack for testing :/
     const res = result instanceof Promise ? result : Promise.resolve(result);
     res
       .then((solution: Result) => {
-        console.log(solution.result.z);
-        console.log(solution);
-        if (solution.result.z < 1) {
-          console.log("Smaller");
-        }
         result$.next({ ilp, solution });
         result$.complete();
       })
       .catch((error) => {
-        //result$.next(<ProblemSolutionWithoutType>{ilp,});
         let solution: Result = {
           "name": "ilp",
           "time": 0.000,
           "result": {
             "vars": {
-/*               "0_m0_a": 0,
-              "0_Arc_a_to_b": 0,
-              "0_Arc_b_to_b1": 0,
-              "0_Arc_b1_to_b2": 0,
-              "0_Arc_b2_to_c": 0,
-              "0_Arc_c_to_mf": 0,
-              "1_m0_a": 0,
-              "1_Arc_a_to_b": 0,
-              "1_Arc_b_to_c": 0,
-              "1_Arc_c_to_mf": 0,
-              "out_a_0": 0,
-              "in_a_1": 0,
-              "out_b_2": 0,
-              "in_b_3": 0,
-              "out_c_4": 0,
-              "in_c_5": 0, */
               "m0": 0
             },
             "z": 0,
@@ -449,7 +406,6 @@ export class IlpSolver {
         console.error(error);
       });
 
-    console.log(result$);
     return result$.asObservable();
   }
 
@@ -462,9 +418,9 @@ export class IlpSolver {
     partialOrders: Array<PartialOrder>
   ): Array<SubjectTo> {
     const baseIlpConstraints: Array<SubjectTo> = [];
-    //console.log("buildBasicIlpForPartialOrders");
+
     for (let i = 0; i < partialOrders.length; i++) {
-      //console.log("Partial Order: " + i);
+
       const events = partialOrders[i].events;
       for (const e of events) {
         if (!this.petriNet.transitions.find((t) => e.label === t.label)) {
@@ -476,14 +432,6 @@ export class IlpSolver {
         } else {
           baseIlpConstraints.push(...this.firingRule(e, i, partialOrders[i]));
           baseIlpConstraints.push(...this.tokenFlow(e, i));
-          // [precision model repair]
-          /* if (1 > 2) { */
-
-          if (i == 1 && e.id === "a") {
-            console.log("buildBasicIlpForPartialOrders inside");
-            /* baseIlpConstraints.push(...this.wrongContinuation(e, i, partialOrders[i])); */
-            /* } */
-          }
         }
       }
       baseIlpConstraints.push(...this.initialMarking(events, i));
@@ -590,7 +538,6 @@ export class IlpSolver {
         )
       )
     );
-    console.log("tokenFlow");
     return this.equal(variables, 0).constraints;
   }
 
@@ -608,7 +555,6 @@ export class IlpSolver {
       .filter((e) => e.previousEvents.length === 0)
       .map((e) => this.variable(this.getStartOfPoEventId(e.id, i), -1));
     variables.push(this.variable(VariableName.INITIAL_MARKING));
-    console.log("initialMarking");
     return this.equal(variables, 0).constraints;
   }
 
@@ -648,8 +594,6 @@ export class IlpSolver {
     const result = clonedeep(baseIlp);
     this.addConstraintsForSameIncomingWeights(existingPlace, result);
     this.addConstraintsForSameOutgoingWeights(existingPlace, result);
-    console.log("Constraints: ");
-    console.log(this.constraintsForNewTransitions);
     Object.entries(this.constraintsForNewTransitions).forEach(
       ([key, value]) => {
         result.subjectTo = result.subjectTo.concat(
@@ -732,7 +676,6 @@ export class IlpSolver {
       existingPlace.incomingArcs.forEach((arc) => {
         const transitionLabel = this.idToTransitionLabelMap[arc.source];
         handledTransitions.add(transitionLabel);
-        console.log("addConstraintsForSameIncomingWeights");
         result.subjectTo = result.subjectTo.concat(
           this.equal(
             this.variable(
@@ -768,7 +711,6 @@ export class IlpSolver {
       | VariableName.OUTGOING_ARC_WEIGHT_PREFIX
       | VariableName.INGOING_ARC_WEIGHT_PREFIX
   ): Array<SubjectTo> {
-    console.log("getRulesForNoArcs");
     return this.petriNet.transitions.flatMap(
       (transition) =>
         this.equal(
@@ -792,7 +734,6 @@ export class IlpSolver {
       | VariableName.OUTGOING_ARC_WEIGHT_PREFIX
       | VariableName.INGOING_ARC_WEIGHT_PREFIX
   ): Array<SubjectTo> {
-    console.log("getRulesForNoOtherArcs");
     return this.petriNet.transitions
       .filter((transition) => !ignoredTransitions.includes(transition.label))
       .flatMap(
@@ -819,13 +760,6 @@ export class IlpSolver {
       };
     } else if (variable.startsWith(VariableName.OUTGOING_ARC_WEIGHT_PREFIX)) {
       const label = this.inverseLabelVariableMapIngoing.get(variable);
-      /* let label: any;
-      console.log(variable);
-      if (variable == "out_b_9") {
-        label = "b";
-      } else {
-        label = this.inverseLabelVariableMapIngoing.get(variable);
-      } */
       if (label === undefined) {
         throw new Error(
           `ILP variable '${variable}' could not be resolved to an outgoing transition label!`
@@ -1036,15 +970,8 @@ export class IlpSolver {
    */
   private avoidWrongContinuationIlp(baseIlp: LP/* , existingPlace: Place */, wrongContinuations: wrongContinuation[], partialOrders: PartialOrder[], z: number): LP {
     const result = clonedeep(baseIlp);
-    /* this.addConstraintsForSameIncomingWeights(existingPlace, result);
-    this.addConstraintsForSameOutgoingWeights(existingPlace, result); */
-    /*     console.log("existingPlace and wrong continuation: ");
-        console.log(existingPlace);
-        console.log(wrongContinuations); */
     if (wrongContinuations.length > 0) {
       let splitWC = wrongContinuations[z].wrongContinuation.split(',');
-      /* console.log(arcSplitted[0]);
-      console.log(arcSplitted[1]); */
 
       // Get first
       let firstEntry = splitWC[0];
@@ -1138,19 +1065,11 @@ export class IlpSolver {
         );
       }
 
-      console.log("Variables in smallerThan: ");
-      console.log(variables);
       result.subjectTo = result.subjectTo.concat(
         this.smallerThan(variables, 0).constraints // e.g.: if 3 or greater than different solution
       );
 
       this.addConstraintsForWrongContinuation(wrongContinuations, partialOrders, result, z);
-      /* result.subjectTo = result.subjectTo.concat(
-        this.getRulesForNoOtherArcs(
-          Array.from(handledTransitions),
-          VariableName.INGOING_ARC_WEIGHT_PREFIX
-        )
-      ); */
     } else {
       result.subjectTo = result.subjectTo.concat(
         this.getRulesForNoArcs(VariableName.INGOING_ARC_WEIGHT_PREFIX)
@@ -1197,10 +1116,6 @@ export class IlpSolver {
     handledTransitions.push("out_" + firstNotValidTransition);
 
     for (let i = 0; i < partialOrders.length; i++) {
-      //console.log("Partial order (length, events, total)");
-      //console.log(partialOrders.length);
-      //console.log(partialOrders[i].events);
-      //console.log(partialOrders[i]);
       // Search in partialOrders[i].arcs for the firstNotValidTransition and get the source
       let searchObject = partialOrders[i].arcs.find(o => o.target === firstNotValidTransition);
       let searchLabel = searchObject?.source;
@@ -1218,25 +1133,10 @@ export class IlpSolver {
             lastValidTransition = lastValidTransitionObject.label;
           }
         }
-        //console.log("lastValidTransition");
-        //console.log(lastValidTransition);
       }
     }
 
     if (whileLoop == true) {
-      /*         result.subjectTo = result.subjectTo.concat(
-                this.greaterEqualThan(
-                  this.variable(
-                    this.transitionVariableName(
-                      lastValidWithLoop, // out
-                      VariableName.OUTGOING_ARC_WEIGHT_PREFIX
-                    )
-                  ),
-                  1
-                ).constraints
-              );
-              handledTransitions.push("out_" + lastValidWithLoop); */
-
       result.subjectTo = result.subjectTo.concat(
         this.greaterEqualThan(
           this.variable(
@@ -1305,66 +1205,6 @@ export class IlpSolver {
         }
       }
     }
-
-    /* result.subjectTo = result.subjectTo.concat(
-      this.equal(
-        this.variable(
-          this.transitionVariableName(
-            "a", // out_a_0
-            VariableName.OUTGOING_ARC_WEIGHT_PREFIX
-          )
-        ),
-        0 // arc.weight
-      ).constraints
-    );
- 
-    result.subjectTo = result.subjectTo.concat(
-      this.equal(
-        this.variable(
-          this.transitionVariableName(
-            "a", // in_a_1
-            VariableName.INGOING_ARC_WEIGHT_PREFIX
-          )
-        ),
-        0 // arc.weight
-      ).constraints
-    );
- 
-    result.subjectTo = result.subjectTo.concat(
-      this.equal(
-        this.variable(
-          this.transitionVariableName(
-            "b", // out_b_2
-            VariableName.OUTGOING_ARC_WEIGHT_PREFIX
-          )
-        ),
-        0 // arc.weight
-      ).constraints
-    );
- 
-    result.subjectTo = result.subjectTo.concat(
-      this.equal(
-        this.variable(
-          this.transitionVariableName(
-            "c", // in_c_5
-            VariableName.INGOING_ARC_WEIGHT_PREFIX
-          )
-        ),
-        0 // arc.weight
-      ).constraints
-    ); */
-
-    // The result.subjectTo above does the same as:
-    /* const variables3 = [];
-          variables3.push(
-            this.variable(
-              "in_c_5",
-              +1
-            )
-          );
-          result.subjectTo = result.subjectTo.concat(
-            this.equal(variables3, 0).constraints
-          ); */
   }
 
   /**
@@ -1376,9 +1216,6 @@ export class IlpSolver {
   */
   private implicitPlacesIlp(baseIlp: LP, existingPlace: Place, partialOrders: PartialOrder[]): LP {
     const result = clonedeep(baseIlp);
-    console.log("implicit place");
-    console.log(existingPlace);
-
     const handledTransitions: string[] = [];
 
     for (let i = 0; i < partialOrders.length; i++) {
@@ -1431,114 +1268,19 @@ export class IlpSolver {
   calculatePrecisionSolutions(
     placeModel: SolutionGeneratorType, wrongContinuations: wrongContinuation[]
   ): Observable<ProblemSolution[]> {
-    // Generate place for missing transition
-    /* if (placeModel.type === 'transition') {
-      const pairs = this.getPairsForMissingTransition(placeModel.newTransition);
-      return combineLatest(
-        pairs.map((pair) =>
-          this.solveILP(
-            this.populateIlpByCausalPairs(
-              this.baseIlp,
-              pair,
-              this.constraintsForNewTransitions[pair[1]]
-            )
-          ).pipe(map((solution) => solution.solution))
-        )
-      ).pipe(
-        map((solutions) => [
-          {
-            type: 'multiplePlaces',
-            solutions: solutions
-              .filter(
-                (solution) => solution.result.status !== Solution.NO_SOLUTION
-              )
-              .map((solution) => solution.result.vars),
-            regionSize: Math.max(
-              ...solutions.map((solution) =>
-                this.generateSumForVars(solution.result.vars)
-              )
-            ),
-          },
-        ])
-      );
-    } */
-    // Calculate how many tokens are required for current place
-    /* const invalidPlace = this.petriNet.places.find(
-      (p) => p.id === "p1"//placeModel.placeId //invalidPlaces
-    ); */
-    /*  if (placeModel.type === 'warning') {
-          console.log("Model Type warning and execute again populateIlpBySameWeights"); */
-    /*       const changeMarkingSolution = this.populateIlpBySameWeights(
-            this.baseIlp,
-            invalidPlace!
-          );
-          if (!invalidPlace) {
-            return of([]);
-          } */
-
-    /*       return this.solveILP(changeMarkingSolution).pipe(
-            map((solution) => {
-              if (solution.solution.result.status === Solution.NO_SOLUTION) {
-                return [];
-              }
-              const problemSolution: ProblemSolution = {
-                type: 'changeMarking',
-                solutions: [solution.solution.result.vars],
-                regionSize: this.generateSumForVars(solution.solution.result.vars),
-              };
-              return [problemSolution];
-            })
-          ); */
-    /* } */
-    //
     if (placeModel.type === 'implicit') {
       const implicitPlace = this.petriNet.places.find(
         (p) => p.id === placeModel.placeId
       );
-      /* let implicitPlace: Place = {
-        "id": "",
-        "type": "place",
-        "marking": 0,
-        "incomingArcs": [
-          {
-            "weight": 1,
-            "source": "a",
-            "target": "p1",
-            "breakpoints": []
-          }
-        ],
-        "outgoingArcs": [
-          {
-            "weight": 1,
-            "source": "p1",
-            "target": "b",
-            "breakpoints": []
-          },
-          {
-            "weight": 1,
-            "source": "p1",
-            "target": "c",
-            "breakpoints": []
-          }
-        ],
-        "issueStatus": "implicit"
-      }; */
-      console.log("Implicit solution");
-      //const addPlaceSolution = this.populateIlpBySameWeights( // Adding this will show a valid fitness repair solution
       const removePlaceSolution = this.implicitPlacesIlp(
         this.baseIlp,
         implicitPlace!,
         this.partialOrders,
       );
-      //if (!invalidPlace) {
-      //  return of([]);
-      //}
-      console.log("removePlaceSolution:");
-      console.log(removePlaceSolution);
+
       return this.solveILP(removePlaceSolution).pipe(
         map((solution) => {
           if (solution.solution.result.status === Solution.NO_SOLUTION) {
-            console.log("Empty solution");
             return [];
           }
           let problemSolution: ProblemSolution = {
@@ -1548,87 +1290,17 @@ export class IlpSolver {
           };
 
           if (problemSolution.regionSize == 0) {
-            console.log("removePlace");
+
             problemSolution = {
               type: 'removePlace',
               solutions: [solution.solution.result.vars],
               regionSize: 0,
             };
           }
-          console.log("problemSolution: ");
-          console.log(problemSolution);
-          //this.solutionToSkip = problemSolution;
           return [problemSolution];
         })
       );
     }
-
-    // Comment on this part, because then the multi solutions are generated
-    /* if (placeModel.type === 'possibility') {
-      console.log("Possibility solution");
-      //const addPlaceSolution = this.populateIlpBySameWeights( // Adding this will show a valid fitness repair solution
-      const addPlaceSolution = this.avoidWrongContinuationIlp( // and removing this
-        this.baseIlp,
-        invalidPlace!,
-        wrongContinuations,
-        this.partialOrders
-      );
-      if (!invalidPlace) {
-        return of([]);
-      }
-      console.log("addPlaceSolution:");
-      console.log(addPlaceSolution);
-      return this.solveILP(addPlaceSolution).pipe(
-        map((solution) => {
-          if (solution.solution.result.status === Solution.NO_SOLUTION) {
-            console.log("Empty solution");
-            return [];
-          }
-          let problemSolution: ProblemSolution = {
-            type: 'addPlace',
-            solutions: [solution.solution.result.vars],
-            regionSize: this.generateSumForVars(solution.solution.result.vars),
-          };
-  
-          if (problemSolution.regionSize == 0) {
-            console.log("addTrace");
-            problemSolution = {
-              type: 'addTrace',
-              solutions: [solution.solution.result.vars],
-              regionSize: 0,
-            };
-          }
-          console.log("problemSolution: ");
-          console.log(problemSolution);
-          this.solutionToSkip = problemSolution;
-          return [problemSolution];
-        })
-      );
-    } */
-    //const unhandledPairs = this.getUnhandledPairs(invalidPlace!);
-    /* const unhandledPairs = this.getUnhandledPairs({
-     "id": "p",
-     "type": "place",
-     "marking": 0,
-     "incomingArcs": [
-         {
-             "weight": 1,
-             "source": "a",
-             "target": "p1",
-             "breakpoints": []
-         }
-     ],
-     "outgoingArcs": [
-         {
-             "weight": 1,
-             "source": "p1",
-             "target": "b",
-             "breakpoints": []
-         }
-     ]
- }); */
-    /*     console.log("unhandledPairs");
-        console.log(unhandledPairs); */
 
     let z = 0;
     if (placeModel.type === 'possibility') {
@@ -1682,10 +1354,7 @@ export class IlpSolver {
 
       return this.solveILP(addPlaceSolution).pipe(
         map((solution) => {
-          console.log("SOLUTION");
-          console.log(solution);
           if (solution.solution.result.status === Solution.NO_SOLUTION) {
-            console.log("Empty solution");
             return [];
           }
           let problemSolution: ProblemSolution = {
@@ -1698,24 +1367,12 @@ export class IlpSolver {
         })
       );
     } else {
-
-
       return combineLatest(
-        /* unhandledPairs.map((pair) => */
-        //this.solveILP(this.avoidWrongContinuationIlp(this.baseIlp/* , invalidPlace! */, wrongContinuations, this.partialOrders, z)).pipe( // populateIlpByCausalPairs(this.baseIlp, pair)
-        this.solveILP(this.baseIlp).pipe( // populateIlpByCausalPairs(this.baseIlp, pair)
+        this.solveILP(this.baseIlp).pipe(
           switchMap((solution) => {
             if (solution.solution.result.status !== Solution.NO_SOLUTION) {
               return of(solution);
             }
-            /* return this.solveILP(
-              this.populateIlpByCausalPairs(
-                this.baseIlp,
-                pair,
-                undefined,
-                false
-              )
-            ); */
             return [];
           }),
           map((solution) => ({
@@ -1724,7 +1381,6 @@ export class IlpSolver {
             type: 'multiplePlaces' as SolutionType,
           }))
         )
-        /* ) */
       ).pipe(
         concatMap(
           (
@@ -1732,45 +1388,19 @@ export class IlpSolver {
               type: SolutionType;
             })[]
           ) => {
-            // If we handle the iteration here, then the solutions will be combined into one solution per type. If we handle the iteration higher, then it will not work, because the response is different and cant be handled in parse-solutionfile line 302
+            // If we handle the iteration here, then the solutions will be combined into one solution per type. If we handle the iteration higher, then it will not work, 
+            // because the response is different and cant be handled in parse-solutionfile line 302
             let ilpsToSolve: { type: SolutionType; ilp: LP }[] = [
               {
                 type: 'addPlace' as SolutionType,
                 ilp: this.avoidWrongContinuationIlp(
                   this.baseIlp,
-                  /* invalidPlace!, */
                   wrongContinuations,
                   this.partialOrders,
                   z
                 ),
               },
-              /* {
-                type: 'addTrace' as SolutionType,
-                ilp: this.avoidWrongContinuationIlp(
-                  this.baseIlp,
-                  //invalidPlace!,
-                  wrongContinuations,
-                  this.partialOrders,
-                  z
-                ),
-              }, */
-              /* {
-                type: 'removePlace' as SolutionType, */
-              /* ilp: this.avoidWrongContinuationIlp(
-                this.baseIlp,
-                //invalidPlace!,
-                wrongContinuations,
-                this.partialOrders,
-                z */
-              /* ilp: this.implicitPlacesIlp(
-              this.baseIlp,
-              implicitPlace!,
-              this.partialOrders,
-            ),
-          } */
             ];
-            console.log("ilpsToSolve");
-            console.log(ilpsToSolve);
             return combineLatest(
               ilpsToSolve.map((ilp) =>
                 this.solveILP(ilp.ilp).pipe(
@@ -1780,7 +1410,7 @@ export class IlpSolver {
                   }))
                 )
               )
-            ).pipe(map((solutions) => [...solutions,])); //...multiplePlaces
+            ).pipe(map((solutions) => [...solutions,]));
           }
         ),
         toArray(),
@@ -1796,8 +1426,6 @@ export class IlpSolver {
             removePlace: { sum: 0, vars: [] }, // [precision model repair]
           };
 
-          console.log("placeSolutions :");
-          console.log(placeSolutions);
           placeSolutions.forEach((placeSolution) => {
             placeSolution
               .filter(
@@ -1819,8 +1447,6 @@ export class IlpSolver {
                 );
               });
           });
-
-          console.log('Generated solutions', typeToSolution);
 
           return Object.entries(typeToSolution)
             .filter(([_, solutions]) => solutions.vars.length > 0)

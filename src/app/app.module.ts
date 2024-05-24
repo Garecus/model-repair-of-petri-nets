@@ -27,7 +27,6 @@ import { FooterComponent } from './components/footer/footer.component';
 import { RepairMenuComponent, HTMLPipe } from './components/repair-menu/repair-menu.component';
 import { SourceFileTextareaComponent } from './components/source-file-textarea/source-file-textarea.component';
 import { TemplateButtonComponent } from './components/template-button/template-button.component';
-import { UploadComponent } from './components/upload/upload.component';
 import { DownloadExampleComponent } from './components/download-example/download-example.component';
 
 @NgModule({
@@ -41,7 +40,6 @@ import { DownloadExampleComponent } from './components/download-example/download
     CanvasComponent,
     DownloadPopoverComponent,
     RepairMenuComponent,
-    UploadComponent,
     DownloadExampleComponent,
     HTMLPipe
   ],

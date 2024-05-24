@@ -135,8 +135,7 @@ export class RepairService {
     if (this.overlayRef) {
       this.overlayRef.dispose();
     }
-
-    console.log(solution);
+    
     if (solution.type != "newTransition") {
     this.currentOpenElement =
       solution.type === 'possibility'
@@ -210,18 +209,14 @@ export class RepairService {
    * @returns only if the opened element is not a transition
    */
   showRepairPopoverPrecision(ref: DOMRect, transition: string): void {
-    //console.log("showRepairPopoverPrecision");
-    //console.log(transition);
     if (this.currentOpenElement === transition) {
       this.currentOpenElement = undefined;
       this.overlayRef?.dispose();
       return;
     }
-    console.log(this.solutions);
     const solutionsForTransition = this.solutions.find(
       (s) => s.type === 'possibility' && s.newTransition === transition
     );
-    console.log(solutionsForTransition);
     this.showRepairPopoverForSolutionPrecision(ref, solutionsForTransition);
   }
 

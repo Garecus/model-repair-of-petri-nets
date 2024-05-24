@@ -23,7 +23,7 @@
       (change)="changeToggle($event)"
       [(ngModel)] = "isToggled"
     >
-      Activate fitness repair suggestions.
+      Activate fitness repair suggestions
     </mat-slide-toggle>
     <mat-slide-toggle
       class="example-margin distance-left"
@@ -31,7 +31,7 @@
       (change)="changeTogglePrecision($event)"
       [(ngModel)] = "isToggledPrecision"
     >
-      Activate precision repair suggestions.
+      Activate precision repair suggestions
     </mat-slide-toggle>
   </section>
 
@@ -115,7 +115,7 @@
 
         <div class="empty-button-list">
           <app-template-button
-            buttonText="Upload a log and  a petri net to start."
+            buttonText="Upload a log and a petri net to start"
             buttonIcon="upload"
             [styleClass]="
               partialOrderCount.count === 0 ? 'color_error' : 'color_success'

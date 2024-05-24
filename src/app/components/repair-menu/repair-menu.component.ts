@@ -41,29 +41,16 @@ export class RepairMenuComponent implements OnInit {
 
   constructor(private netCommandService: NetCommandService, private repairService: RepairService) { }
 
-
   /**
    * On page initialization: Show the user the RepairMenu.FirstLine and .SecondLine
    * @returns the solutions and their descriptions
    */
   ngOnInit(): void {
     this.repairService.triggeredBuildContent.subscribe((solutionType: string) => {
-      console.log("Show repair menu with solution type: " + solutionType);
       this.solutionType = solutionType;
     });
-
-    // [precision model repair]
-    /* if (this.solutionType == "precision") { */
-    /* if (this.transitionSolution) {
-    this.infoHeader = `The transition has ${this.transitionSolution.wrongContinuations.length} possible wrong ${this.transitionSolution.wrongContinuations.length === 1 ? 'continuation' : 'continuations'}.`;
-    this.shownTextsForSolutions = this.generateSolutionToDisplay(
-      this.transitionSolution.solutions,
-      true
-    );
-    console.log(this.shownTextsForSolutions);
-    } */
-    /*  } */ /* else if (this.solutionType == "fitness") { */
-    // Fitness
+    
+    // [fitness model repair]
     if (this.placeSolution.type === 'warning') {
       this.infoHeader = `The place has ${this.placeSolution.tooManyTokens} too many tokens`;
       this.shownTextsForSolutions = [
@@ -117,30 +104,23 @@ export class RepairMenuComponent implements OnInit {
         // Identify no add-place solution for a wrong continuation and then mark this solution as not repairable in the ui
         for (let i = 0; i < this.placeSolution.wrongContinuations.length; i++) {
           for (let j = 0; j < this.placeSolution.solutions.length; j++) {
-            // if there ia another one that start and ends with the same, but has something inbetween then do not propose the addplace solution //XXX
-
+            // if there is another one that start and ends with the same, but has something inbetween then do not propose the addplace solution
           }
           let countSolutions = 0;
           for (let j = 0; j < this.placeSolution.solutions.length; j++) {
-            /* console.log("i: " + this.placeSolution.wrongContinuations[i].wrongContinuation)
-            console.log("j: " + this.placeSolution.solutions[j].relatedWrongContinuation?.wrongContinuation); */
             if (this.placeSolution.wrongContinuations[i].wrongContinuation == this.placeSolution.solutions[j].relatedWrongContinuation?.wrongContinuation) {
               countSolutions++;
             }
           }
-          /*  console.log(countSolutions); */
 
           for (let j = 0; j < this.placeSolution.solutions.length; j++) {
             if (this.placeSolution.solutions[j].relatedWrongContinuation?.wrongContinuation == this.placeSolution.wrongContinuations[i].wrongContinuation) {
-              /* console.log(this.placeSolution.solutions[j].relatedWrongContinuation?.wrongContinuation);
-              console.log(countSolutions); */
               if (countSolutions > 1) {
                 this.placeSolution.solutions[j].relatedWrongContinuation!.type = "repairable";
               }
               if (countSolutions == 1 && (this.placeSolution.solutions[j].relatedWrongContinuation!.type == "unknown" || this.placeSolution.solutions[j].relatedWrongContinuation!.type == "not repairable")) {
                 this.placeSolution.solutions[j].relatedWrongContinuation!.type = "not repairable";
               }
-              /* console.log(this.placeSolution.solutions[j].relatedWrongContinuation!.type); */
             }
           }
         }

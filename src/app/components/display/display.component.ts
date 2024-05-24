@@ -5,14 +5,13 @@ import { BehaviorSubject, distinctUntilChanged, map, Observable, of, shareReplay
 
 import { FirePartialOrder } from '../../algorithms/fire-partial-orders/fire-partial-order';
 import { PetriNetSolutionService } from '../../algorithms/regions/petri-net-solution.service';
-import { LogList, PartialOrder, wrongContinuation } from '../../classes/diagram/partial-order';
+import { PartialOrder, wrongContinuation } from '../../classes/diagram/partial-order';
 import { PetriNet } from '../../classes/diagram/petri-net';
 import { Place } from '../../classes/diagram/place';
 import { DisplayService } from '../../services/display.service';
 import { LayoutResult, LayoutService, } from '../../services/layout/layout.service';
 import { NewTransitionSolution, PlaceSolution, PrecisionSolution, } from '../../services/repair/repair.model';
 import { RepairService } from '../../services/repair/repair.service';
-import { SvgService } from '../../services/svg/svg.service';
 import { CanvasComponent } from '../canvas/canvas.component';
 import { ParserService } from 'src/app/services/parser/parser.service';
 import { CheckWrongContinuations } from 'src/app/algorithms/check-wrong-continuations/check-wrong-continuations';
@@ -51,7 +50,6 @@ export class DisplayComponent implements OnInit {
 
   constructor(
     private layoutService: LayoutService,
-    private svgService: SvgService,
     private displayService: DisplayService,
     private petriNetRegionsService: PetriNetSolutionService,
     private repairService: RepairService,
@@ -120,7 +118,6 @@ export class DisplayComponent implements OnInit {
       } else if (this.solutionType == "fitness") {
         this.precisionActive = false;
       }
-      /* this.buildContent(); */
     });
 
     // Display the content that is up to date right now
@@ -199,28 +196,9 @@ export class DisplayComponent implements OnInit {
                 });
 
                 // Identification of wrongContinuations to be able to handle them
-                /*
-                for (let index = 0; index < partialOrders.length; index++) {
-                  this.wrongContinuations = this.checkWrongContinuations(net, partialOrders[index], partialOrders);
-                }
-                */
                 this.wrongContinuations = this.checkWrongContinuations(net, partialOrders[0], partialOrders);
                 this.wrongContinuationsString = this.wrongContinuations.map(a => a.wrongContinuation);
                 for (let i = 0; i < this.wrongContinuationsString.length; i++) {
-                  /* let splitted = this.wrongContinuationsString[i].split("");
-                  this.wrongContinuationsString[i] = ""; */
-                  /* for (let j = 0; j < splitted.length; j++) {
-                    if (j < splitted.length - 1) {
-                      splitted[j] = splitted[j] + ",";
-                    }
-
-                    if (j == splitted.length - 1) {
-                      splitted[j] = splitted[j] + "]";
-                    } else if (j == 0) {
-                      splitted[j] = "[" + splitted[j];
-                    }
-                    this.wrongContinuationsString[i] = this.wrongContinuationsString[i].concat(splitted[j].toString());
-                  } */
                   this.wrongContinuationsString[i] = this.wrongContinuationsString[i]= '[' + this.wrongContinuationsString[i] +']';
                 }
 
@@ -289,9 +267,6 @@ export class DisplayComponent implements OnInit {
                   });
                 }
 
-                console.log("implicitPlaces");
-                console.log(implicitPlaces);
-
                 const placeIds2 = Object.keys(implicitPlaces);
                 this.implicitPlaceCount$.next({
                   count: placeIds2.length,
@@ -342,33 +317,6 @@ export class DisplayComponent implements OnInit {
                   let invalidPlaces = { //invalidPlaces
                     "p_new": 1,
                   }
-
-                  //let solutions: any = [];
-                  //let newSolution: any;
-                   /* for (let z = 0; z < this.wrongContinuations.length; z++) {
-                     return this.petriNetRegionsService
-                     //newSolution = this.petriNetRegionsService
-                       .computePrecisionSolutions(partialOrders, net, invalidPlaces, invalidTransitions, this.wrongContinuations, z)
-                       .pipe(
-                         tap(() => (this.computingSolutions = false)
-                         ),
-                         map((solutions) => ({
-                           solutions,
-                           renderChanges: false,
-                         })
-                         ),
-                         startWith({
-                           solutions: [] as PrecisionSolution[],
-                           renderChanges: false,
-                         })
-                       );
-                       //solutions.push(newSolution);
-                   }
-                   this.computingSolutions = false;
-                   return of({ solutions: [], renderChanges: true }); */
-                  //console.log(solutions);
-                  //solutions = solutions[0];
-                  //return of({ solutions, renderChanges: true });
 
                   this.computingSolutions = false;
                   return this.petriNetRegionsService
@@ -447,7 +395,6 @@ export class DisplayComponent implements OnInit {
     petriNet: PetriNet,
     partialOrder: PartialOrder
   ): string[] {
-    //console.log("Fire Partial order");
     return new FirePartialOrder(petriNet, partialOrder, []).getInvalidPlaces();
   }
 
